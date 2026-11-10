@@ -7,8 +7,8 @@ cd "$(dirname "$0")"; mkdir -p build out
 MODE=${1:-goran}; NAME=PC_B02_GLP_TROSTRUKI_TT_H1
 export SSL_CERT_FILE=${SSL_CERT_FILE:-/root/.ccr/ca-bundle.crt}
 if [ "$MODE" = el ]; then
-  ffmpeg -y -hide_banner -loglevel error -i "$2" -ar 48000 -ac 1 build/voice_raw.wav
-  python3 el_timing.py build/voice_raw.wav; TAG=V1
+  ffmpeg -y -hide_banner -loglevel error -i "$2" -ar 48000 -ac 1 build/el_in.wav
+  python3 el_align.py build/el_in.wav; TAG=V1
 else
   python3 tts.py +12%; TAG=V1_glas_goran
 fi
