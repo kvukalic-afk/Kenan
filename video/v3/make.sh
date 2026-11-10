@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p build out
-NAME=PC_B01_KOZA_GHKCU_TT_H1_V3
+NAME=PC_B01_KOZA_GHKCU_TT_H1_V4
 VOICE=${1:-assets/glas_ivan_elevenlabs.mp3}
 cp "$VOICE" build/voice_el.mp3
 python3 render.py

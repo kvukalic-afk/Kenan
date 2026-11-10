@@ -11,7 +11,8 @@ B = os.path.join(HERE, "build"); SH = os.path.join(HERE, "shots")
 W, H, FPS = 1080, 1920, 30
 FXB = os.path.join(HERE, "..", "fonts", "Manrope-ExtraBold.ttf")
 FIN = "/usr/share/fonts/opentype/inter/Inter-SemiBold.otf"
-BG = (0x1F, 0x22, 0x26); TXT = (0xF5, 0xF0, 0xE8); ACC = (0xB8, 0x73, 0x33); INK = (0x14, 0x15, 0x17)
+BG = (0x0B, 0x1F, 0x3A); TXT = (0xFF, 0xFF, 0xFF); ACC = (0x19, 0xB5, 0xB0); INK = (0x07, 0x16, 0x2B)  # paleta B (logo)
+LOGO = os.path.join(HERE, "..", "brand", "logo_ig_320.jpg")
 SAFE_L, SAFE_R = 70, 140
 GCX = (SAFE_L + W - SAFE_R) // 2
 END_CARD = 1.8
@@ -97,7 +98,7 @@ def build_subs(segs):
     return subs
 
 STOCK = {  # shot -> (file, start offset s)
-    "S1": ("a10222557", 0.5), "S2": ("b7299411", 1.0), "S3": ("c8381578", 0.3), "S4": ("d8131891", 12.0),
+    "S1": ("a10222557", 0.5), "S2": ("b7299411", 1.0), "S3": ("c8381578", 0.3), "S4": ("d8131891", 0.5),
     "S4b": ("e8789007", 0.5), "S5": ("e8496473", 0.3), "S6": ("e8055995", 0.5), "S7": ("g6871961", 0.5),
 }
 
@@ -216,24 +217,30 @@ def draw_caption(d, sb, t):
         stroke_text(d, (x, y), wd, fs, col, sw=8)
         x += d.textlength(wd + " ", font=fs)
 
+_logo_cache = {}
+def logo_round(size):
+    if size not in _logo_cache:
+        im = Image.open(LOGO).convert("RGB").resize((size, size), Image.LANCZOS)
+        m = Image.new("L", (size * 4, size * 4), 0); ImageDraw.Draw(m).ellipse((0, 0, size * 4, size * 4), fill=255)
+        im.putalpha(m.resize((size, size), Image.LANCZOS)); _logo_cache[size] = im
+    return _logo_cache[size]
+
 def logo(img, a):
-    ov = Image.new("RGBA", (440, 90), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
-    r = 30; od.ellipse((0, 10, 2 * r, 10 + 2 * r), outline=ACC + (255,), width=5)
-    for i in range(3):
-        cx = r - 14 + i * 14; od.ellipse((cx - 4.5, 10 + r - 4.5, cx + 4.5, 10 + r + 4.5), fill=ACC + (255,))
-    od.text((78, 20), "PEPTID CENTAR", font=F(FXB, 34), fill=TXT + (255,), stroke_width=3, stroke_fill=INK + (255,))
-    ov.putalpha(ov.split()[3].point(lambda v: int(v * a)))
-    img.paste(ov, (SAFE_L, 232), ov)
+    lg = logo_round(86).copy()
+    lg.putalpha(lg.split()[3].point(lambda v: int(v * a)))
+    img.paste(lg, (SAFE_L, 228), lg)
+    ov = Image.new("RGBA", (380, 60), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
+    od.text((0, 8), "Peptid Centar", font=F(FXB, 36), fill=TXT + (int(255 * a),), stroke_width=3, stroke_fill=INK + (int(255 * a),))
+    img.paste(ov, (SAFE_L + 100, 240), ov)
 
 def end_card(d, p):
     k = ease(p * 3)
     c = lambda col: tuple(int(BG[i] + (col[i] - BG[i]) * k) for i in range(3))
-    d.ellipse((GCX - 75, 600, GCX + 75, 750), outline=c(ACC), width=12)
-    for i in range(3):
-        cx = GCX - 35 + i * 35; d.ellipse((cx - 11, 664, cx + 11, 686), fill=c(ACC))
-    d.text((GCX, 800), "PEPTID CENTAR", font=F(FXB, 84), fill=c(TXT), anchor="ma")
-    d.text((GCX, 915), "Peptidi bez hajpa", font=F(FXB, 56), fill=c(ACC), anchor="ma")
-    d.text((GCX, 1180), "Edukacija · nije medicinski savjet", font=F(FIN, 40), fill=c((0x8C, 0x8F, 0x94)), anchor="ma")
+    lg = logo_round(380).copy(); lg.putalpha(lg.split()[3].point(lambda v: int(v * k)))
+    d._image.paste(lg, (GCX - 190, 470), lg)
+    d.text((GCX, 900), "Peptidi bez hajpa", font=F(FXB, 64), fill=c(ACC), anchor="ma")
+    d.text((GCX, 1000), "@peptidcentar", font=F(FXB, 48), fill=c(TXT), anchor="ma")
+    d.text((GCX, 1180), "Edukacija · nije medicinski savjet", font=F(FIN, 40), fill=c((0x8A, 0x97, 0xA6)), anchor="ma")
 
 def main():
     voice = os.path.join(B, "voice_el.mp3")
