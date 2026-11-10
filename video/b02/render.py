@@ -230,7 +230,7 @@ def b_bonus(d, L, k, tb, T):
 
 def b_status(d, L, k, tb, T):
     a = back(tb / 0.4)
-    pill(d, GCX, 30, "U ISPITIVANJU · još nije odobren", F(FXB, 44), min(1, a), BG, WARN, center=True)
+    pill(d, GCX, 30, "FAZA 3 · NEJM 2026", F(FXB, 48), min(1, a), BG, ACC, center=True)
     ct(d, GCX, 200, "SKALA DOKAZA", F(FXB, 56), TXT)
     size, gap = 100, 34; total = 5 * size + 4 * gap; x0 = GCX - total / 2
     for i in range(5):

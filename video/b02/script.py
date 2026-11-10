@@ -9,6 +9,6 @@ SCRIPT = [
     dict(tts="Studija je izašla ovog mjeseca u jednom od najuglednijih medicinskih časopisa na svijetu. Preko dvije hiljade i trista ljudi, osamdeset sedmica.", sub="Studija je izašla ovog mjeseca u jednom od najuglednijih medicinskih časopisa na svijetu. Preko 2300 ljudi, 80 sedmica.", acc=["2300", "80"], beats=[("journal", 0), ("chips", 0.55)]),
     dict(tts="Najjača grupa: minus dvadeset pet posto težine. Placebo: minus četiri.", sub="Najjača grupa: −25% težine. Placebo: −4%.", acc=["−25%"], beats=[("bars", 0)]),
     dict(tts="A bonus? Manje bolova u koljenima, i manje prekida disanja u snu.", sub="A bonus? Manje bolova u koljenima, i manje prekida disanja u snu.", acc=["bonus?", "koljenima,", "snu."], beats=[("bonus", 0)]),
-    dict(tts="Još nije odobren kao lijek, ali ovo je peptid koji će cijeli svijet pratiti.", sub="Još nije odobren kao lijek, ali ovo je peptid koji će cijeli svijet pratiti.", acc=["pratiti."], beats=[("status", 0)]),
+    dict(tts="Faza tri, velika studija, objavljena u NEJM-u. Ovo je peptid koji će cijeli svijet pratiti.", sub="Faza 3, velika studija, objavljena u NEJM-u. Ovo je peptid koji će cijeli svijet pratiti.", acc=["3,", "pratiti."], beats=[("status", 0)]),
     dict(tts="Sačuvaj ovo, i prati Peptid Centar.", sub="Sačuvaj ovo, i prati Peptid Centar.", acc=["Sačuvaj"], beats=[("cta", 0)]),
 ]
