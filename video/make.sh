@@ -20,7 +20,11 @@ else
   NAME=${NAME}_DRAFT_privremeni_glas
 fi
 # voice chain: high-pass 80 Hz, gentle compression, de-ess, loudness -14 LUFS / -1 dBTP
-ffmpeg -y -hide_banner -loglevel error -i build/voice_raw.wav -af "highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=80,deesser,loudnorm=I=-12.5:TP=-1.5:LRA=11,alimiter=limit=0.84" -ar 48000 -ac 2 build/voice.wav
+ffmpeg -y -hide_banner -loglevel error -i build/voice_raw.wav -af "highpass=f=80,acompressor=threshold=-20dB:ratio=3:attack=5:release=80,deesser,loudnorm=I=-14:TP=-1.5:LRA=11" -ar 48000 -ac 2 build/voice.wav
+# second pass: measure and apply exact gain to -14 LUFS, true peak <= -1 dBTP
+I=$(ffmpeg -hide_banner -nostats -i build/voice.wav -af ebur128 -f null - 2>&1 | grep -A3 Summary | grep -oP "I:\s+\K-?[0-9.]+")
+G=$(python3 -c "print(round(-14-($I),2))")
+ffmpeg -y -hide_banner -loglevel error -i build/voice.wav -af "volume=${G}dB,alimiter=limit=0.89:level=false" build/voice_g.wav && mv build/voice_g.wav build/voice.wav
 python3 timing.py build/voice_raw.wav 10 build/timing.json
 python3 render.py build/timing.json build/voice.wav build
 DUR=$(python3 -c "import json;print(json.load(open('build/render_meta.json'))['total'])")

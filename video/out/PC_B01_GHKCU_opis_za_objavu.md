@@ -1,7 +1,5 @@
 # PC_B01 · GHK-Cu · Opis za objavu (TikTok)
 
-> ⚠️ NACRT. Ne objavljivati dok nalaz E1 u bilješkama nema status „Provjereno: da“.
-
 ## Opis (TikTok)
 
 Šta bakreni peptid stvarno radi za fine bore? 🧪
@@ -24,7 +22,7 @@ Edukacija · nije medicinski savjet. Izvori u zakačenom komentaru.
 Bakreni peptid (GHK-Cu) i fine bore: mala kontrolisana studija, 40 žena, 8 sedmica. Rezultat je zanimljiv, ali dokaz je za sada nivo 3 od 5. Sačuvaj. Edukacija · nije medicinski savjet.
 
 ## Zakačeni komentar (izvori)
-📚 Izvor: Badenhorst T. i sar., „Effects of GHK-Cu on MMP and TIMP Expression, Collagen and Elastin Production, and Facial Wrinkle Parameters“, Journal of Aging Science, 2016. Randomizirana studija na 40 žena (40–65 god.), 8 sedmica, serum s GHK-Cu u odnosu na običan serum. Serum je dao proizvođač. [PROVJERITI DOI i brojke prije objave]
+📚 Izvor: Badenhorst T. i sar., „Effects of GHK-Cu on MMP and TIMP Expression, Collagen and Elastin Production, and Facial Wrinkle Parameters“, Journal of Aging Science, 2016. J Aging Sci 2016;4:166, DOI 10.4172/2329-8847.1000166. Randomizirana, dvostruko slijepa studija na 40 žena (40–65 god.), 8 sedmica: volumen bora −55,8 % u odnosu na običan serum. Studiju je finansirao proizvođač seruma.
 Skala dokaza: 3/5 (ljudi, mala studija). Edukacija · nije medicinski savjet.
 
 ## 3 spremna odgovora

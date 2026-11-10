@@ -15,4 +15,4 @@ Sve rečenice u jednom fajlu, s pauzom od ~0,5 s između rečenica (10 rečenica
 ./make.sh glas.mp3 muzika.mp3   # + verzija s muzikom (−18 dB, ducking)
 ```
 
-Bez argumenta se koristi privremeni espeak-ng glas (samo za nacrt).
+Bez argumenta se koristi privremeni espeak-ng glas (samo za nacrt). Finalni glas: `./make.sh assets/glas_eric_vidiq.mp3`.
