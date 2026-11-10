@@ -96,6 +96,26 @@ def build_subs(segs):
             subs.append({"start": st - 0.04, "end": en, "words": [words[j] for j in c]})
     return subs
 
+STOCK = {  # shot -> (file, start offset s)
+    "S1": ("a10222557", 0.5), "S2": ("b7299411", 1.0), "S3": ("c8381578", 0.3), "S4": ("d8131891", 12.0),
+    "S4b": ("e8789007", 0.5), "S5": ("e8496473", 0.3), "S6": ("e8055995", 0.5), "S7": ("g6871961", 0.5),
+}
+
+def build_base(shots, speech_end):
+    parts = []
+    for i, (s, name, ov, e) in enumerate(shots):
+        src, off = STOCK[name]
+        out = os.path.join(B, f"base_{i}.mp4")
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", str(off), "-i", os.path.join(HERE, "stock", src + ".mp4"),
+                        "-t", f"{e - s:.3f}", "-an", "-vf",
+                        "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30,eq=saturation=1.04:contrast=1.03,setsar=1",
+                        "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-pix_fmt", "yuv420p", out], check=True)
+        parts.append(out)
+    lst = os.path.join(B, "base_list.txt")
+    with open(lst, "w") as f:
+        for p in parts: f.write(f"file '{p}'\n")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", os.path.join(B, "base.mp4")], check=True)
+
 def load_shot(name):
     for ext in ("png", "jpg", "jpeg", "webp"):
         p = os.path.join(SH, f"{name}.{ext}")
@@ -167,8 +187,8 @@ def ov_split(d, tb, T):
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
     od.line((W // 2, 260, W // 2, 260 + 760 * k), fill=TXT + (230,), width=6)
     d._image.paste(Image.alpha_composite(d._image.convert("RGBA"), ov).convert("RGB"))
-    stroke_text(d, (W // 2 - 30, 300), "S PEPTIDOM", F(FXB, 54), ACC, anchor="ra")
-    stroke_text(d, (W // 2 + 30, 300), "BEZ", F(FXB, 54), TXT)
+    stroke_text(d, (W // 2 - 30, 350), "S PEPTIDOM", F(FXB, 54), ACC, anchor="ra")
+    stroke_text(d, (W // 2 + 30, 350), "BEZ", F(FXB, 54), TXT)
 def ov_result(d, tb, T):
     p = ease((tb - 0.9) / 1.0)
     s = "−" + str(int(round(56 * p))) + "%"
@@ -227,7 +247,10 @@ def main():
         shots.append([st, name, ov])
     for i in range(len(shots)):
         shots[i].append(shots[i + 1][0] if i + 1 < len(shots) else speech_end)
-    imgs = {name: load_shot(name) for _, name, _, _ in shots}
+    build_base(shots, speech_end)
+    rd = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-i", os.path.join(B, "base.mp4"), "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                          stdout=subprocess.PIPE)
+    last = None
     sfx = [(s, "whoosh") for s, _, _, _ in shots[1:]] + [(speech_end, "whoosh")]
     sfx += [(segs[9][0] + 0.9, "ding"), (shots[3][0] + 1.3, "pop"), (segs[3][0] + 0.6, "pop")]
     ff = subprocess.Popen(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
@@ -240,7 +263,13 @@ def main():
             for j, (s, name, ov, e) in enumerate(shots):
                 if s <= t < e:
                     p = (t - s) / (e - s)
-                    frame = kenburns(imgs[name], p, t, j)
+                    raw = rd.stdout.read(W * H * 3)
+                    if len(raw) == W * H * 3: last = Image.frombytes("RGB", (W, H), raw)
+                    frame = last.copy()
+                    z = 1.0 + 0.05 * p  # slow push-in for energy
+                    if z > 1.001:
+                        cw, ch = W / z, H / z
+                        frame = frame.transform((W, H), Image.EXTENT, ((W - cw) / 2, (H - ch) / 2, (W + cw) / 2, (H + ch) / 2), Image.BILINEAR)
                     # quick flash-cut: 3 frames brighten on cut (UGC jump cut feel)
                     if j and t - s < 2 / FPS:
                         frame = Image.blend(frame, Image.new("RGB", (W, H), (255, 255, 255)), 0.25)

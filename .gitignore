@@ -1,3 +1,5 @@
 video/build/
 video/v2/build/
 video/v3/build/
+video/v3/stock/*.mp4
+video/v3/stock/*.png
