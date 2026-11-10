@@ -52,7 +52,7 @@ Referentne TikTokove nisam mogao otvoriti, pa metrika nema. Korišten je obrazac
 | Oblast | Rezultat |
 |---|---|
 | Stari brend | N/A (nema izvornog videa) ✅ |
-| Izgovor | Pravi glas (ElevenLabs „Eric“); STT provjera nije urađena (nema lokalnog STT modela). Preslušaj: „GHK“ je izgovoreno kao „bakrenim peptidom“ ⚠️ |
+| Izgovor | Pravi glas (ElevenLabs „Eric“, višejezični). Automatska STT provjera nije urađena (nema lokalnog STT modela), pa treba preslušati naglaske. U govoru je „bakreni peptid“, a „GHK-Cu“ stoji samo u titlu ⚠️ |
 | Sinhronizacija | Titlovi raspoređeni po rečenicama iz silencedetect ✅ |
 | Čitljivost | Sigurne zone poštovane, dijakritici ispravni ✅ |
 | Glasnoća | −14,0 LUFS, peak −4,2 dBFS ✅ |
