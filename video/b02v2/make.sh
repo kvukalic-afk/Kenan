@@ -24,7 +24,9 @@ final() {
   ffmpeg -y -hide_banner -loglevel error -i build/mix.mkv -af "volume=${G}dB,alimiter=limit=0.82:level=false" \
     -c:v libx264 -profile:v high -preset slow -crf 19 -pix_fmt yuv420p -r 30 -c:a aac -b:a 160k -ar 48000 -ac 2 -map_metadata -1 -movflags +faststart "$2"
 }
-final "[1:a]apad[v];[v]asplit[v1][v2];[2:a]volume=-15dB[m];[m][v1]sidechaincompress=threshold=0.04:ratio=5:attack=20:release=350[md];[3:a]volume=-9dB[s];[v2][md][s]amix=inputs=3:duration=first:normalize=0[a]" "out/${NAME}_${TAG}.mp4"
+MI=$(ffmpeg -hide_banner -nostats -i build/music.wav -af ebur128 -f null - 2>&1 | grep -A3 Summary | grep -oP "I:\s+\K-?[0-9.]+")
+MG=$(python3 -c "print(round(-23.5-($MI),2))")   # music bed ~9 dB under the voice, gentle ducking
+final "[1:a]apad[v];[v]asplit[v1][v2];[2:a]volume=${MG}dB[m];[m][v1]sidechaincompress=threshold=0.1:ratio=2:attack=15:release=250[md];[3:a]volume=-7dB[s];[v2][md][s]amix=inputs=3:duration=first:normalize=0[a]" "out/${NAME}_${TAG}.mp4"
 final "[2:a]volume=-4dB[m];[3:a]volume=-8dB[s];[m][s]amix=inputs=2:duration=first:normalize=0[a]" "out/${NAME}_${TAG}_bez_glasa.mp4"
 cp build/titlovi.srt "out/${NAME}_${TAG}.srt"
 ffmpeg -y -hide_banner -loglevel error -i "out/${NAME}_${TAG}.mp4" -vf "fps=2,scale=216:384,tile=10x10" -frames:v 1 "out/${NAME}_${TAG}_mreza.png"

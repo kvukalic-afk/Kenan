@@ -22,6 +22,8 @@ BPM = 112; beat = 60 / BPM; bar = 4 * beat
 CH = [[45, 52, 57, 60], [41, 48, 53, 57], [48, 55, 60, 64], [43, 50, 55, 59]]   # Am F C G
 tk = np.arange(int(0.22 * SR)) / SR
 kick = np.sin(2 * np.pi * np.cumsum(45 + 110 * np.exp(-tk * 38)) / SR) * np.exp(-tk * 16)
+kick = np.tanh(kick * 3.0) * 0.8 + 0.5 * np.sin(2 * np.pi * np.cumsum(180 + 500 * np.exp(-tk * 60)) / SR) * np.exp(-tk * 40)   # harmonics so phone speakers reproduce it
+kn = rng.standard_normal(len(tk)); kick += (kn - lp(kn, 0.3)) * np.exp(-tk * 220) * 0.5                                          # click transient
 tc = np.arange(int(0.14 * SR)) / SR
 cl = rng.standard_normal(len(tc)); cl = (cl - lp(cl, 0.12)) * np.exp(-tc * 34)
 th = np.arange(int(0.05 * SR)) / SR
@@ -36,14 +38,14 @@ for b in range(nb):
     for j, m in enumerate(ch[1:]):
         for det, pan in ((-0.1, 0.7), (0.1, 0.3)):
             f = note(m + 12) * 2 ** (det / 12)
-            v = (0.6 * np.sin(2 * np.pi * f * tt) + 0.25 * np.sin(4 * np.pi * f * tt)) * env * 0.03
+            v = (0.6 * np.sin(2 * np.pi * f * tt) + 0.25 * np.sin(4 * np.pi * f * tt)) * env * 0.045
             L[s0:s1] += v * pan; R[s0:s1] += v * (1 - pan)
     for k in range(4):
         tb = t0 + k * beat
-        if b >= 1:
+        if b >= 0:
             add(L, tb, kick, 0.5); add(R, tb, kick, 0.5)
-            if k % 2 == 1: add(L, tb, cl, 0.16); add(R, tb, cl, 0.16)
-            add(L, tb + beat / 2, hat, 0.05); add(R, tb + beat / 2, hat, 0.06)
+            if k % 2 == 1: add(L, tb, cl, 0.34); add(R, tb, cl, 0.34)
+            add(L, tb + beat / 2, hat, 0.12); add(R, tb + beat / 2, hat, 0.13)
         # bass eighths
         for e8 in range(2):
             tbb = tb + e8 * beat / 2
