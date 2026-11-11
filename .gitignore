@@ -8,3 +8,6 @@ video/v3/stock/*.mp4
 video/v3/stock/*.png
 video/b02v2/stock/*.mp4
 video/b02v2/out/*_bez_glasa.mp4
+video/b03v2/build/
+video/b03v2/stock/*.mp4
+video/b03v2/out/*_bez_glasa.mp4
