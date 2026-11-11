@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<title>Karusel — 3 greške u 3. sedmici</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Lora:ital,wght@1,500;1,600&display=block" rel="stylesheet">
+<style>
+  :root{
+    --ivory:#F6F1E8; --gold:#D6B67C; --gold-deep:#B8955A;
+    --graphite:#16140F; --graphite-2:#1E1B16; --oxblood:#6B1F1C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0c0b09;font-family:Poppins,sans-serif;color:var(--ivory)}
+  .slide{position:relative;width:1080px;height:1350px;overflow:hidden;
+    background:
+      radial-gradient(900px 700px at 8% 4%, rgba(107,31,28,.55), transparent 62%),
+      radial-gradient(700px 600px at 100% 100%, rgba(150,96,40,.22), transparent 60%),
+      radial-gradient(1200px 900px at 50% 45%, var(--graphite-2), var(--graphite) 70%);
+    margin-bottom:40px}
+  .tall .slide{height:1920px}
+  /* grain */
+  .slide::before{content:"";position:absolute;inset:-50%;pointer-events:none;z-index:5;opacity:.16;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
+  /* vignette */
+  .slide::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:4;
+    background:radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(0,0,0,.62) 100%)}
+  /* brand frame */
+  .frame{position:absolute;inset:44px;border:1.5px solid rgba(214,182,124,.42);z-index:6;pointer-events:none}
+  .c{position:absolute;width:46px;height:46px;border-color:var(--gold);border-style:solid;border-width:0}
+  .c.tl{top:-4px;left:-4px;border-top-width:4px;border-left-width:4px}
+  .c.tr{top:-4px;right:-4px;border-top-width:4px;border-right-width:4px}
+  .c.bl{bottom:-4px;left:-4px;border-bottom-width:4px;border-left-width:4px}
+  .c.br{bottom:-4px;right:-4px;border-bottom-width:4px;border-right-width:4px}
+
+  .inner{position:absolute;inset:44px;z-index:7;padding:78px 84px 84px;display:flex;flex-direction:column}
+  .tall .inner{padding:300px 84px 470px}
+  .top{display:flex;justify-content:space-between;align-items:center;
+    font-weight:600;font-size:22px;letter-spacing:.32em;color:var(--gold);text-transform:uppercase}
+  .tall .top{position:absolute;top:96px;left:84px;right:84px}
+  .top .n{letter-spacing:.12em;color:rgba(246,241,232,.55);font-weight:500}
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative}
+  .rule{width:88px;height:3px;background:var(--gold);margin-bottom:44px}
+  h1{font-weight:800;font-size:92px;line-height:1.04;letter-spacing:-.025em;color:var(--ivory);text-wrap:balance}
+  h1.xl{font-size:104px}
+  h1.md{font-size:84px}
+  p.sub{margin-top:44px;font-weight:500;font-size:44px;line-height:1.32;color:rgba(246,241,232,.86);text-wrap:pretty}
+  em{font-family:Lora,serif;font-style:italic;font-weight:600;color:var(--gold);letter-spacing:0}
+  h1 em{font-weight:600}
+  .ghost{position:absolute;right:-70px;top:50%;transform:translateY(-58%);font-weight:800;font-size:640px;line-height:1;
+    color:var(--gold);opacity:.085;z-index:-1;letter-spacing:-.06em}
+  .label{font-weight:600;font-size:26px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:30px}
+  .foot{display:flex;justify-content:space-between;align-items:flex-end;font-size:24px;color:rgba(246,241,232,.55);font-weight:500}
+  .tall .foot{position:absolute;left:84px;right:84px;bottom:390px}
+  .swipe{font-weight:600;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-size:24px}
+  .swipe b{font-size:34px;font-weight:600;margin-left:8px;letter-spacing:0}
+  .slogan{font-family:Lora,serif;font-style:italic;font-size:30px;color:var(--gold)}
+  .admit{margin-top:56px;padding-top:40px;border-top:1.5px solid rgba(214,182,124,.35);
+    font-weight:500;font-size:36px;line-height:1.36;color:rgba(246,241,232,.80)}
+  .kw{display:inline-block;color:var(--graphite);background:var(--gold);padding:0 22px 4px;border-radius:6px;margin:0 4px}
+  .contact{margin-top:44px;font-size:28px;font-weight:500;color:rgba(246,241,232,.6);letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const S = [
+  { // 1 HOOK
+    html:`<div class="rule"></div>
+      <h1 class="xl">3 greške zbog kojih početnici odustanu u <span style="color:var(--gold)">3.&nbsp;sedmici</span></h1>
+      <p class="sub">Nijedna nije <em>lijenost.</em></p>`,
+    foot:'swipe' },
+  { // 2 NEGATIVAC + UZROK
+    html:`<div class="label">Prvo istina</div>
+      <h1>Nije do volje. Do plana je.</h1>
+      <p class="sub">Plan sa interneta pisan je za nekog ko ima slobodno popodne i 10 godina staža. Ne za <em>tebe.</em></p>`,
+    foot:'swipe' },
+  { // 3 GREŠKA 1
+    ghost:'1',
+    html:`<div class="label">Greška 1</div>
+      <h1 class="md">Kreneš 6 dana sedmično.</h1>
+      <p class="sub">Prva sedmica: vatra. Treća: nemaš snage ni za šta. Kreni s 3 dana. <em>Ostani na 3.</em></p>`,
+    foot:'swipe' },
+  { // 4 GREŠKA 2
+    ghost:'2',
+    html:`<div class="label">Greška 2</div>
+      <h1 class="md">Svake sedmice novi plan.</h1>
+      <p class="sub">Napredak dolazi kad isto radiš malo bolje. Jedan plan 6–8 sedmica i <em>zapisuj tegove.</em></p>`,
+    foot:'swipe' },
+  { // 5 GREŠKA 3
+    ghost:'3',
+    html:`<div class="label">Greška 3</div>
+      <h1 class="md">Treniraš tamo gdje te niko ne zna.</h1>
+      <p class="sub">Kad nema ko pitat „gdje si bio jučer?“, lahko je preskočit. Nađi <em>jednog čovjeka</em> koji te čeka.</p>`,
+    foot:'swipe' },
+  { // 6 IDENTITET
+    html:`<div class="rule"></div>
+      <h1>U 4. sedmici trening više nije odluka.</h1>
+      <p class="sub">Postane <em>dio dana.</em> Kao kafa. Kao posao. Kao ti.</p>`,
+    foot:'swipe' },
+  { // 7 CTA
+    html:`<div class="label">Tvoj sljedeći korak</div>
+      <h1>Napiši <span class="kw">PLAN</span> u poruku.</h1>
+      <p class="sub">Pitamo te 3 stvari i kažemo ti šta ima smisla baš za tebe.</p>
+      <p class="admit">Nismo najveća sala u Krajini. Ali kod nas te <em>niko neće ostaviti</em> samog na spravi.</p>`,
+    foot:'end' },
+];
+const params = new URLSearchParams(location.search);
+const tall = params.get('f') === 'tall';
+if (tall) document.body.classList.add('tall');
+const root = document.getElementById('root');
+S.forEach((s,i)=>{
+  const n = String(i+1).padStart(2,'0');
+  const foot = s.foot==='swipe'
+    ? `<span>@fitnesadin</span><span class="swipe">prevuci<b>»</b></span>`
+    : `<span>Fitness Club Adin · Stijena · 16–22h</span><span class="slogan">Jači od jučer.</span>`;
+  root.insertAdjacentHTML('beforeend', `
+  <section class="slide" id="s${i+1}">
+    <div class="frame"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
+    <div class="inner">
+      <div class="top"><span>Fitness Club Adin</span><span class="n">${n} / 07</span></div>
+      <div class="body">${s.ghost?`<div class="ghost">${s.ghost}</div>`:''}${s.html}</div>
+      <div class="foot">${foot}</div>
+    </div>
+  </section>`);
+});
+</script>
+</body>
+</html>
