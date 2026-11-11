@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<title>Karusel — Test poda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Lora:ital,wght@1,500;1,600&display=block" rel="stylesheet">
+<style>
+  :root{
+    --ivory:#F6F1E8; --gold:#D6B67C; --gold-deep:#B8955A;
+    --graphite:#16140F; --graphite-2:#1E1B16; --oxblood:#6B1F1C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0c0b09;font-family:Poppins,sans-serif;color:var(--ivory)}
+  .slide{position:relative;width:1080px;height:1350px;overflow:hidden;
+    background:
+      radial-gradient(900px 700px at 8% 4%, rgba(107,31,28,.55), transparent 62%),
+      radial-gradient(700px 600px at 100% 100%, rgba(150,96,40,.22), transparent 60%),
+      radial-gradient(1200px 900px at 50% 45%, var(--graphite-2), var(--graphite) 70%);
+    margin-bottom:40px}
+  .tall .slide{height:1920px}
+  .slide::before{content:"";position:absolute;inset:-50%;pointer-events:none;z-index:5;opacity:.16;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
+  .slide::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:4;
+    background:radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(0,0,0,.62) 100%)}
+  .frame{position:absolute;inset:44px;border:1.5px solid rgba(214,182,124,.42);z-index:6;pointer-events:none}
+  .c{position:absolute;width:46px;height:46px;border-color:var(--gold);border-style:solid;border-width:0}
+  .c.tl{top:-4px;left:-4px;border-top-width:4px;border-left-width:4px}
+  .c.tr{top:-4px;right:-4px;border-top-width:4px;border-right-width:4px}
+  .c.bl{bottom:-4px;left:-4px;border-bottom-width:4px;border-left-width:4px}
+  .c.br{bottom:-4px;right:-4px;border-bottom-width:4px;border-right-width:4px}
+
+  .inner{position:absolute;inset:44px;z-index:7;padding:78px 84px 84px;display:flex;flex-direction:column}
+  .tall .inner{padding:300px 84px 470px}
+  .top{display:flex;justify-content:space-between;align-items:center;
+    font-weight:600;font-size:22px;letter-spacing:.32em;color:var(--gold);text-transform:uppercase}
+  .tall .top{position:absolute;top:96px;left:84px;right:84px}
+  .top .n{letter-spacing:.12em;color:rgba(246,241,232,.55);font-weight:500}
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative}
+  .rule{width:88px;height:3px;background:var(--gold);margin-bottom:44px}
+  h1{font-weight:800;font-size:92px;line-height:1.04;letter-spacing:-.025em;color:var(--ivory);text-wrap:balance}
+  h1.xxl{font-size:132px;line-height:.98;letter-spacing:-.035em}
+  h1.md{font-size:80px}
+  h1 .g{color:var(--gold)}
+  p.sub{margin-top:44px;font-weight:500;font-size:44px;line-height:1.32;color:rgba(246,241,232,.86);text-wrap:pretty}
+  em{font-family:Lora,serif;font-style:italic;font-weight:600;color:var(--gold);letter-spacing:0}
+  .label{font-weight:600;font-size:26px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:30px}
+  .ghost{position:absolute;right:-60px;top:50%;transform:translateY(-55%);font-weight:900;font-size:560px;line-height:1;
+    color:var(--gold);opacity:.08;z-index:-1;letter-spacing:-.06em}
+  .ghost.low{top:auto;bottom:-170px;transform:none;opacity:.07}
+  .note{margin-top:40px;font-size:27px;line-height:1.4;color:rgba(246,241,232,.55);font-weight:500}
+
+  .steps{margin-top:46px;list-style:none;display:flex;flex-direction:column;gap:26px}
+  .steps li{display:flex;gap:28px;align-items:baseline;font-size:44px;font-weight:600;line-height:1.2}
+  .steps b{flex:none;width:58px;font-weight:800;color:var(--gold);font-size:44px}
+
+  .rows{margin-top:44px;display:flex;flex-direction:column;gap:22px}
+  .row{display:flex;align-items:center;gap:34px;padding:24px 30px;border:1.5px solid rgba(214,182,124,.30);border-radius:6px;background:rgba(0,0,0,.18)}
+  .row .pts{flex:none;width:190px;font-weight:800;font-size:64px;letter-spacing:-.02em;color:var(--gold);line-height:1}
+  .row .txt{font-size:36px;font-weight:600;line-height:1.25}
+  .row .txt span{display:block;font-size:27px;font-weight:500;color:rgba(246,241,232,.62);margin-top:6px}
+
+  .minus{margin-top:44px;display:flex;flex-direction:column;gap:20px}
+  .minus div{display:flex;gap:28px;align-items:baseline;font-size:40px;font-weight:600}
+  .minus div b{flex:none;width:118px;font-weight:800;font-size:48px;color:var(--gold)}
+
+  .foot{display:flex;justify-content:space-between;align-items:flex-end;font-size:24px;color:rgba(246,241,232,.55);font-weight:500}
+  .tall .foot{position:absolute;left:84px;right:84px;bottom:390px}
+  .swipe{font-weight:600;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-size:24px}
+  .swipe b{font-size:34px;font-weight:600;margin-left:8px;letter-spacing:0}
+  .slogan{font-family:Lora,serif;font-style:italic;font-size:30px;color:var(--gold)}
+  .admit{margin-top:52px;padding-top:38px;border-top:1.5px solid rgba(214,182,124,.35);
+    font-weight:500;font-size:34px;line-height:1.36;color:rgba(246,241,232,.80)}
+  .big0{display:inline-block;font-weight:800;color:var(--graphite);background:var(--gold);padding:0 24px 6px;border-radius:6px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const S = [
+  { // 1 HOOK
+    ghost:'10', ghostCls:'low',
+    html:`<div class="label">Probaj odmah</div>
+      <h1 class="xxl">Sjedni na pod. <span class="g">Ustani bez ruku.</span></h1>
+      <p class="sub">Tvoj djed je ovo radio <em>bez razmišljanja.</em> A ti?</p>`,
+    foot:'swipe' },
+  { // 2 KAKO SE RADI
+    html:`<div class="label">Kako se radi</div>
+      <h1 class="md">Ruke ne diraju ništa.</h1>
+      <ul class="steps">
+        <li><b>1</b><span>Bos ili u čarapama, na podu.</span></li>
+        <li><b>2</b><span>Prekrsti noge i sjedni.</span></li>
+        <li><b>3</b><span>Ustani istim putem.</span></li>
+      </ul>
+      <p class="note">Ako te bole koljena ili kukovi – preskoči test i pitaj nas u poruci.</p>`,
+    foot:'swipe' },
+  { // 3 BODOVANJE
+    html:`<div class="label">Bodovanje</div>
+      <h1 class="md">Kreneš s <span class="big0">10</span> bodova.</h1>
+      <div class="minus">
+        <div><b>−1</b><span>za svaku ruku, koljeno ili lakat koji te spasi</span></div>
+        <div><b>−½</b><span>ako se zaljuljaš</span></div>
+      </div>
+      <p class="sub" style="margin-top:46px">Sjedanje 5 bodova. Ustajanje 5. <em>Budi pošten.</em></p>`,
+    foot:'swipe' },
+  { // 4 REZULTAT + ŠTETNO PRIZNANJE
+    html:`<div class="label">Koliko si dobio?</div>
+      <h1 class="md">Tvoj rezultat.</h1>
+      <div class="rows">
+        <div class="row"><div class="pts">8–10</div><div class="txt">Tijelo ti je spremno.<span>Čuvaj ga.</span></div></div>
+        <div class="row"><div class="pts">5–7½</div><div class="txt">Radi, ali kasni.<span>Noge i kukovi traže posla.</span></div></div>
+        <div class="row"><div class="pts">0–4½</div><div class="txt">Tijelo ti šalje poruku.<span>Vrijeme je da je pročitaš.</span></div></div>
+      </div>`,
+    foot:'swipe' },
+  { // 5 NEGATIVAC + UZROK
+    html:`<div class="rule"></div>
+      <h1>Nisi ti slabiji od djeda. <span class="g">Samo si sjeo na stolicu.</span></h1>
+      <p class="sub">Stolica. Auto. Kauč. Tijelo zaboravi ono što ne radi. Ali <em>vrati</em> ono što ponavljaš.</p>`,
+    foot:'swipe' },
+  { // 6 RJEŠENJE
+    html:`<div class="label">Šta da radiš od danas</div>
+      <h1 class="md">10 puta dnevno: sjedni na pod i ustani.</h1>
+      <p class="sub">Kako god možeš. S rukama, bez ruku. Za <em>30 dana</em> uradi test opet i uporedi broj.</p>`,
+    foot:'swipe' },
+  { // 7 CTA
+    html:`<div class="label">Iskreno?</div>
+      <h1>Napiši svoj broj u komentar <span class="g">👇</span></h1>
+      <p class="sub">I označi onog ko misli da je još <em>u formi.</em></p>
+      <p class="admit">Nećemo te lagat: ni u našoj sali ne dobije svako 10. Zato i dolazimo.</p>`,
+    foot:'end' },
+];
+const params = new URLSearchParams(location.search);
+if (params.get('f') === 'tall') document.body.classList.add('tall');
+const root = document.getElementById('root');
+S.forEach((s,i)=>{
+  const n = String(i+1).padStart(2,'0');
+  const foot = s.foot==='swipe'
+    ? `<span>@fitnesadin</span><span class="swipe">prevuci<b>»</b></span>`
+    : `<span>Fitness Club Adin · Stijena · 16–22h</span><span class="slogan">Jači od jučer.</span>`;
+  root.insertAdjacentHTML('beforeend', `
+  <section class="slide" id="s${i+1}">
+    <div class="frame"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
+    <div class="inner">
+      <div class="top"><span>Fitness Club Adin</span><span class="n">${n} / 07</span></div>
+      <div class="body">${s.ghost?`<div class="ghost ${s.ghostCls||''}">${s.ghost}</div>`:''}${s.html}</div>
+      <div class="foot">${foot}</div>
+    </div>
+  </section>`);
+});
+</script>
+</body>
+</html>
