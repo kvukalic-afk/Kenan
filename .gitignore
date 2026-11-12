@@ -18,3 +18,4 @@ video/brand/helvera/
 video/b05/build/
 video/b05/stock/*.mp4
 video/b05/out/*_bez_glasa.mp4
+__pycache__/

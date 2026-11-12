@@ -33,3 +33,6 @@ Alpska bijela pozadina, „PEPTID CENTAR · edukativni projekat brenda · HELVER
 | 8 od 10 muškaraca: bolji libido | Cureus 2022 (samoprocjena) | 3 |
 
 Napomena: Helvera asortiman iz prijedloga brenda (BPC-157, TB-500, GHK-Cu, MOTS-c za injekciju) nije isto što i supstance i oblici iz ovih studija. Video ih zato ne povezuje.
+
+## Glas
+vidIQ voiceover, glas „Liam – Energetic, Social Media Creator“ (28 vidIQ kredita). ElevenLabs je 12. 11. isključio besplatni pristup na nalogu („Unusual activity… Free Tier access has been disabled“), pa „Marko“ nije bio dostupan. Kad ElevenLabs ponovo radi: `./make.sh el <novi_glas.mp3>`.
