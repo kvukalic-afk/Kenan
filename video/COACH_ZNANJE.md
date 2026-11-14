@@ -53,3 +53,85 @@ AVATAR → PROBLEM do **root cause** (nauka) → **MEHANIZAM rješenja** (kako s
 ## 8. Kako se primjenjuje na Peptid Centar (naša pravila povrh coacha)
 - Svaki video = jedan uski avatar + jedan težak problem + jedan peptid kao neočekivano dobro rješenje, kroz 7 dijelova.
 - Pravila korisnika ostaju: samo pozitivno i korisno, bez nabrajanja ograničenja i regulatornih izjava u videu; svaka brojka provjerena u otvorenom izvoru; HELVERA samo kao miran potpis na kraju (bez kutije uz brojke o koristima, bez cijena i linkova).
+
+---
+# DIO II · Copywriting i direktni marketing (drugi paket coacha, 14. 11. 2026)
+Izvori: Majstorski vodič kroz direktni marketing i copywriting (pdf+docx), Škola prodaje i copywritinga, Kalina Mode · Škola prodaje (4 transkripcije: Speaking Their Language, 5 Senses, Brand-Safe DR, Breaking Down Ads),
+Copywriting Master (Kalina metodologija, primjena Fitness Club Adin), Rhythm & Flow, The 7 Types of Specificity, AI prompt Open Loops, Brending brief, Product Research Part II (docx+xlsx).
+
+## 9. Centralna istina
+- Ne prodaješ proizvod — prodaješ VJEROVANJE i OSJEĆAJ. Kupac mora osjećati da je SAM odlučio. Put: „ovaj me razumije“ → „ovo sam ja“ → „ovo moram imati“ → „bio bih lud da ne uzmem“.
+- Ne kopiraj tuđe šablone: isti fundamenti, drugačiji dizajn/format (novost = pažnja).
+- Lakoća prodaje = veličina želje × nedostatak lake alternative. Uvećaj želju, smanji osjećaj da alternativa lako postoji. Kopaj želju do identiteta (bol u leđima → sjediti → karijera).
+
+## 10. Glas avatara (temelj ispod svake tehnike)
+- Voice match = povjerenje; mismatch = scroll. NJIHOVE riječi (Roll Quotes: doslovno, bez parafraze), nikad žargon. Dužina rečenice i registar po avataru (mama: brzo; 65+: jasno; profesionalac: duže).
+- Emotivno stanje: frustriran → ne budi veseo; izgoren → ne budi naivan, budi iskren.
+- Pravi glas: prepozna šta su sve probali (validacija), potvrdi frustraciju, njihovim riječima. „Nisi luda, nisi sama, ovo se može popraviti.“
+- Glas avatara (reklama, emocija) ≠ tehnički sloj (mehanizam/sastojci) — ne miješati registre.
+- Prije pisanja: postani avatar (čitaj citate naglas), bistar um, input = output.
+
+## 11. Pažnja i hook
+- Pažnja = (Relevantnost × Emocija × Novina) ÷ Napor. Jasno > pametno.
+- Reptilski triggeri (pogodi 2–3): prijetnja, prilika, novina, „ja“, kontrast, emocija.
+- Hijerarhija hookova: 5 gubitak/preživljavanje > 4 bol/strah > 3 identitet > 2 prilika > 1 radoznalost. Ne koristi nivo 1 kad možeš 4/5.
+- Pattern interrupt: neočekivani otvor (zvuči kao početak priče, ne oglas), kontradikcija, nejasno→specifično („3:47 ujutro. Četvrti put.“), trigger fraze („Doktor je rek’o…“, „Tad sam shvatio…“), scroll-stop fraze („Niko o ovom ne priča“), pitanje o njihovom životu.
+- 8 tipova: bol, radoznalost, priča, kontrarni, autoritet, transformacija, pitanje, hitnost. Headline formule: „Zašto X ne radi“, proof (Dan 1 vs Dan 28), story (usred scene), warning.
+- Prve 3 linije: HOOK (zaustavi) → ANCHOR (ovo je za tebe) → OPEN LOOP. Redoslijed: interrupt → kvalifikuj → radoznalost.
+- Hook u prvih 5 riječi; jedan hook, ne tri; hook mora biti isporučen u tijelu; slika = tekst. Stacking tehnika je najjači.
+- Format: image ad 5–8 riječi; UGC prvo lice, govorno; VSL problem → neprijatelj → dokaz → petlja; advertorial uređivački ton bez hypea.
+- Hook rate (3s/impresije): <20% wallpaper, 30–40% prosjek, 40–50% dobar, 60%+ izuzetno. Dijagnoze: wallpaper, everyone (dodaj specifičnost), closed loop, clickbait, premature reveal (nagovještavaj, ne otkrivaj).
+
+## 12. Open loops (Zeigarnik) — 5 tipova
+„Šta ti ne govore“, story interrupt (prekini na vrhuncu: „reći ću ti šta je bilo za minut, ali prvo…“), counterintuitive reveal („sve što su ti rekli o X je pogrešno“), brojevi koji se ne slažu, „prije nego ti kažem“. Uvijek njihovim jezikom i s isplatom koju stvarno isporučiš.
+
+## 13. Priča
+- Priča gasi BS-radar (narativni transport); „ja“ > „vi“; case > statistika. Posuđeno iskustvo: prožive transformaciju prije kupovine.
+- Smrtne greške: generička i prenapuhana. Lijek: tačno avatarov život, ni više ni manje.
+- 3 tipa: Origin (samo ako je istina), Customer (život s problemom → prelom → otkriće → skepticizam → rezultat → život sad), Moment (jedna senzorna scena — za kratke formate).
+- Villain je uvijek VANJSKI (sistem, izgovor, pogrešan savjet, „tijelo radi protiv tebe“) — nikad kupac. Ranjivost/sumnja junaka = autentičnost.
+- Background/turning point mora biti realističan (doktor čita studije i otkrije…), nikad naučna fantastika.
+- YES-sekvenca: svaka rečenica „da, razumijem → ima smisla → vjerujem → istina“. Jedna nevjerovatna tvrdnja = izgubljen.
+
+## 14. Senzorni jezik i specifičnost
+- Tvrdnju možeš osporiti, iskustvo ne. Svaku korist pretvori u senzornu mikro-scenu (vid, dodir, zvuk, miris/okus, unutrašnji osjećaj). Pitaj: šta će vidjeti/osjetiti/čuti, šta više NEĆE, koji trenutak će biti drugačiji.
+- Mini-film: setup (konkretan trenutak) → senzorni detalji → kontrast sa starim → emocija → rezolucija.
+- 7 specifičnosti: broj, vrijeme (dan 1/7/14/30), senzorna, scenarij, osoba, proces, poređenje. NIKAD izmišljena; ne pretjeruj s decimalama; svaka brojka mora imati izvor.
+
+## 15. Ritam (Rhythm & Flow)
+- Miješaj kratke (udar, vrhunac emocije, prelaz) i duge rečenice (slika, priča, objašnjenje). Sve kratko = robot; sve dugo = umor.
+- Slippery slide (Sugarman): svaka rečenica prodaje sljedeću. Bucket brigade („I evo u čemu je stvar…“), jedna riječ, fragment („Ne više.“), pravilo trojke, paralelizam, build.
+- Čitaj naglas / snimi se. Ako ne možeš glatko pročitati, ni oni ne mogu.
+
+## 16. Funnel i advertorial
+- Hladnu publiku nikad direktno na proizvod: reklama → most (advertorial/listicle/day-in-life) → landing. Svaki dio radi SAMO svoj posao, jedna kongruentna priča.
+- Advertorial: hook/above the fold → LEAD (ko priča, autoritet sa specifičnim brojevima) → background + turning point → root cause → unique mechanism → product build-up → reveal (nagrada, bez cijene) → social proof → close.
+- Root cause radi tri stvari: objašnjava zašto ništa nije radilo, gradi povjerenje logikom (najjače kad se nadovezuje na ono u šta već vjeruju), čini mehanizam neizbježnim. Nauku pretvori u dječju sliku (biljka + otrov).
+- Neka System 2 djeluje kao System 1 (pametno bez napora).
+- Reveal: „ovo mora postojati“ + „napravljeno baš za mene“ + lakoća + sigurnost; odmah sruši prigovore (transparentnost, lakoća, diskvalifikacija „ako očekuješ čudo preko noći — preskoči“, „većina toga nije ni pravljena za OVO“). Realna očekivanja = retencija.
+- Close: uvećaj „miša“ (posljedice), pa ga ubij; cijena je uvijek poređenje — sidri naviše; recenzije koje ruše prigovore (najjača od najvećeg skeptika); pozitivni future pacing; anticipirani žal; garancija s jasnim koracima; ponuda kao nagrada; samo STVARNA oskudica.
+- Motivacija kad je problem „uspavan“: priča u kojoj kupac sam zaključi „ovo se može desiti i meni“ (loss aversion, ne direktna prijetnja).
+
+## 17. Brand-safe direct response (naš model)
+- Prodaj danas I gradi brend. Proizvod mora stvarno isporučiti obećano.
+- Priča/stvarni testimonijal umjesto izmišljene statistike; zaslužena urgentnost (male serije, lista čekanja), nikad lažni tajmer; dokaz sa imenima/datumima; bez praznih superlativa („revolucionarno“ = copywriter voice leak).
+- Kupac: sve objasni jasno, ali je pametan i skeptičan — ne vrijeđaj ga glupostima. „Neću te vrijeđati još jednim proizvodom — evo zašto ovo radi, pa sama odluči.“
+- Damaging admission (1–2 po copyju, rano, stvarna mana → odmah pivot u snagu): ograničenje, mana, za koga NIJE, cijena, prošli neuspjesi, „ne liječi nego pomaže“.
+- Checklista prije objave: bi li mi bilo neugodno da ovo postane viralno? bih li pokazao skeptičnom prijatelju? mogu li odbraniti svaku tvrdnju? je li urgentnost stvarna? zvuči li kao čovjek?
+- Dokaz raste s brendom: testimonijali → before/after → studije, treća strana, stručnjaci. Više dokaza = copy manje mora prodavati.
+
+## 18. Ružne reklame i učenje
+- Ugly ads (meme, screenshot, POV, crveni krug, news stil, sirovi UGC) — prekid obrasca, novost→dopamin, niska odbrana. Slika samo zaustavlja; copy nosi kontekst.
+- Intent (research) → ideja → izvršenje → pobjednik/gubitnik. Hit-rate ~1–10%: najviše se uči iz PALIH reklama — za svaku hipoteza (hook? želja? awareness mismatch? avatar mismatch? izvršenje? timing? proizvod/ponuda?), testiraj u sljedećoj. Svaku reklamu procjenjuj 7 dana. Testiraj različite TIPOVE hooka, ne sinonime.
+- Razbijanje reklame: gledaj 5× (dojam, samo slika, samo zvuk, emotivni put, bilješke) + workbook (avatar, awareness, hook sekunda po sekunda, amplifikacija, mehanizam, belief-shift, dokazi, transformacija, 10 okidača, emotivni vrhunac, load-bearing vs dekoracija).
+
+## 19. Brending (ime/identitet)
+- Ime je prvi okidač osjećaja: glas avatara, System 1 (1–3 sloga, lako izgovorljivo), intimnost + povjerenje + širina (krovni brend), novost (ne Pure/Vital/Bio), praktičnost (domen, handle, ne izvrće se). Scorecard 7 kriterija × 5 bodova (<24/35 slabo). Brendiraj OSJEĆAJ/TRENUTAK (Ritual, Seed), povjerenje kroz prirodu/naslijeđe (Weleda), domaći korijen = intimnost.
+
+## 20. Primjena na Peptid Centar videe (obavezno od B08)
+- Hook nivo 4–5 (gubitak/bol/identitet), u prvih 5 riječi, pa anchor („ako si…“), pa open loop; jedan hook.
+- Tekst za glas: miješan ritam (kratko/dugo), čitaj naglas; nikad sve kratke rečenice (robotski).
+- Barem jedna senzorna mikro-scena problema i jedan mini-film rezultata (budući ja); specifičnost (dan/sedmica/broj) samo iz izvora.
+- Villain vanjski; root cause kao dječja slika; mehanizam kao System 1; peptid kao nagrada/„ovo mora postojati“.
+- Jedan damaging admission gdje gradi kredibilitet (npr. „nije čudo preko noći“) — u skladu s korisnikovim pravilom „samo pozitivno“: formulisati kao realno očekivanje, ne kao ograničenje studije.
+- Brand-safe: bez izmišljenih statistika, testimonijala i lažne hitnosti; svaka tvrdnja odbranjiva.
