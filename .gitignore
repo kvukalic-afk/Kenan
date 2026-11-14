@@ -24,3 +24,8 @@ video/b06/stock/*.mp4
 video/b06/stock/packbg.png
 video/b06/out/*.mp4
 __pycache__/
+video/b07/build/
+video/b07/stock/*.mp4
+video/b07/out/*.mp4
+video/b07/out/*.png
+__pycache__/
