@@ -31,3 +31,10 @@ Forum.hr, Klix.ba forum, Krstarica; tehnički: Realx3mforum, Pansport, Doktor.rs
 **Najveća nezadovoljena potreba = prostor za HELVERA:** POVJERENJE U BOČICU. Najveći strah korisnika nije igla nego nepoznat sastav, loše serije i krivotvorine.
 Brend koji mirno pokaže provjerljivost (serija, analiza, uputstvo, ko stoji iza) odgovara tačno na taj strah — bez ijedne prodajne riječi.
 **Ograničenja izvještaja:** nema reprezentativnih studija; objave su samoselektirane; recenzije na prodajnim stranicama neprovjerljive.
+
+## STVARNA AMBALAŽA V3 (specifikacija za štampu 13. 11. 2026, fajlovi lokalno u `brand/helvera/pack_v3/`, nije u gitu)
+- Probna serija: 100 kompleta, 6 proizvoda: BPC-157 5 mg (plava) ×10, GHK-Cu 50 mg (bakarna) ×10, Semaglutide 10 mg (zelena) ×10, HCG 5000 IU ×50, Tirzepatide 10 mg ×10, NAD+ 250 mg ×10. (TB-500 i MOTS-c više nisu u asortimanu.)
+- Kutija poklopac+dno 72×52×25,5 mm, umetak, bočica Ø16×35–38 mm leži vodoravno, naljepnica 45×20 mm, pečatna traka 12×22 mm. Sav tekst na engleskom.
+- Tekst na ambalaži: „FOR RESEARCH USE ONLY“, „Not for human or veterinary use. Not for diagnostic or therapeutic use.“, „Sold only to laboratories, research institutions and qualified professionals“, CAS broj, polja LOT/EXP/SN/STORAGE/SUPPLIER (prazna), „SWISS MADE“ + križ, guilloche pečat.
+- Ovo ZAMJENJUJE stari koncept (kutija s „Rp“, „Supkutana primjena“) korišten u B06 i B09.
+- Otvorena pitanja prema korisniku (15. 11.): (1) „Swiss made“ + križ samo ako je porijeklo stvarno švicarsko; (2) proizvod označen „nije za ljudsku upotrebu“ ne ide uz sadržaj o ljudskim koristima/primjeni.
