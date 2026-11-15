@@ -150,7 +150,7 @@ def s_product(img, d, tb, T):
         sc = 1.12; fg = im.resize((int(im.width * sc), int(im.height * sc)), Image.LANCZOS)
         bgim = im.resize((int(im.width * H / im.height), H), Image.BILINEAR).filter(ImageFilter.GaussianBlur(90))
         bgim = bgim.resize((fg.width, H), Image.BILINEAR)
-        y = (H - fg.height) // 2 - 40
+        y = (H - fg.height) // 2 + 50
         m = Image.new("L", fg.size, 255); md = ImageDraw.Draw(m)
         for i in range(220):
             v = int(255 * i / 220); md.line((0, i, fg.width, i), fill=v); md.line((0, fg.height - 1 - i, fg.width, fg.height - 1 - i), fill=v)
