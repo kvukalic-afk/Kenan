@@ -29,3 +29,7 @@ video/b07/stock/*.mp4
 video/b07/out/*.mp4
 video/b07/out/*.png
 __pycache__/
+video/b08/build/
+video/b08/stock/*.mp4
+video/b08/out/*.mp4
+video/b08/out/*.png
