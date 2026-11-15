@@ -37,4 +37,5 @@ Brend koji mirno pokaže provjerljivost (serija, analiza, uputstvo, ko stoji iza
 - Kutija poklopac+dno 72×52×25,5 mm, umetak, bočica Ø16×35–38 mm leži vodoravno, naljepnica 45×20 mm, pečatna traka 12×22 mm. Sav tekst na engleskom.
 - Tekst na ambalaži: „FOR RESEARCH USE ONLY“, „Not for human or veterinary use. Not for diagnostic or therapeutic use.“, „Sold only to laboratories, research institutions and qualified professionals“, CAS broj, polja LOT/EXP/SN/STORAGE/SUPPLIER (prazna), „SWISS MADE“ + križ, guilloche pečat.
 - Ovo ZAMJENJUJE stari koncept (kutija s „Rp“, „Supkutana primjena“) korišten u B06 i B09.
-- Otvorena pitanja prema korisniku (15. 11.): (1) „Swiss made“ + križ samo ako je porijeklo stvarno švicarsko; (2) proizvod označen „nije za ljudsku upotrebu“ ne ide uz sadržaj o ljudskim koristima/primjeni.
+- Korisnik potvrdio (15. 11.): proizvod se stvarno proizvodi u Švicarskoj → „Swiss made“ se smije koristiti. Oznaka „not for human use“ ostaje na ambalaži dok se upotreba ne legalizuje.
+- Pravilo sadržaja: nikad poziv na ličnu upotrebu, doze ni upute za pripremu/ubrizgavanje. Kad je HELVERA proizvod u kadru: molekula, mehanizam, kvalitet, porijeklo, serija, čuvanje — bez obećanja ishoda za ljude u istom komadu. Edukativne priče o ljudima i studijama idu bez proizvoda u kadru.

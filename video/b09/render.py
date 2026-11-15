@@ -164,23 +164,28 @@ def s_body(img, d, tb, T):
 _im = {}
 def s_product(img, d, tb, T):
     if "hero" not in _im:
-        im = Image.open(os.path.join(HV, "pack", "hero_kutija_bocica.jpg")).convert("RGB")
-        sc = H / im.height * 1.12
-        _im["hero"] = im.resize((int(im.width * sc), int(im.height * sc)), Image.LANCZOS)
+        im = Image.open(os.path.join(HV, "pack_v3", "zatvorena_kutija_pecat.png")).convert("RGB")
+        sc = 1.12; fg = im.resize((int(im.width * sc), int(im.height * sc)), Image.LANCZOS)
+        bgim = im.resize((int(im.width * H / im.height), H), Image.BILINEAR).filter(ImageFilter.GaussianBlur(90))
+        bgim = bgim.resize((fg.width, H), Image.BILINEAR)
+        y = (H - fg.height) // 2 + 40
+        m = Image.new("L", fg.size, 255); md = ImageDraw.Draw(m)
+        for i in range(220):
+            v = int(255 * i / 220); md.line((0, i, fg.width, i), fill=v); md.line((0, fg.height - 1 - i, fg.width, fg.height - 1 - i), fill=v)
+        bgim.paste(fg, (0, y), m); _im["hero"] = bgim
     im = _im["hero"]; p = smooth(tb / max(T, 0.1))
-    # slow pan from the box toward the vial, slight push-in
-    z = 1.0 + 0.06 * p
+    z = 1.0 + 0.05 * p
     cw, ch = W / z, H / z
-    x0 = (im.width - cw) * (0.38 + 0.50 * p); y0 = (im.height - ch) * 0.52
+    x0 = (im.width - cw) * (0.18 + 0.64 * p); y0 = (im.height - ch) * 0.5
     fr = im.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch))).resize((W, H), Image.BILINEAR)
     img.paste(fr, (0, 0))
-    bgc = (0xD4, 0xD4, 0xD3)
+    bgc = (0xC9, 0xCC, 0xCB)
     k1 = ease((tb - T * 0.35) / 0.7); k2 = ease((tb - T * 0.62) / 0.7); k3 = ease((tb - T * 0.8) / 0.7)
     text_fade(d, (CX, 300), "Ne koliko jako.", F("DLight", 66), TEXT, bgc, ease((tb - 0.2) / 0.7) * (1 - k1 * 0.0))
     text_fade(d, (CX, 390), "Koliko tačno.", F("DSemiBold", 84), NAVY, bgc, k1)
     text_fade(d, (CX, 1500), "Čista molekula.", F("DLight", 56), NAVY, bgc, k2)
     text_fade(d, (CX, 1575), "Tačna poruka.", F("DLight", 56), NAVY, bgc, k3)
-    d.text((CX, 1700), "prikaz pakovanja · uskoro", font=F("TRegular", 26), fill=GREY, anchor="ma")
+    d.text((CX, 1700), "HELVERA · prikaz ambalaže", font=F("TRegular", 26), fill=GREY, anchor="ma")
 
 def s_save(img, d, tb, T):
     img.paste(WHITE, (0, 0, W, H))
