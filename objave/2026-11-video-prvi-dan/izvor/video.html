@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<title>Reel — Prvi dan u Adinu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&family=Lora:ital,wght@1,500;1,600&display=block" rel="stylesheet">
+<style>
+  :root{--ivory:#F6F1E8;--gold:#D6B67C;--graphite:#16140F;--g2:#1E1B16}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#0c0b09}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;font-family:Poppins,sans-serif;color:var(--ivory);
+    background:radial-gradient(1300px 1100px at 50% 45%,var(--g2),var(--graphite) 72%)}
+  #glow1,#glow2{position:absolute;border-radius:50%;filter:blur(40px);pointer-events:none}
+  #glow1{width:1300px;height:1100px;background:radial-gradient(closest-side,rgba(120,32,28,.62),transparent)}
+  #glow2{width:1000px;height:900px;background:radial-gradient(closest-side,rgba(170,110,45,.26),transparent)}
+  #grain{position:absolute;inset:0;opacity:.17;mix-blend-mode:overlay;pointer-events:none;z-index:20}
+  #vig{position:absolute;inset:0;pointer-events:none;z-index:19;background:radial-gradient(ellipse at 50% 50%,transparent 50%,rgba(0,0,0,.66) 100%)}
+  #flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,#fff3da,#D6B67C 60%,#7a5a2c);opacity:0;z-index:30;pointer-events:none;mix-blend-mode:screen}
+  .frame{position:absolute;inset:44px;border:1.5px solid rgba(214,182,124,.40);z-index:21;pointer-events:none}
+  .c{position:absolute;width:52px;height:52px;border:0 solid var(--gold)}
+  .c.tl{top:-4px;left:-4px;border-top-width:4px;border-left-width:4px}
+  .c.tr{top:-4px;right:-4px;border-top-width:4px;border-right-width:4px}
+  .c.bl{bottom:-4px;left:-4px;border-bottom-width:4px;border-left-width:4px}
+  .c.br{bottom:-4px;right:-4px;border-bottom-width:4px;border-right-width:4px}
+  #brand{position:absolute;top:120px;left:0;right:0;text-align:center;font-weight:600;font-size:26px;letter-spacing:.36em;color:var(--gold);z-index:22}
+  #bar{position:absolute;top:44px;left:44px;height:5px;background:var(--gold);z-index:23}
+
+  #scenes{position:absolute;inset:0;z-index:10}
+  .scene{position:absolute;left:96px;right:96px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;opacity:0;
+    padding:420px 0 470px}
+  .ln{overflow:hidden;padding:6px 0 10px;margin:-6px 0 -10px}
+  .ln>span{display:block;will-change:transform}
+  .label{font-weight:600;font-size:30px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:34px}
+  .q{font-weight:800;font-size:74px;line-height:1.1;letter-spacing:-.025em;position:relative;margin-bottom:34px;white-space:nowrap}
+  .q .strike{width:0}
+  .q .strike{position:absolute;left:-12px;top:50%;height:12px;background:var(--gold);width:0;border-radius:3px;box-shadow:0 0 30px rgba(214,182,124,.6)}
+  .h{font-weight:800;font-size:116px;line-height:1.02;letter-spacing:-.03em}
+  .h.s{font-size:100px}
+  .h .g{color:var(--gold)}
+  .sub{font-weight:500;font-size:52px;line-height:1.3;color:rgba(246,241,232,.88);margin-top:38px}
+  em{font-family:Lora,serif;font-style:italic;font-weight:600;color:var(--gold)}
+  .num{font-weight:900;font-size:300px;line-height:.85;color:var(--gold);letter-spacing:-.05em;margin-bottom:30px}
+  .kw{display:inline-block;background:var(--gold);color:var(--graphite);padding:0 26px 8px;border-radius:8px}
+  .small{font-weight:500;font-size:34px;color:rgba(246,241,232,.62);margin-top:60px;line-height:1.5}
+  .slogan{font-family:Lora,serif;font-style:italic;font-size:48px;color:var(--gold);margin-top:26px}
+  .rule{width:110px;height:4px;background:var(--gold);margin-bottom:46px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow1"></div><div id="glow2"></div>
+  <div id="scenes">
+
+    <!-- S1–S3: unutrašnji glas (0.0–5.0) -->
+    <div class="scene" data-s="0" data-e="5.15">
+      <div class="label ln"><span data-in="-1">Šta ti glava kaže:</span></div>
+      <div class="q ln" style="overflow:visible"><span data-in="-1" data-dim="1.6">„Svi će gledat u&nbsp;mene.“</span><i class="strike" data-strike="4.35"></i></div>
+      <div class="q ln" style="overflow:visible"><span data-in="1.6" data-dim="3.0">„Ne znam niš radit.“</span><i class="strike" data-strike="4.5"></i></div>
+      <div class="q ln" style="overflow:visible"><span data-in="3.0" data-dim="4.3">„Krenut ću od sutra.“</span><i class="strike" data-strike="4.65"></i></div>
+    </div>
+
+    <!-- S4: istina (5.0–7.0) -->
+    <div class="scene" data-s="5.0" data-e="7.0">
+      <div class="label ln"><span data-in="5.05">Prvi dan u Adinu</span></div>
+      <div class="h ln"><span data-in="5.15">Evo šta se</span></div>
+      <div class="h ln"><span data-in="5.3"><span class="g">stvarno</span> desi.</span></div>
+    </div>
+
+    <!-- S5: 01 (7.0–9.3) -->
+    <div class="scene" data-s="7.0" data-e="9.3">
+      <div class="num ln"><span data-in="7.0">01</span></div>
+      <div class="h s ln"><span data-in="7.12">Prvi trening</span></div>
+      <div class="h s ln"><span data-in="7.24">ne radiš <span class="g">sam.</span></span></div>
+      <div class="sub ln"><span data-in="7.6">Trener je pored tebe od prve vježbe.</span></div>
+    </div>
+
+    <!-- S6: 02 (9.3–11.6) -->
+    <div class="scene" data-s="9.3" data-e="11.6">
+      <div class="num ln"><span data-in="9.3">02</span></div>
+      <div class="h s ln"><span data-in="9.42">Dobiješ plan.</span></div>
+      <div class="sub ln"><span data-in="9.8">Znaš tačno šta radiš. <em>Svaki put.</em></span></div>
+    </div>
+
+    <!-- S7: 03 (11.6–13.9) -->
+    <div class="scene" data-s="11.6" data-e="13.9">
+      <div class="num ln"><span data-in="11.6">03</span></div>
+      <div class="h s ln"><span data-in="11.72">Niko ne gleda</span></div>
+      <div class="h s ln"><span data-in="11.84">u tebe.</span></div>
+      <div class="sub ln"><span data-in="12.25">Svi gledaju <em>sebe.</em></span></div>
+    </div>
+
+    <!-- S8: štetno priznanje (13.9–16.4) -->
+    <div class="scene" data-s="13.9" data-e="16.4">
+      <div class="rule ln"><span data-in="13.9" style="height:4px;background:var(--gold)"></span></div>
+      <div class="h s ln"><span data-in="13.95">Prvih 14 dana</span></div>
+      <div class="h s ln"><span data-in="14.08">bit će teško.</span></div>
+      <div class="sub ln"><span data-in="14.9"><em>Nećemo te lagat.</em></span></div>
+    </div>
+
+    <!-- S9: okret (16.4–18.6) -->
+    <div class="scene" data-s="16.4" data-e="18.6">
+      <div class="h ln"><span data-in="16.45">Ali nećeš</span></div>
+      <div class="h ln"><span data-in="16.6">biti <span class="g">sam.</span></span></div>
+    </div>
+
+    <!-- S10: CTA (18.6–23.0) -->
+    <div class="scene" data-s="18.6" data-e="99">
+      <div class="label ln"><span data-in="18.65">Tvoj prvi korak</span></div>
+      <div class="h ln"><span data-in="18.75">Napiši</span></div>
+      <div class="h ln"><span data-in="18.9"><span class="kw">PRVI</span></span></div>
+      <div class="h s ln"><span data-in="19.05">u poruku.</span></div>
+      <div class="sub ln"><span data-in="19.7">Ponesi samo <em>čiste patike.</em></span></div>
+      <div class="small ln"><span data-in="20.4">Fitness Club Adin · Stijena, Cazin<br>Svaki dan 16–22h · @fitnesadin</span></div>
+      <div class="slogan ln"><span data-in="21.0">Jači od jučer.</span></div>
+    </div>
+  </div>
+
+  <canvas id="grain" width="540" height="960"></canvas>
+  <div id="vig"></div>
+  <div class="frame"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
+  <div id="brand">FITNESS CLUB ADIN</div>
+  <div id="bar"></div>
+  <div id="flash"></div>
+</div>
+<script>
+const DUR = 23.0, IMPACT = 5.0;
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const easeOut=x=>1-Math.pow(1-x,4);
+const easeInOut=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+// deterministic noise
+let seed=1; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+const gc=document.getElementById('grain'), gx=gc.getContext('2d'), gimg=gx.createImageData(540,960);
+function grain(frame){
+  seed=1+frame*7919;
+  const d=gimg.data;
+  for(let i=0;i<d.length;i+=4){const v=rnd()*255;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255}
+  gx.putImageData(gimg,0,0);
+}
+const scenes=[...document.querySelectorAll('.scene')];
+const stage=document.getElementById('stage');
+function render(t, frame){
+  // background drift
+  const g1=document.getElementById('glow1'), g2=document.getElementById('glow2');
+  g1.style.left=(-520+Math.sin(t*.25)*90)+'px'; g1.style.top=(-420+Math.cos(t*.2)*70)+'px';
+  g2.style.left=(420+Math.cos(t*.22)*80)+'px'; g2.style.top=(1250+Math.sin(t*.3)*80)+'px';
+  grain(frame);
+  // impact: flash + shake
+  const fi=t>=IMPACT? Math.exp(-(t-IMPACT)*9):0;
+  document.getElementById('flash').style.opacity=(t>=IMPACT&&t<IMPACT+.6)? (0.85*fi).toFixed(3):0;
+  const sh=t>=IMPACT&&t<IMPACT+.45? 22*Math.exp(-(t-IMPACT)*8):0;
+  document.getElementById('scenes').style.transform=`translate(${(Math.sin(t*95)*sh).toFixed(1)}px,${(Math.cos(t*83)*sh).toFixed(1)}px)`;
+  // progress bar
+  document.getElementById('bar').style.width=(992*clamp(t/DUR))+'px';
+
+  for(const sc of scenes){
+    const s=+sc.dataset.s, e=+sc.dataset.e;
+    if(t<s-0.01||t>e){sc.style.opacity=0;continue}
+    const out=clamp((t-(e-0.22))/0.22);
+    const zoom=1+0.035*clamp((t-s)/(Math.min(e,DUR)-s));
+    sc.style.opacity=(1-out).toFixed(3);
+    sc.style.filter=out>0?`blur(${(out*14).toFixed(1)}px)`:'none';
+    sc.style.transform=`scale(${(zoom+out*0.06).toFixed(4)})`;
+    for(const sp of sc.querySelectorAll('[data-in]')){
+      const ti=+sp.dataset.in, p=easeOut(clamp((t-ti)/0.42));
+      let op=t<ti?0:1;
+      if(sp.dataset.dim && t>=ti){ const d=clamp((t-(+sp.dataset.dim))/0.3); op=1-0.55*d; }
+      sp.style.transform=`translateY(${((1-p)*110).toFixed(2)}%)`;
+      sp.style.opacity=op;
+    }
+    for(const st of sc.querySelectorAll('[data-strike]')){
+      const ts=+st.dataset.strike, p=easeInOut(clamp((t-ts)/0.28));
+      st.style.width=`calc(${(p*100).toFixed(2)}% + ${(p*24).toFixed(1)}px)`;
+    }
+  }
+}
+window.render=render; window.DUR=DUR;
+render(0,0);
+</script>
+</body>
+</html>
