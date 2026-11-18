@@ -1,0 +1,129 @@
+<title>HELVERA slanje upita</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: one narrow working column; a checklist you tick down, grouped by how the supplier is reached */
+:root{
+  --bg:#f4f5f8; --surface:#ffffff; --fg:#1b2333; --muted:#5d6678; --line:#dde1e8;
+  --accent:#1f3a5f; --accent-fg:#ffffff; --red:#c8322f; --ok:#2f7d4f; --warnbg:#fff6e5; --warnfg:#8a5a00;
+  --display:"Space Grotesk","Helvetica Neue",Arial,sans-serif; --body:"Inter","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#11151c; --surface:#1a202a; --fg:#e6e9ef; --muted:#9aa3b2; --line:#2c3441;
+  --accent:#8fb3e0; --accent-fg:#0d1420; --red:#ef6b66; --ok:#6cc58f; --warnbg:#2c2414; --warnfg:#f1c46b; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#11151c; --surface:#1a202a; --fg:#e6e9ef; --muted:#9aa3b2; --line:#2c3441;
+  --accent:#8fb3e0; --accent-fg:#0d1420; --red:#ef6b66; --ok:#6cc58f; --warnbg:#2c2414; --warnfg:#f1c46b; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);margin:0}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+header{display:grid;gap:8px}
+.brand{font:700 13px/1 var(--display);letter-spacing:2px;color:var(--muted)}
+.brand b{color:var(--red)}
+h1{font:700 clamp(24px,4vw,32px)/1.15 var(--display);margin:0;text-wrap:balance}
+h2{font:700 18px/1.2 var(--display);margin:0;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.muted{color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;padding:0;margin:0;list-style:none}
+.steps li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.steps b{font-family:var(--display)}
+.steps span{color:var(--muted);font-size:14px}
+.progress{display:flex;align-items:center;gap:12px;font-variant-numeric:tabular-nums}
+.bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .2s}
+section{display:grid;gap:12px}
+ul.list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.row{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.row.is-done{opacity:.6}
+.row.warn{border-left:3px solid var(--warnfg)}
+.info{min-width:0;display:grid;gap:3px}
+.nm{font-weight:600}
+.why{color:var(--muted);font-size:14px}
+.conf{font-size:12.5px;color:var(--muted)}
+.row.warn .conf{color:var(--warnfg)}
+.addrs{display:flex;flex-wrap:wrap;gap:6px}
+.addr{font:500 13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;user-select:all;overflow-wrap:anywhere}
+.pill{font:600 11px/1 var(--body);letter-spacing:.5px;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:99px;padding:3px 7px;margin-left:6px;vertical-align:2px;white-space:nowrap}
+.done{display:grid;justify-items:center;gap:2px;font-size:11px;color:var(--muted);cursor:pointer}
+.done input{width:20px;height:20px;accent-color:var(--ok);cursor:pointer}
+.act{display:flex;flex-direction:column;gap:6px}
+.btn{font:600 13.5px/1 var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:9px 12px;text-decoration:none;text-align:center;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn:focus-visible,.done input:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.note{background:var(--warnbg);color:var(--warnfg);border-radius:10px;padding:12px 14px;font-size:14px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+summary{cursor:pointer;font-weight:600}
+pre{white-space:pre-wrap;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;margin:10px 0 0;color:var(--fg)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:14px}
+@media (max-width:620px){ .row{grid-template-columns:auto 1fr} .act{grid-column:1/-1;flex-direction:row} .act .btn{flex:1} }
+@media (prefers-reduced-motion:reduce){ .bar i{transition:none} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">▌<b>▌</b> HELVERA · RFQ-HV-001</div>
+    <h1>Slanje upita kineskim dobavljačima</h1>
+    <p class="muted">100 kompleta probne ambalaže, 6 dizajna. Šalje se s naloga <b>peptidcentar@gmail.com</b>, potpis Denis Vukelić.</p>
+  </header>
+
+  <ol class="steps">
+    <li><b>1 · Otvori u Gmailu</b><span>Otvara se novi email s primaocem, naslovom i tekstom. Ako si prijavljen na više naloga, provjeri da je „Od“ peptidcentar@gmail.com.</span></li>
+    <li><b>2 · Priloži PDF</b><span>Spajalica → <b>RFQ_HELVERA_vial_packaging_EN.pdf</b>. Bez PDF-a dobavljač nema specifikaciju.</span></li>
+    <li><b>3 · Pošalji i označi</b><span>Klikni Pošalji, pa ovdje štikliraj „Poslano“. Oznake se pamte samo u ovom pregledniku.</span></li>
+  </ol>
+
+  <div class="progress"><div class="bar"><i id="bar"></i></div><span id="count">0 / 15 poslano</span></div>
+
+  <section>
+    <h2>Email: 5 dobavljača s javnom adresom</h2>
+    <ul class="list">
+%%EMAIL%%
+    </ul>
+  </section>
+
+  <section>
+    <h2>Preko platforme: 10 dobavljača bez javnog emaila</h2>
+    <p class="muted">Ovi dobavljači primaju upite samo kroz „Contact Supplier“ ili „Send Inquiry“ na Alibabi ili Made-in-China. Prijavi se na svoj nalog, otvori stranicu, zalijepi poruku i priloži isti PDF.</p>
+    <ul class="list">
+%%FORMS%%
+    </ul>
+    <div class="note">Uz ovo objavi i besplatni zahtjev za ponudu: na Alibabi <b>Request for Quotation</b> (<a href="https://rfq.alibaba.com/" target="_blank" rel="noopener">rfq.alibaba.com</a>), na Made-in-China <b>Post Sourcing Request</b>. Za 24–48 sati obično javi još 10 i više dobavljača.</div>
+  </section>
+
+  <details>
+    <summary>Tekst emaila (naslov: %%SUBJ%%)</summary>
+    <pre>%%BODYPREVIEW%%</pre>
+  </details>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const CHAT = %%CHAT%%;
+const KEY = "helvera-rfq-sent";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
+const rows = [...document.querySelectorAll(".row")];
+function render() {
+  let n = 0;
+  rows.forEach(r => { const on = !!state[r.dataset.id]; r.classList.toggle("is-done", on); r.querySelector("input").checked = on; if (on) n++; });
+  document.getElementById("count").textContent = n + " / " + rows.length + " poslano";
+  document.getElementById("bar").style.width = (100 * n / rows.length) + "%";
+}
+rows.forEach(r => r.querySelector("input").addEventListener("change", e => {
+  state[r.dataset.id] = e.target.checked;
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (err) {}
+  render();
+}));
+function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 1800); }
+function selectText(el) { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-copy],button[data-copytext]");
+  if (!b) return;
+  const text = b.dataset.copytext === "chat" ? CHAT : b.dataset.copy;
+  navigator.clipboard.writeText(text).then(() => toast("Kopirano")).catch(() => {
+    const pre = document.querySelector("details pre"); document.querySelector("details").open = true; selectText(pre); toast("Označeno, kopiraj s Ctrl+C");
+  });
+});
+render();
+</script>

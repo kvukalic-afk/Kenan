@@ -1,0 +1,329 @@
+<title>HELVERA slanje upita</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: one narrow working column; a checklist you tick down, grouped by how the supplier is reached */
+:root{
+  --bg:#f4f5f8; --surface:#ffffff; --fg:#1b2333; --muted:#5d6678; --line:#dde1e8;
+  --accent:#1f3a5f; --accent-fg:#ffffff; --red:#c8322f; --ok:#2f7d4f; --warnbg:#fff6e5; --warnfg:#8a5a00;
+  --display:"Space Grotesk","Helvetica Neue",Arial,sans-serif; --body:"Inter","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#11151c; --surface:#1a202a; --fg:#e6e9ef; --muted:#9aa3b2; --line:#2c3441;
+  --accent:#8fb3e0; --accent-fg:#0d1420; --red:#ef6b66; --ok:#6cc58f; --warnbg:#2c2414; --warnfg:#f1c46b; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#11151c; --surface:#1a202a; --fg:#e6e9ef; --muted:#9aa3b2; --line:#2c3441;
+  --accent:#8fb3e0; --accent-fg:#0d1420; --red:#ef6b66; --ok:#6cc58f; --warnbg:#2c2414; --warnfg:#f1c46b; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);margin:0}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+header{display:grid;gap:8px}
+.brand{font:700 13px/1 var(--display);letter-spacing:2px;color:var(--muted)}
+.brand b{color:var(--red)}
+h1{font:700 clamp(24px,4vw,32px)/1.15 var(--display);margin:0;text-wrap:balance}
+h2{font:700 18px/1.2 var(--display);margin:0;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.muted{color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;padding:0;margin:0;list-style:none}
+.steps li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.steps b{font-family:var(--display)}
+.steps span{color:var(--muted);font-size:14px}
+.progress{display:flex;align-items:center;gap:12px;font-variant-numeric:tabular-nums}
+.bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .2s}
+section{display:grid;gap:12px}
+ul.list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.row{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.row.is-done{opacity:.6}
+.row.warn{border-left:3px solid var(--warnfg)}
+.info{min-width:0;display:grid;gap:3px}
+.nm{font-weight:600}
+.why{color:var(--muted);font-size:14px}
+.conf{font-size:12.5px;color:var(--muted)}
+.row.warn .conf{color:var(--warnfg)}
+.addrs{display:flex;flex-wrap:wrap;gap:6px}
+.addr{font:500 13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;user-select:all;overflow-wrap:anywhere}
+.pill{font:600 11px/1 var(--body);letter-spacing:.5px;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:99px;padding:3px 7px;margin-left:6px;vertical-align:2px;white-space:nowrap}
+.done{display:grid;justify-items:center;gap:2px;font-size:11px;color:var(--muted);cursor:pointer}
+.done input{width:20px;height:20px;accent-color:var(--ok);cursor:pointer}
+.act{display:flex;flex-direction:column;gap:6px}
+.btn{font:600 13.5px/1 var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:9px 12px;text-decoration:none;text-align:center;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn:focus-visible,.done input:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.note{background:var(--warnbg);color:var(--warnfg);border-radius:10px;padding:12px 14px;font-size:14px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+summary{cursor:pointer;font-weight:600}
+pre{white-space:pre-wrap;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;margin:10px 0 0;color:var(--fg)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:14px}
+@media (max-width:620px){ .row{grid-template-columns:auto 1fr} .act{grid-column:1/-1;flex-direction:row} .act .btn{flex:1} }
+@media (prefers-reduced-motion:reduce){ .bar i{transition:none} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">▌<b>▌</b> HELVERA · RFQ-HV-001</div>
+    <h1>Slanje upita kineskim dobavljačima</h1>
+    <p class="muted">100 kompleta probne ambalaže, 6 dizajna. Šalje se s naloga <b>peptidcentar@gmail.com</b>, potpis Denis Vukelić.</p>
+  </header>
+
+  <ol class="steps">
+    <li><b>1 · Otvori u Gmailu</b><span>Otvara se novi email s primaocem, naslovom i tekstom. Ako si prijavljen na više naloga, provjeri da je „Od“ peptidcentar@gmail.com.</span></li>
+    <li><b>2 · Priloži PDF</b><span>Spajalica → <b>RFQ_HELVERA_vial_packaging_EN.pdf</b>. Bez PDF-a dobavljač nema specifikaciju.</span></li>
+    <li><b>3 · Pošalji i označi</b><span>Klikni Pošalji, pa ovdje štikliraj „Poslano“. Oznake se pamte samo u ovom pregledniku.</span></li>
+  </ol>
+
+  <div class="progress"><div class="bar"><i id="bar"></i></div><span id="count">0 / 15 poslano</span></div>
+
+  <section>
+    <h2>Email: 5 dobavljača s javnom adresom</h2>
+    <ul class="list">
+<li class="row" data-id="meikei">
+  <label class="done"><input type="checkbox" id="c-meikei" aria-label="Poslano: Guangzhou Meikei Intelligent Printing"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Guangzhou Meikei Intelligent Printing <span class="pill">Opcija A</span></div>
+    <div class="why">Kutija + naljepnice, mat plastifikacija, EVA umetak · MOQ 100 · Alibaba Verified, 5–6 god. · Guangzhou</div>
+    <div class="addrs"><span class="addr" data-copy="sk-jane@meikei.com.cn">sk-jane@meikei.com.cn</span></div>
+    <div class="conf">Email s njihove web stranice</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://mail.google.com/mail/?authuser=peptidcentar%40gmail.com&amp;view=cm&amp;fs=1&amp;to=sk-jane%40meikei.com.cn&amp;su=RFQ%3A%20100%20custom%20printed%20vial%20box%20sets%2C%206%20designs%20%28HELVERA%29&amp;body=Dear%20Guangzhou%20Meikei%20team%2C%0A%0AWe%20would%20like%20a%20quotation%20for%20100%20custom%20printed%20packaging%20sets%20for%20one%202%20ml%20glass%20vial%20%28%C3%9816%20x%2035-38%20mm%29.%20The%20full%20specification%20and%20the%20quotation%20form%20are%20in%20the%20attached%20PDF%20%28RFQ-HV-001%29.%0A%0AEach%20set%20includes%3A%0A-%20Lid-and-base%20box%2C%20closed%20size%2072%20x%2052%20x%2025.5%20mm%2C%20350%20g%2Fm2%20white%20board%2C%20CMYK%20print%2C%20matte%20lamination%0A-%20Paper%20insert%20%28cradle%20for%20the%20vial%20lying%20horizontally%29%0A-%20Vial%20label%2045%20x%2020%20mm%2C%20white%20matte%20BOPP%2C%20fridge-safe%20adhesive%20%282-8%20%C2%B0C%29%0A-%20Seal%20sticker%2012%20x%2022%20mm%0A%0AThere%20are%206%20designs%20with%20the%20same%20size%20and%20structure%2C%20mixed%20in%20one%20order%20%28100%20sets%20in%20total%2C%20plus%20spares%29.%20Print-ready%20vector%20PDF%20files%20with%20dielines%20are%20ready.%0A%0APrice%20is%20our%20main%20criterion.%20Please%20quote%3A%0A1%29%20unit%20price%20at%20100%20%2F%20300%20%2F%20500%20%2F%201%2C000%20sets%0A2%29%20setup%2C%20die%20and%20sample%20cost%0A3%29%20express%20shipping%20to%20Bosnia%20and%20Herzegovina%20%28DDU%29%2C%20plus%20packed%20weight%0A4%29%20the%20total%20for%20100%20sets%20including%20shipping%0A%0AIf%20you%20have%20a%20cheaper%20standard%20structure%20in%20a%20similar%20size%2C%20please%20also%20quote%20it%20%28for%20example%20a%20rigid%20box%20with%20an%20EVA%20insert%29.%0A%0APlease%20confirm%20that%20you%20can%20mix%20the%206%20designs%20within%20MOQ%20100.%20This%20is%20a%20trial%20order.%20Larger%20repeat%20orders%20will%20follow%20if%20the%20quality%20is%20good.%0A%0AThank%20you.%20We%20look%20forward%20to%20your%20offer.%0A%0ABest%20regards%2C%0ADenis%20Vukeli%C4%87%0AHELVERA%0Apeptidcentar%40gmail.com" target="_blank" rel="noopener">Otvori u Gmailu</a>
+    <button class="btn" type="button" data-copy="sk-jane@meikei.com.cn">Kopiraj email</button>
+  </div>
+</li>
+<li class="row" data-id="yucai">
+  <label class="done"><input type="checkbox" id="c-yucai" aria-label="Poslano: Shanghai Yucai Industrial"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Shanghai Yucai Industrial <span class="pill">Opcija A</span></div>
+    <div class="why">Kutija za 3 ml + tray + naljepnice · MOQ 100 · Alibaba Verified, 9 god. · Shanghai</div>
+    <div class="addrs"><span class="addr" data-copy="sales@yucai-printing.com">sales@yucai-printing.com</span></div>
+    <div class="conf">Email s njihove web stranice</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://mail.google.com/mail/?authuser=peptidcentar%40gmail.com&amp;view=cm&amp;fs=1&amp;to=sales%40yucai-printing.com&amp;su=RFQ%3A%20100%20custom%20printed%20vial%20box%20sets%2C%206%20designs%20%28HELVERA%29&amp;body=Dear%20Shanghai%20Yucai%20team%2C%0A%0AWe%20would%20like%20a%20quotation%20for%20100%20custom%20printed%20packaging%20sets%20for%20one%202%20ml%20glass%20vial%20%28%C3%9816%20x%2035-38%20mm%29.%20The%20full%20specification%20and%20the%20quotation%20form%20are%20in%20the%20attached%20PDF%20%28RFQ-HV-001%29.%0A%0AEach%20set%20includes%3A%0A-%20Lid-and-base%20box%2C%20closed%20size%2072%20x%2052%20x%2025.5%20mm%2C%20350%20g%2Fm2%20white%20board%2C%20CMYK%20print%2C%20matte%20lamination%0A-%20Paper%20insert%20%28cradle%20for%20the%20vial%20lying%20horizontally%29%0A-%20Vial%20label%2045%20x%2020%20mm%2C%20white%20matte%20BOPP%2C%20fridge-safe%20adhesive%20%282-8%20%C2%B0C%29%0A-%20Seal%20sticker%2012%20x%2022%20mm%0A%0AThere%20are%206%20designs%20with%20the%20same%20size%20and%20structure%2C%20mixed%20in%20one%20order%20%28100%20sets%20in%20total%2C%20plus%20spares%29.%20Print-ready%20vector%20PDF%20files%20with%20dielines%20are%20ready.%0A%0APrice%20is%20our%20main%20criterion.%20Please%20quote%3A%0A1%29%20unit%20price%20at%20100%20%2F%20300%20%2F%20500%20%2F%201%2C000%20sets%0A2%29%20setup%2C%20die%20and%20sample%20cost%0A3%29%20express%20shipping%20to%20Bosnia%20and%20Herzegovina%20%28DDU%29%2C%20plus%20packed%20weight%0A4%29%20the%20total%20for%20100%20sets%20including%20shipping%0A%0AIf%20you%20have%20a%20cheaper%20standard%20structure%20in%20a%20similar%20size%2C%20please%20also%20quote%20it%20%28for%20example%20a%20rigid%20box%20with%20an%20EVA%20insert%29.%0A%0APlease%20confirm%20that%20you%20can%20mix%20the%206%20designs%20within%20MOQ%20100.%20This%20is%20a%20trial%20order.%20Larger%20repeat%20orders%20will%20follow%20if%20the%20quality%20is%20good.%0A%0AThank%20you.%20We%20look%20forward%20to%20your%20offer.%0A%0ABest%20regards%2C%0ADenis%20Vukeli%C4%87%0AHELVERA%0Apeptidcentar%40gmail.com" target="_blank" rel="noopener">Otvori u Gmailu</a>
+    <button class="btn" type="button" data-copy="sales@yucai-printing.com">Kopiraj email</button>
+  </div>
+</li>
+<li class="row" data-id="hanlong">
+  <label class="done"><input type="checkbox" id="c-hanlong" aria-label="Poslano: Yiwu Hanlong Crafts / Packaging"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Yiwu Hanlong Crafts / Packaging <span class="pill">Opcija B</span></div>
+    <div class="why">Rigid kartonska kutija za bočicu, custom logo · MOQ 100 · Alibaba Verified · Yiwu</div>
+    <div class="addrs"><span class="addr" data-copy="alicelou2146@163.com">alicelou2146@163.com</span></div>
+    <div class="conf">Email s njihove web stranice</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://mail.google.com/mail/?authuser=peptidcentar%40gmail.com&amp;view=cm&amp;fs=1&amp;to=alicelou2146%40163.com&amp;su=RFQ%3A%20100%20custom%20printed%20vial%20box%20sets%2C%206%20designs%20%28HELVERA%29&amp;body=Dear%20Hanlong%20team%2C%0A%0AWe%20would%20like%20a%20quotation%20for%20100%20custom%20printed%20packaging%20sets%20for%20one%202%20ml%20glass%20vial%20%28%C3%9816%20x%2035-38%20mm%29.%20The%20full%20specification%20and%20the%20quotation%20form%20are%20in%20the%20attached%20PDF%20%28RFQ-HV-001%29.%0A%0AEach%20set%20includes%3A%0A-%20Lid-and-base%20box%2C%20closed%20size%2072%20x%2052%20x%2025.5%20mm%2C%20350%20g%2Fm2%20white%20board%2C%20CMYK%20print%2C%20matte%20lamination%0A-%20Paper%20insert%20%28cradle%20for%20the%20vial%20lying%20horizontally%29%0A-%20Vial%20label%2045%20x%2020%20mm%2C%20white%20matte%20BOPP%2C%20fridge-safe%20adhesive%20%282-8%20%C2%B0C%29%0A-%20Seal%20sticker%2012%20x%2022%20mm%0A%0AThere%20are%206%20designs%20with%20the%20same%20size%20and%20structure%2C%20mixed%20in%20one%20order%20%28100%20sets%20in%20total%2C%20plus%20spares%29.%20Print-ready%20vector%20PDF%20files%20with%20dielines%20are%20ready.%0A%0APrice%20is%20our%20main%20criterion.%20Please%20quote%3A%0A1%29%20unit%20price%20at%20100%20%2F%20300%20%2F%20500%20%2F%201%2C000%20sets%0A2%29%20setup%2C%20die%20and%20sample%20cost%0A3%29%20express%20shipping%20to%20Bosnia%20and%20Herzegovina%20%28DDU%29%2C%20plus%20packed%20weight%0A4%29%20the%20total%20for%20100%20sets%20including%20shipping%0A%0AIf%20you%20have%20a%20cheaper%20standard%20structure%20in%20a%20similar%20size%2C%20please%20also%20quote%20it%20%28for%20example%20a%20rigid%20box%20with%20an%20EVA%20insert%29.%0A%0APlease%20confirm%20that%20you%20can%20mix%20the%206%20designs%20within%20MOQ%20100.%20This%20is%20a%20trial%20order.%20Larger%20repeat%20orders%20will%20follow%20if%20the%20quality%20is%20good.%0A%0AThank%20you.%20We%20look%20forward%20to%20your%20offer.%0A%0ABest%20regards%2C%0ADenis%20Vukeli%C4%87%0AHELVERA%0Apeptidcentar%40gmail.com" target="_blank" rel="noopener">Otvori u Gmailu</a>
+    <button class="btn" type="button" data-copy="alicelou2146@163.com">Kopiraj email</button>
+  </div>
+</li>
+<li class="row" data-id="yison">
+  <label class="done"><input type="checkbox" id="c-yison" aria-label="Poslano: Guangzhou Yison Printing"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Guangzhou Yison Printing <span class="pill">Opcija A</span></div>
+    <div class="why">Kutija s umetkom + naljepnice · Diamond + audit · na listingu MOQ 2.000, pitamo za 100 · Guangzhou</div>
+    <div class="addrs"><span class="addr" data-copy="maggie@yisonprinting.com">maggie@yisonprinting.com</span><span class="addr" data-copy="sale016@yisonprinting.com">cc sale016@yisonprinting.com</span></div>
+    <div class="conf">Email s njihove web stranice</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://mail.google.com/mail/?authuser=peptidcentar%40gmail.com&amp;view=cm&amp;fs=1&amp;to=maggie%40yisonprinting.com&amp;su=RFQ%3A%20100%20custom%20printed%20vial%20box%20sets%2C%206%20designs%20%28HELVERA%29&amp;body=Dear%20Yison%20Printing%20team%2C%0A%0AWe%20would%20like%20a%20quotation%20for%20100%20custom%20printed%20packaging%20sets%20for%20one%202%20ml%20glass%20vial%20%28%C3%9816%20x%2035-38%20mm%29.%20The%20full%20specification%20and%20the%20quotation%20form%20are%20in%20the%20attached%20PDF%20%28RFQ-HV-001%29.%0A%0AEach%20set%20includes%3A%0A-%20Lid-and-base%20box%2C%20closed%20size%2072%20x%2052%20x%2025.5%20mm%2C%20350%20g%2Fm2%20white%20board%2C%20CMYK%20print%2C%20matte%20lamination%0A-%20Paper%20insert%20%28cradle%20for%20the%20vial%20lying%20horizontally%29%0A-%20Vial%20label%2045%20x%2020%20mm%2C%20white%20matte%20BOPP%2C%20fridge-safe%20adhesive%20%282-8%20%C2%B0C%29%0A-%20Seal%20sticker%2012%20x%2022%20mm%0A%0AThere%20are%206%20designs%20with%20the%20same%20size%20and%20structure%2C%20mixed%20in%20one%20order%20%28100%20sets%20in%20total%2C%20plus%20spares%29.%20Print-ready%20vector%20PDF%20files%20with%20dielines%20are%20ready.%0A%0APrice%20is%20our%20main%20criterion.%20Please%20quote%3A%0A1%29%20unit%20price%20at%20100%20%2F%20300%20%2F%20500%20%2F%201%2C000%20sets%0A2%29%20setup%2C%20die%20and%20sample%20cost%0A3%29%20express%20shipping%20to%20Bosnia%20and%20Herzegovina%20%28DDU%29%2C%20plus%20packed%20weight%0A4%29%20the%20total%20for%20100%20sets%20including%20shipping%0A%0AIf%20you%20have%20a%20cheaper%20standard%20structure%20in%20a%20similar%20size%2C%20please%20also%20quote%20it%20%28for%20example%20a%20rigid%20box%20with%20an%20EVA%20insert%29.%0A%0APlease%20confirm%20that%20you%20can%20mix%20the%206%20designs%20within%20MOQ%20100.%20This%20is%20a%20trial%20order.%20Larger%20repeat%20orders%20will%20follow%20if%20the%20quality%20is%20good.%0A%0AThank%20you.%20We%20look%20forward%20to%20your%20offer.%0A%0ABest%20regards%2C%0ADenis%20Vukeli%C4%87%0AHELVERA%0Apeptidcentar%40gmail.com&amp;cc=sale016%40yisonprinting.com" target="_blank" rel="noopener">Otvori u Gmailu</a>
+    <button class="btn" type="button" data-copy="maggie@yisonprinting.com">Kopiraj email</button>
+  </div>
+</li>
+<li class="row warn" data-id="hxm">
+  <label class="done"><input type="checkbox" id="c-hxm" aria-label="Poslano: Hengxinmao (Xiamen) Technology"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Hengxinmao (Xiamen) Technology <span class="pill">Opcija A</span></div>
+    <div class="why">Kutija + naljepnice, plastični tray · MOQ 100 · Alibaba Verified, 8 god. · Xiamen</div>
+    <div class="addrs"><span class="addr" data-copy="rita@print-unions.com">rita@print-unions.com</span></div>
+    <div class="conf">⚠ Email iz kopije stranice u pretraživaču, nije potvrđen. Moguće je da je ista grupa kao Xiamen Speed Print</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://mail.google.com/mail/?authuser=peptidcentar%40gmail.com&amp;view=cm&amp;fs=1&amp;to=rita%40print-unions.com&amp;su=RFQ%3A%20100%20custom%20printed%20vial%20box%20sets%2C%206%20designs%20%28HELVERA%29&amp;body=Dear%20Hengxinmao%20team%2C%0A%0AWe%20would%20like%20a%20quotation%20for%20100%20custom%20printed%20packaging%20sets%20for%20one%202%20ml%20glass%20vial%20%28%C3%9816%20x%2035-38%20mm%29.%20The%20full%20specification%20and%20the%20quotation%20form%20are%20in%20the%20attached%20PDF%20%28RFQ-HV-001%29.%0A%0AEach%20set%20includes%3A%0A-%20Lid-and-base%20box%2C%20closed%20size%2072%20x%2052%20x%2025.5%20mm%2C%20350%20g%2Fm2%20white%20board%2C%20CMYK%20print%2C%20matte%20lamination%0A-%20Paper%20insert%20%28cradle%20for%20the%20vial%20lying%20horizontally%29%0A-%20Vial%20label%2045%20x%2020%20mm%2C%20white%20matte%20BOPP%2C%20fridge-safe%20adhesive%20%282-8%20%C2%B0C%29%0A-%20Seal%20sticker%2012%20x%2022%20mm%0A%0AThere%20are%206%20designs%20with%20the%20same%20size%20and%20structure%2C%20mixed%20in%20one%20order%20%28100%20sets%20in%20total%2C%20plus%20spares%29.%20Print-ready%20vector%20PDF%20files%20with%20dielines%20are%20ready.%0A%0APrice%20is%20our%20main%20criterion.%20Please%20quote%3A%0A1%29%20unit%20price%20at%20100%20%2F%20300%20%2F%20500%20%2F%201%2C000%20sets%0A2%29%20setup%2C%20die%20and%20sample%20cost%0A3%29%20express%20shipping%20to%20Bosnia%20and%20Herzegovina%20%28DDU%29%2C%20plus%20packed%20weight%0A4%29%20the%20total%20for%20100%20sets%20including%20shipping%0A%0AIf%20you%20have%20a%20cheaper%20standard%20structure%20in%20a%20similar%20size%2C%20please%20also%20quote%20it%20%28for%20example%20a%20rigid%20box%20with%20an%20EVA%20insert%29.%0A%0APlease%20confirm%20that%20you%20can%20mix%20the%206%20designs%20within%20MOQ%20100.%20This%20is%20a%20trial%20order.%20Larger%20repeat%20orders%20will%20follow%20if%20the%20quality%20is%20good.%0A%0AThank%20you.%20We%20look%20forward%20to%20your%20offer.%0A%0ABest%20regards%2C%0ADenis%20Vukeli%C4%87%0AHELVERA%0Apeptidcentar%40gmail.com" target="_blank" rel="noopener">Otvori u Gmailu</a>
+    <button class="btn" type="button" data-copy="rita@print-unions.com">Kopiraj email</button>
+  </div>
+</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Preko platforme: 10 dobavljača bez javnog emaila</h2>
+    <p class="muted">Ovi dobavljači primaju upite samo kroz „Contact Supplier“ ili „Send Inquiry“ na Alibabi ili Made-in-China. Prijavi se na svoj nalog, otvori stranicu, zalijepi poruku i priloži isti PDF.</p>
+    <ul class="list">
+<li class="row" data-id="yzm">
+  <label class="done"><input type="checkbox" id="c-yzm" aria-label="Poslano: Xiamen YZM Commerce &amp; Trade (luxeprint)"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Xiamen YZM Commerce &amp; Trade (luxeprint) <span class="pill plat">Alibaba</span></div>
+    <div class="why">Kutije 1–10 ml + tray + naljepnice · MOQ 100 · 10–11 god.</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://luxeprint.en.alibaba.com/" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+<li class="row" data-id="speed">
+  <label class="done"><input type="checkbox" id="c-speed" aria-label="Poslano: Xiamen Speed Print Industrial"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Xiamen Speed Print Industrial <span class="pill plat">Alibaba</span></div>
+    <div class="why">Set kutija + naljepnica · MOQ 100 · 11 god.</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://speedprint.en.alibaba.com/" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+<li class="row" data-id="jiguan">
+  <label class="done"><input type="checkbox" id="c-jiguan" aria-label="Poslano: Dongguan Jiguan Technology"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Dongguan Jiguan Technology <span class="pill plat">Made-in-China</span></div>
+    <div class="why">Diamond od 2013, TÜV audit · „No MOQ“ · besplatni standardni uzorci</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://jiguantech.en.made-in-china.com/contact-info.html" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+<li class="row" data-id="hxmq">
+  <label class="done"><input type="checkbox" id="c-hxmq" aria-label="Poslano: Hengxinmao (Quanzhou) Technology"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Hengxinmao (Quanzhou) Technology <span class="pill plat">Alibaba</span></div>
+    <div class="why">Luksuzna sklopiva kutija s magnetom · MOQ 100 · Opcija B</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://fastprint.en.alibaba.com/" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+<li class="row" data-id="dianchuang">
+  <label class="done"><input type="checkbox" id="c-dianchuang" aria-label="Poslano: Nanchang Dian Chuang Packaging"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Nanchang Dian Chuang Packaging <span class="pill plat">Made-in-China</span></div>
+    <div class="why">Rigid kutija s magnetom · Diamond + audit · MOQ 100 · Opcija B</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://dianchuangpacking.en.made-in-china.com/contact-info.html" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+<li class="row" data-id="woolf">
+  <label class="done"><input type="checkbox" id="c-woolf" aria-label="Poslano: Changsha Woolf Technology"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Changsha Woolf Technology <span class="pill plat">Made-in-China</span></div>
+    <div class="why">Kutije + vodootporne naljepnice · Gold + audit · MOQ 100</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://woolftech.en.made-in-china.com/" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+<li class="row" data-id="haitop">
+  <label class="done"><input type="checkbox" id="c-haitop" aria-label="Poslano: Qingdao Haitop Paper Packaging"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Qingdao Haitop Paper Packaging <span class="pill plat">Made-in-China</span></div>
+    <div class="why">Kutija + naljepnica · MOQ 100</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://haitoppackaging.en.made-in-china.com/contact-info.html" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+<li class="row" data-id="fonroon">
+  <label class="done"><input type="checkbox" id="c-fonroon" aria-label="Poslano: Shenzhen Fonroon Packaging Printing"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Shenzhen Fonroon Packaging Printing <span class="pill plat">Alibaba</span></div>
+    <div class="why">Kutija + umetak za 2/3 ml · MOQ 100 · nov dobavljač (1 god.)</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://fonroon.en.alibaba.com/" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+<li class="row" data-id="caiyibiao">
+  <label class="done"><input type="checkbox" id="c-caiyibiao" aria-label="Poslano: Shanghai Caiyibiao Industrial (samo naljepnice)"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Shanghai Caiyibiao Industrial (samo naljepnice) <span class="pill plat">Alibaba</span></div>
+    <div class="why">Naljepnice za bočice · MOQ 100 · 0,01–0,03 $</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://www.alibaba.com/product-detail/Custom-Printing-3ml-5ml-10-ml_1601870578079.html" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+<li class="row" data-id="fuxinrui">
+  <label class="done"><input type="checkbox" id="c-fuxinrui" aria-label="Poslano: Shenzhen Fuxinrui Industrial"><span>Poslano</span></label>
+  <div class="info">
+    <div class="nm">Shenzhen Fuxinrui Industrial <span class="pill plat">Made-in-China</span></div>
+    <div class="why">ISO 9001, rigid kutije · MOQ 500, za kasnije serije</div>
+  </div>
+  <div class="act">
+    <a class="btn primary" href="https://medpack.en.made-in-china.com/contact-info.html" target="_blank" rel="noopener">Otvori stranicu</a>
+    <button class="btn" type="button" data-copytext="chat">Kopiraj poruku</button>
+  </div>
+</li>
+    </ul>
+    <div class="note">Uz ovo objavi i besplatni zahtjev za ponudu: na Alibabi <b>Request for Quotation</b> (<a href="https://rfq.alibaba.com/" target="_blank" rel="noopener">rfq.alibaba.com</a>), na Made-in-China <b>Post Sourcing Request</b>. Za 24–48 sati obično javi još 10 i više dobavljača.</div>
+  </section>
+
+  <details>
+    <summary>Tekst emaila (naslov: RFQ: 100 custom printed vial box sets, 6 designs (HELVERA))</summary>
+    <pre>Dear [Company] team,
+
+We would like a quotation for 100 custom printed packaging sets for one 2 ml glass vial (Ø16 x 35-38 mm). The full specification and the quotation form are in the attached PDF (RFQ-HV-001).
+
+Each set includes:
+- Lid-and-base box, closed size 72 x 52 x 25.5 mm, 350 g/m2 white board, CMYK print, matte lamination
+- Paper insert (cradle for the vial lying horizontally)
+- Vial label 45 x 20 mm, white matte BOPP, fridge-safe adhesive (2-8 °C)
+- Seal sticker 12 x 22 mm
+
+There are 6 designs with the same size and structure, mixed in one order (100 sets in total, plus spares). Print-ready vector PDF files with dielines are ready.
+
+Price is our main criterion. Please quote:
+1) unit price at 100 / 300 / 500 / 1,000 sets
+2) setup, die and sample cost
+3) express shipping to Bosnia and Herzegovina (DDU), plus packed weight
+4) the total for 100 sets including shipping
+
+If you have a cheaper standard structure in a similar size, please also quote it (for example a rigid box with an EVA insert).
+
+Please confirm that you can mix the 6 designs within MOQ 100. This is a trial order. Larger repeat orders will follow if the quality is good.
+
+Thank you. We look forward to your offer.
+
+Best regards,
+Denis Vukelić
+HELVERA
+peptidcentar@gmail.com</pre>
+  </details>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const CHAT = "Hello,\n\nWe would like a quotation for 100 custom printed packaging sets for one 2 ml glass vial (\u00d816 x 35-38 mm). The full specification and the quotation form are in the attached PDF (RFQ-HV-001).\n\nEach set includes:\n- Lid-and-base box, closed size 72 x 52 x 25.5 mm, 350 g/m2 white board, CMYK print, matte lamination\n- Paper insert (cradle for the vial lying horizontally)\n- Vial label 45 x 20 mm, white matte BOPP, fridge-safe adhesive (2-8 \u00b0C)\n- Seal sticker 12 x 22 mm\n\nThere are 6 designs with the same size and structure, mixed in one order (100 sets in total, plus spares). Print-ready vector PDF files with dielines are ready.\n\nPrice is our main criterion. Please quote:\n1) unit price at 100 / 300 / 500 / 1,000 sets\n2) setup, die and sample cost\n3) express shipping to Bosnia and Herzegovina (DDU), plus packed weight\n4) the total for 100 sets including shipping\n\nIf you have a cheaper standard structure in a similar size, please also quote it (for example a rigid box with an EVA insert).\n\nPlease confirm that you can mix the 6 designs within MOQ 100. This is a trial order. Larger repeat orders will follow if the quality is good.\n\nThank you. We look forward to your offer.\n\nBest regards,\nDenis Vukeli\u0107\nHELVERA\npeptidcentar@gmail.com";
+const KEY = "helvera-rfq-sent";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
+const rows = [...document.querySelectorAll(".row")];
+function render() {
+  let n = 0;
+  rows.forEach(r => { const on = !!state[r.dataset.id]; r.classList.toggle("is-done", on); r.querySelector("input").checked = on; if (on) n++; });
+  document.getElementById("count").textContent = n + " / " + rows.length + " poslano";
+  document.getElementById("bar").style.width = (100 * n / rows.length) + "%";
+}
+rows.forEach(r => r.querySelector("input").addEventListener("change", e => {
+  state[r.dataset.id] = e.target.checked;
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (err) {}
+  render();
+}));
+function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 1800); }
+function selectText(el) { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-copy],button[data-copytext]");
+  if (!b) return;
+  const text = b.dataset.copytext === "chat" ? CHAT : b.dataset.copy;
+  navigator.clipboard.writeText(text).then(() => toast("Kopirano")).catch(() => {
+    const pre = document.querySelector("details pre"); document.querySelector("details").open = true; selectText(pre); toast("Označeno, kopiraj s Ctrl+C");
+  });
+});
+render();
+</script>
