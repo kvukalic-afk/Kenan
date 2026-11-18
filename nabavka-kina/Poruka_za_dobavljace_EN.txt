@@ -25,7 +25,9 @@ The full specification and quotation form are in the attached PDF.
 Can you mix 6 designs within MOQ 100? This is a trial order. Larger repeat orders will follow if the quality is good.
 
 Thank you,
-[Name]
+Denis Vukelić
+HELVERA
+peptidcentar@gmail.com
 
 
 === SHORT VERSION: for Alibaba "Request for Quotation" (RFQ) form ===
@@ -38,5 +40,5 @@ Details: Box 72×52×25.5 mm closed, 350gsm white board, CMYK 4/4 lid and 4/0 ba
 === FOLLOW-UP: send if a supplier only gives a "price range" ===
 
 Thank you. Please send an exact quotation for our 100-set order (6 designs mixed), not the catalogue range.
-We need the total price including setup, sample and express shipping to Bosnia and Herzegovina (postal code [xxxxx]).
+We need the total price including setup, sample and express shipping to Bosnia and Herzegovina (full address will follow with the order).
 Please also send photos of a similar lid-and-base box you have produced in a small size.
