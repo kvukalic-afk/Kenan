@@ -1,0 +1,70 @@
+/* Dokumenti za print: A4 uspravno, 11–12 pt, zaglavlje i podnožje na svakoj stranici. */
+
+.print-alati {
+  position: sticky; top: 0; z-index: 10; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  padding: calc(env(safe-area-inset-top) + 8px) 12px 8px; background: var(--primarna); color: var(--na-primarnoj);
+}
+.print-alati .dugme { min-height: 44px; }
+.print-alati .napomena { font-size: 0.8rem; opacity: 0.9; flex-basis: 100%; }
+
+.print-pozadina { background: #8a8f93; padding: 16px 8px 48px; min-height: 100vh; }
+.print-stranica {
+  background: #fff; color: #111; width: 100%; max-width: 210mm; margin: 0 auto; padding: 14mm 14mm;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3); font-family: 'Times New Roman', Times, 'Liberation Serif', serif; font-size: 11.5pt; line-height: 1.4;
+  color-scheme: light;
+}
+@media (max-width: 600px) {
+  .print-stranica { padding: 8mm 5mm; font-size: 10.5pt; }
+}
+
+table.dokument { width: 100%; border-collapse: collapse; }
+table.dokument > thead > tr > td, table.dokument > tfoot > tr > td, table.dokument > tbody > tr > td { padding: 0; border: none; }
+
+.dok-zaglavlje { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-bottom: 1.5pt solid #111; padding-bottom: 4pt; margin-bottom: 10pt; font-size: 10pt; }
+.dok-zaglavlje .skola { font-weight: bold; }
+.povjerljivo { color: #c00000; font-weight: bold; letter-spacing: 0.12em; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; border: 1.2pt solid #c00000; padding: 1pt 6pt; white-space: nowrap; }
+.dok-podnozje { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-top: 1pt solid #111; padding-top: 6pt; margin-top: 14pt; font-size: 10pt; }
+.dok-podnozje .potpis { text-align: right; }
+.dok-podnozje .linija { display: inline-block; width: 52mm; border-bottom: 0.8pt solid #111; height: 14pt; margin-top: 2pt; }
+.dok-podnozje .povjerljivo { font-size: 8pt; }
+
+.print-stranica h1 { text-align: center; font-size: 14pt; font-weight: bold; margin: 4pt 0 2pt; letter-spacing: 0.02em; font-family: inherit; color: #111; }
+.print-stranica .podnaslov { text-align: center; margin: 0 0 12pt; font-size: 11pt; }
+.print-stranica h2 { font-size: 12pt; margin: 14pt 0 6pt; font-family: inherit; color: #111; break-after: avoid; page-break-after: avoid; }
+.print-stranica p { margin: 0 0 8pt; }
+
+.print-stranica table.podaci-tab, .print-stranica table.lista-tab, .print-stranica table.tabela { width: 100%; border-collapse: collapse; margin-bottom: 10pt; font-size: inherit; }
+.print-stranica .podaci-tab th, .print-stranica .podaci-tab td,
+.print-stranica .lista-tab th, .print-stranica .lista-tab td,
+.print-stranica .tabela th, .print-stranica .tabela td { border: 0.8pt solid #444; padding: 3pt 6pt; vertical-align: top; text-align: left; color: #111; background: none; }
+.print-stranica .podaci-tab th { width: 34%; background: #f0f0f0; font-weight: bold; }
+.print-stranica .lista-tab thead th, .print-stranica .tabela thead th { background: #e8e8e8; font-weight: bold; font-size: 10pt; }
+.print-stranica .lista-tab { font-size: 10pt; }
+.print-stranica td.n, .print-stranica th.n { text-align: right; font-variant-numeric: tabular-nums; }
+.print-stranica .tabela tr.zbir td { font-weight: bold; background: #f0f0f0; color: #111; }
+.print-stranica .tabela tr.zbir.ukupno td { background: #dcdcdc; color: #111; }
+.print-stranica thead { display: table-header-group; }
+.print-stranica tfoot { display: table-footer-group; }
+.print-stranica tr { break-inside: auto; page-break-inside: auto; }
+.print-stranica .tekst-celija { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.blok { margin-bottom: 10pt; }
+.blok h2 { margin-bottom: 3pt; }
+.blok .sadrzaj-bloka { border: 0.8pt solid #444; padding: 6pt 8pt; min-height: 22mm; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sazetak { border-left: 3pt solid #555; padding: 4pt 0 4pt 10pt; margin-bottom: 12pt; text-align: justify; }
+.dva { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14pt; }
+
+@page {
+  size: A4 portrait;
+  margin: 14mm 14mm 16mm;
+  @bottom-center { content: 'Stranica ' counter(page) ' / ' counter(pages); font-family: Arial, sans-serif; font-size: 8pt; color: #555; }
+}
+
+@media print {
+  html, body { background: #fff !important; }
+  .print-alati, .toast, .modal-pozadina { display: none !important; }
+  .print-pozadina { background: none; padding: 0; min-height: 0; }
+  .print-stranica { box-shadow: none; max-width: none; padding: 0; margin: 0; font-size: 11.5pt; }
+  .print-stranica .povjerljivo, .print-stranica .podaci-tab th, .print-stranica thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .blok .sadrzaj-bloka { min-height: 0; }
+}
