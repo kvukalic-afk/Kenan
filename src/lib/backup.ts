@@ -8,7 +8,7 @@
 //  - Brisanja iz kopije (tombstones) brišu lokalni zapis ako lokalno nije mijenjan nakon brisanja.
 //  - Postavke se preuzimaju ako su novije, ali PIN i datum zadnje kopije ostaju lokalni.
 
-import type { Obrisano, Postavke, Radionica, Razgovor, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
+import type { Obrisano, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
 
 export interface Snimak {
   ucenici: Ucenik[];
@@ -16,12 +16,13 @@ export interface Snimak {
   radionice: Radionica[];
   saradnja: Saradnja[];
   sifrarnik: StavkaSifrarnika[];
+  razredi: Razred[];
   obrisano: Obrisano[];
   postavke: Partial<Postavke> | null;
 }
 
-export type TabelaKopije = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik';
-export const TABELE_KOPIJE: TabelaKopije[] = ['ucenici', 'razgovori', 'radionice', 'saradnja', 'sifrarnik'];
+export type TabelaKopije = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi';
+export const TABELE_KOPIJE: TabelaKopije[] = ['ucenici', 'razgovori', 'radionice', 'saradnja', 'sifrarnik', 'razredi'];
 
 export const NAZIVI_TABELA: Record<TabelaKopije, string> = {
   ucenici: 'Učenici',
@@ -29,6 +30,7 @@ export const NAZIVI_TABELA: Record<TabelaKopije, string> = {
   radionice: 'Radionice',
   saradnja: 'Saradnja',
   sifrarnik: 'Šifrarnik',
+  razredi: 'Razrednici',
 };
 
 type AnyZapis = { id: string; updatedAt: string; createdAt: string };
@@ -42,7 +44,7 @@ export interface PlanUvoza {
   broj: { dodati: number; azurirati: number; obrisati: number };
 }
 
-const prazno = <T,>(): Record<TabelaKopije, T[]> => ({ ucenici: [], razgovori: [], radionice: [], saradnja: [], sifrarnik: [] });
+const prazno = <T,>(): Record<TabelaKopije, T[]> => ({ ucenici: [], razgovori: [], radionice: [], saradnja: [], sifrarnik: [], razredi: [] });
 
 const novije = (a: string, b: string) => (a || '') > (b || '');
 
@@ -55,14 +57,15 @@ export function napraviPlan(lokalno: Snimak, dolazno: Snimak): PlanUvoza {
   const lokalniTragovi = new Map(lokalno.obrisano.map((o) => [o.id, o]));
 
   for (const tabela of TABELE_KOPIJE) {
-    const lok = lokalno[tabela] as AnyZapis[];
+    const lok = (lokalno[tabela] ?? []) as AnyZapis[];
     const poId = new Map(lok.map((z) => [z.id, z]));
     const poKljucu = new Map<string, AnyZapis>();
     if (tabela === 'ucenici') for (const u of lok as Ucenik[]) poKljucu.set(u.sifra.toUpperCase(), u);
     if (tabela === 'sifrarnik') for (const s of lok as StavkaSifrarnika[]) poKljucu.set(`${s.kategorija}|${s.naziv.toLowerCase()}`, s);
+    if (tabela === 'razredi') for (const r of lok as Razred[]) poKljucu.set(r.razred, r);
     const vidjeno = new Set<string>();
 
-    for (const z of (dolazno[tabela] ?? []) as AnyZapis[]) {
+    for (const z of ((dolazno[tabela] ?? []) as AnyZapis[])) {
       if (!z || !z.id || vidjeno.has(z.id)) continue;
       vidjeno.add(z.id);
       const trag = lokalniTragovi.get(z.id);
@@ -75,10 +78,13 @@ export function napraviPlan(lokalno: Snimak, dolazno: Snimak): PlanUvoza {
         postojeci = poKljucu.get(`${s.kategorija}|${(s.naziv || '').toLowerCase()}`);
       }
 
+      if (!postojeci && tabela === 'razredi') postojeci = poKljucu.get((z as Razred).razred);
+
       if (!postojeci) {
         dodati[tabela].push(z);
         poId.set(z.id, z);
         if (tabela === 'ucenici') poKljucu.set((z as Ucenik).sifra.toUpperCase(), z);
+        if (tabela === 'razredi') poKljucu.set((z as Razred).razred, z);
       } else if (novije(z.updatedAt, postojeci.updatedAt)) {
         // zadrži lokalni ID i datum kreiranja
         azurirati[tabela].push({ ...z, id: postojeci.id, createdAt: postojeci.createdAt });
@@ -93,7 +99,7 @@ export function napraviPlan(lokalno: Snimak, dolazno: Snimak): PlanUvoza {
     if (!lokTrag || novije(trag.deletedAt, lokTrag.deletedAt)) noviTragovi.push(trag);
     const tabela = trag.tabela as TabelaKopije;
     if (!TABELE_KOPIJE.includes(tabela)) continue;
-    const lok = (lokalno[tabela] as AnyZapis[]).find((z) => z.id === trag.id);
+    const lok = ((lokalno[tabela] ?? []) as AnyZapis[]).find((z) => z.id === trag.id);
     if (lok && !novije(lok.updatedAt, trag.deletedAt)) {
       obrisati[tabela].push(trag.id);
       azurirati[tabela] = azurirati[tabela].filter((z) => z.id !== trag.id);

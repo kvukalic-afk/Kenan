@@ -3,8 +3,8 @@
 Aplikacija za školskog psihologa (JU Osnovna škola Stijena). U nju se unose bilješke nakon razgovora s učenicima, zapisnici s radionica i kontakti sa saradnicima. Iz nje se dobijaju dokumenti za print i statistika za izvještaje.
 
 - Radi na mobitelu i računaru i instalira se kao app s ikonicom (PWA).
-- **Radi offline.** Podaci ostaju samo na uređaju (IndexedDB). Nema servera, računa ni praćenja.
-- Koristi **šifre učenika** (npr. `U014`), ne imena.
+- **Radi offline.** Podaci (i imena učenika) ostaju samo na uređaju (IndexedDB). Nema servera, računa ni praćenja.
+- Učenici imaju ime i prezime, šifru (npr. `U014`) i razred. Razrednik se upisuje jednom po razredu.
 
 ---
 
@@ -112,17 +112,17 @@ Uvoz **spaja** podatke bez duplikata:
 
 ---
 
-## 5. Učenici: šifre umjesto imena
+## 5. Učenici, imena i razrednici
 
-- Šifra smije imati samo slova, brojeve, `-` i `_` (do 20 znakova) i automatski se piše velikim slovima (`u014` → `U014`).
-- Ako ukucaš razmak ili nešto što liči na ime, app upozorava: **„Upiši šifru, ne ime“**.
-- Spisak *šifra ↔ ime* čuvaš odvojeno, u svom Excelu, a ne u appu.
+- Svaki učenik ima **ime i prezime**, **šifru** (npr. `U014`) i **razred**. Šifra je stalna oznaka po kojoj se zapisi vežu za učenika, pa se ime može ispraviti bez gubitka zapisa.
+- **Razrednik** se upisuje jednom po razredu (Učenici → **Razrednici**) i automatski se vidi kod svih učenika tog razreda, u kartonu i u dokumentima.
+- Pri unosu razgovora, saradnje ili radionice u polje „Učenik“ možeš kucati **ime, prezime ili šifru**. App nudi učenike s liste i ispod polja pokazuje ime, razred i razrednika.
+- Šifra smije imati samo slova, brojeve, `-` i `_` (do 20 znakova) i automatski se piše velikim slovima.
+- **Imena u dokumentima:** Postavke → „Imena učenika u dokumentima za print i u Excelu“. Kad je isključeno, u printu i Excelu stoji samo šifra (npr. kad dokument ide izvan škole).
 
-**Uvoz popisa:** Učenici → **Uvoz popisa**. Zalijepi dvije kolone iz Excela (šifra, razred) ili izaberi CSV/XLSX fajl. Prije potvrde app pokazuje pregled (novi, promjena razreda, greške).
+**Uvoz popisa:** Učenici → **Uvoz popisa**. Zalijepi kolone iz Excela ili izaberi CSV/XLSX. Prepoznaju se kolone **Šifra, Razred, Ime, Prezime** (ili jedna kolona **Ime i prezime**) i **Razrednik**, bilo kojim redom, ako imaju zaglavlje. Prije potvrde app pokazuje pregled: novi učenici, promjene razreda ili imena i greške.
 
-Nova šifra upisana pri unosu razgovora automatski kreira učenika. App tada traži samo razred.
-
----
+Nova šifra upisana pri unosu razgovora automatski kreira učenika. App tada traži razred, a po želji i ime i prezime.
 
 ## 6. Ostalo što je dobro znati
 

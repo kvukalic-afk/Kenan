@@ -16,7 +16,7 @@ const rad = (datum: string, broj: number, p: Partial<Radionica> = {}): Radionica
 const sar = (datum: string, p: Partial<Saradnja> = {}): Saradnja => ({
   ...baza, id: `s${++n}`, datum, sifra: '', ustanovaOsoba: 'Roditelj/staratelj', opisOsobe: '', nacin: 'Sastanak', razlog: '', dogovorIshod: '', ...p,
 });
-const uc = (sifra: string, p: Partial<Ucenik> = {}): Ucenik => ({ ...baza, id: sifra, sifra, razred: '6-1', status: 'Aktivan', uPracenju: false, napomena: '', ...p });
+const uc = (sifra: string, p: Partial<Ucenik> = {}): Ucenik => ({ ...baza, id: sifra, sifra, ime: '', prezime: '', razred: '6-1', status: 'Aktivan', uPracenju: false, napomena: '', ...p });
 
 describe('školska godina', () => {
   it('od septembra je tekuća godina', () => {

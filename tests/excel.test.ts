@@ -14,10 +14,10 @@ describe('Excel izvoz', () => {
   it('pravi listove s bosanskim zaglavljima, datumima i prelamanjem', async () => {
     const T = '2026-11-01T00:00:00Z';
     const data = await napraviExcel({
-      ucenici: [{ id: '1', sifra: 'U014', razred: '6-2', status: 'Aktivan', uPracenju: true, napomena: '', createdAt: T, updatedAt: T }],
+      ucenici: [{ id: '1', sifra: 'U014', ime: 'Petar', prezime: 'Petrović', razred: '6-2', status: 'Aktivan', uPracenju: true, napomena: '', createdAt: T, updatedAt: T }],
       razgovori: [{ id: 'r', createdAt: T, updatedAt: T, datum: '2026-11-19', sifra: 'U014', razred: '6-2', vrstaKontakta: 'Grupni razgovor', inicirao: '', razlog: 'Izostanci',
         biljeske: 'Dug tekst '.repeat(30), zakljucak: '', preporuke: '', sljedeciKorak: '', datumSljedecegKontakta: '', statusSlucaja: 'Otvoren' }],
-      radionice: [], saradnja: [], sifrarnik: [], obrisano: [], postavke: null,
+      radionice: [], saradnja: [], sifrarnik: [], razredi: [{ id: 'r', razred: '6-2', razrednik: 'Ana Anić', createdAt: T, updatedAt: T }], obrisano: [], postavke: null,
     }, 2026);
     const wb = XLSX.read(data, { type: 'array', cellStyles: true, cellNF: true });
     expect(wb.SheetNames).toEqual(['Učenici', 'Razgovori', 'Radionice', 'Saradnja', 'Statistika']);

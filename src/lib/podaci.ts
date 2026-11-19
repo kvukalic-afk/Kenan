@@ -23,9 +23,20 @@ export function opcije(sve: StavkaSifrarnika[], kat: Kategorija, trenutna?: stri
 }
 
 export async function snimakBaze(): Promise<Snimak> {
-  const [ucenici, razgovori, radionice, saradnja, sifrarnik, obrisano, postavke] = await Promise.all([
+  const [ucenici, razgovori, radionice, saradnja, sifrarnik, razredi, obrisano, postavke] = await Promise.all([
     db.ucenici.toArray(), db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray(),
-    db.sifrarnik.toArray(), db.obrisano.toArray(), db.postavke.get('postavke'),
+    db.sifrarnik.toArray(), db.razredi.toArray(), db.obrisano.toArray(), db.postavke.get('postavke'),
   ]);
-  return { ucenici, razgovori, radionice, saradnja, sifrarnik, obrisano, postavke: postavke ?? null };
+  return { ucenici, razgovori, radionice, saradnja, sifrarnik, razredi, obrisano, postavke: postavke ?? null };
+}
+
+/** Mapa šifra → učenik i razred → razrednik, za prikaz imena svuda u appu. */
+export function useImenik() {
+  const p = useLiveQuery(async () => {
+    const [ucenici, razredi] = await Promise.all([db.ucenici.toArray(), db.razredi.toArray()]);
+    return { ucenici, razredi };
+  }, []);
+  const poSifri = new Map((p?.ucenici ?? []).map((u) => [u.sifra, u]));
+  const razrednik = new Map((p?.razredi ?? []).map((r) => [r.razred, r.razrednik]));
+  return { poSifri, razrednik, ucenici: p?.ucenici ?? [], razredi: p?.razredi ?? [] };
 }

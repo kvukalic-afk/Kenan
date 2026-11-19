@@ -65,14 +65,14 @@ export type StavkaVremena =
   | { vrsta: 'radionica'; z: Radionica }
   | { vrsta: 'saradnja'; z: Saradnja };
 
-export function naslovStavke(s: StavkaVremena): { glavno: string; opis: string } {
-  if (s.vrsta === 'razgovor') return { glavno: `${s.z.sifra}${s.z.razred ? ` · ${s.z.razred}` : ''}`, opis: [s.z.razlog, s.z.vrstaKontakta].filter(Boolean).join(' · ') || s.z.biljeske };
+export function naslovStavke(s: StavkaVremena, imeZa: (sifra: string) => string = (x) => x): { glavno: string; opis: string } {
+  if (s.vrsta === 'razgovor') return { glavno: `${imeZa(s.z.sifra)}${s.z.razred ? ` · ${s.z.razred}` : ''}`, opis: [s.z.razlog, s.z.vrstaKontakta].filter(Boolean).join(' · ') || s.z.biljeske };
   if (s.vrsta === 'radionica') return { glavno: s.z.tema || 'Radionica', opis: [s.z.razred, s.z.oblast].filter(Boolean).join(' · ') };
-  return { glavno: s.z.ustanovaOsoba || 'Saradnja', opis: [s.z.sifra, s.z.opisOsobe, s.z.nacin].filter(Boolean).join(' · ') };
+  return { glavno: s.z.ustanovaOsoba || 'Saradnja', opis: [s.z.sifra && imeZa(s.z.sifra), s.z.opisOsobe, s.z.nacin].filter(Boolean).join(' · ') };
 }
 
-export function RedStavke({ s, prikaziSifru = true }: { s: StavkaVremena; prikaziSifru?: boolean }) {
-  const { glavno, opis } = naslovStavke(s);
+export function RedStavke({ s, prikaziSifru = true, imeZa }: { s: StavkaVremena; prikaziSifru?: boolean; imeZa?: (sifra: string) => string }) {
+  const { glavno, opis } = naslovStavke(s, imeZa);
   const status = s.vrsta === 'razgovor' ? s.z.statusSlucaja : '';
   return (
     <a className="stavka" href={`#/zapis/${s.vrsta}/${s.z.id}`}>

@@ -40,7 +40,7 @@ export async function ucenikPoSifri(sifra: string): Promise<Ucenik | undefined> 
 }
 
 /** Vrati postojećeg učenika ili ga kreiraj (pri snimanju razgovora s novom šifrom). */
-export async function osigurajUcenika(sifra: string, razred: string): Promise<Ucenik> {
+export async function osigurajUcenika(sifra: string, razred: string, ime = '', prezime = ''): Promise<Ucenik> {
   const postojeci = await ucenikPoSifri(sifra);
   if (postojeci) {
     if (!postojeci.razred && razred) {
@@ -52,7 +52,7 @@ export async function osigurajUcenika(sifra: string, razred: string): Promise<Uc
   }
   const t = sada();
   const novi: Ucenik = {
-    id: uuid(), sifra, razred: normalizujRazred(razred), status: 'Aktivan', uPracenju: false, napomena: '',
+    id: uuid(), sifra, ime: ime.trim(), prezime: prezime.trim(), razred: normalizujRazred(razred), status: 'Aktivan', uPracenju: false, napomena: '',
     createdAt: t, updatedAt: t,
   };
   await db.ucenici.add(novi);
@@ -107,9 +107,9 @@ async function sacuvaj<T extends { id: string; createdAt: string; updatedAt: str
   return zapis;
 }
 
-export async function sacuvajRazgovor(podaci: Novo<Razgovor>): Promise<Razgovor> {
+export async function sacuvajRazgovor(podaci: Novo<Razgovor>, noviUcenik?: { ime: string; prezime: string }): Promise<Razgovor> {
   return db.transaction('rw', db.razgovori, db.ucenici, async () => {
-    await osigurajUcenika(podaci.sifra, podaci.razred);
+    await osigurajUcenika(podaci.sifra, podaci.razred, noviUcenik?.ime, noviUcenik?.prezime);
     return sacuvaj<Razgovor>('razgovori', { ...podaci, razred: normalizujRazred(podaci.razred) });
   });
 }
@@ -150,6 +150,20 @@ export async function obrisiUcenika(ucenik: Ucenik): Promise<void> {
       ...razg.map((id) => ({ id, tabela: 'razgovori' as const, deletedAt: t })),
     ]);
   });
+}
+
+// ---------- Razredi i razrednici ----------
+
+export async function postaviRazrednika(razred: string, razrednik: string): Promise<void> {
+  const r = normalizujRazred(razred);
+  if (!r) return;
+  const t = sada();
+  const postojeci = await db.razredi.where('razred').equals(r).first();
+  if (postojeci) {
+    if (postojeci.razrednik !== razrednik.trim()) await db.razredi.put({ ...postojeci, razrednik: razrednik.trim(), updatedAt: t });
+  } else if (razrednik.trim()) {
+    await db.razredi.add({ id: uuid(), razred: r, razrednik: razrednik.trim(), createdAt: t, updatedAt: t });
+  }
 }
 
 // ---------- Šifrarnik ----------

@@ -8,7 +8,8 @@ import { NAZIV_VRSTE, StatusOznaka, Zaglavlje } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { prikaz, prikazVremena } from '../lib/datum';
 import { nazad } from '../lib/router';
-import type { Radionica, Razgovor, Saradnja, VrstaUnosa } from '../types';
+import { punoIme, type Radionica, type Razgovor, type Saradnja, type VrstaUnosa } from '../types';
+import { useImenik } from '../lib/podaci';
 
 const TABELA = { razgovor: 'razgovori', radionica: 'radionice', saradnja: 'saradnja' } as const;
 
@@ -22,7 +23,20 @@ function Blok({ naslov, tekst }: { naslov: string; tekst: string }) {
   return (<section style={{ marginTop: 14 }}><h3>{naslov}</h3><div className="blok-teksta">{tekst}</div></section>);
 }
 
-const sifraLink = (s: string) => (s ? <a href={`#/ucenici/${encodeURIComponent(s)}`}><strong>{s}</strong></a> : '');
+function SifraLink({ s }: { s: string }) {
+  const { poSifri, razrednik } = useImenik();
+  if (!s) return null;
+  const u = poSifri.get(s);
+  const ime = punoIme(u);
+  const r = u?.razred ? razrednik.get(u.razred) : '';
+  return (
+    <>
+      <a href={`#/ucenici/${encodeURIComponent(s)}`}><strong>{ime || s}</strong></a>
+      {ime && <span className="blijedo"> · {s}</span>}
+      {r && <div className="malo blijedo">razrednik: {r}</div>}
+    </>
+  );
+}
 
 export function Detalji({ vrsta, id }: { vrsta: VrstaUnosa; id: string }) {
   const toast = useToast();
@@ -41,7 +55,7 @@ export function Detalji({ vrsta, id }: { vrsta: VrstaUnosa; id: string }) {
       <>
         <dl className="podaci">
           <Red o="Datum">{prikaz(r.datum)}</Red>
-          <Red o="Šifra">{sifraLink(r.sifra)}</Red>
+          <Red o="Učenik"><SifraLink s={r.sifra} /></Red>
           <Red o="Razred">{r.razred}</Red>
           <Red o="Vrsta kontakta">{r.vrstaKontakta}</Red>
           <Red o="Inicirao">{r.inicirao}</Red>
@@ -68,7 +82,7 @@ export function Detalji({ vrsta, id }: { vrsta: VrstaUnosa; id: string }) {
           <Red o="Broj učesnika">{r.brojUcesnika ?? ''}</Red>
           <Red o="Trajanje">{r.trajanjeMin ? `${r.trajanjeMin} min` : ''}</Red>
           <Red o="Učenici za praćenje">
-            {r.ucenicizaPracenje?.length ? <span className="tagovi" style={{ margin: 0 }}>{r.ucenicizaPracenje.map((s) => <a key={s} className="tag" style={{ padding: '2px 10px', textDecoration: 'none' }} href={`#/ucenici/${encodeURIComponent(s)}`}>{s}</a>)}</span> : ''}
+            {r.ucenicizaPracenje?.length ? <span className="tagovi" style={{ margin: 0 }}>{r.ucenicizaPracenje.map((s) => <TagUcenika key={s} s={s} />)}</span> : ''}
           </Red>
         </dl>
         <Blok naslov="Cilj" tekst={r.cilj} />
@@ -84,7 +98,7 @@ export function Detalji({ vrsta, id }: { vrsta: VrstaUnosa; id: string }) {
       <>
         <dl className="podaci">
           <Red o="Datum">{prikaz(s.datum)}</Red>
-          <Red o="Šifra učenika">{sifraLink(s.sifra)}</Red>
+          <Red o="Učenik">{s.sifra ? <SifraLink s={s.sifra} /> : ''}</Red>
           <Red o="Ustanova / osoba">{s.ustanovaOsoba}</Red>
           <Red o="Opis osobe">{s.opisOsobe}</Red>
           <Red o="Način">{s.nacin}</Red>
@@ -115,4 +129,9 @@ export function Detalji({ vrsta, id }: { vrsta: VrstaUnosa; id: string }) {
       )}
     </>
   );
+}
+
+function TagUcenika({ s }: { s: string }) {
+  const { poSifri } = useImenik();
+  return <a className="tag" style={{ padding: '2px 10px', textDecoration: 'none' }} href={`#/ucenici/${encodeURIComponent(s)}`}>{punoIme(poSifri.get(s)) || s}</a>;
 }

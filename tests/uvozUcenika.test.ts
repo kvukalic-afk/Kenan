@@ -17,4 +17,15 @@ describe('uvoz popisa učenika', () => {
     const t = tekstUTabelu('"Razred","Šifra"\n"8-2","U100"');
     expect(pregledajUvoz(t, []).redovi[0]).toMatchObject({ sifra: 'U100', razred: '8-2' });
   });
+  it('čita ime i prezime i razrednika', () => {
+    const t = tekstUTabelu('Šifra;Razred;Ime i prezime;Razrednik\nU001;7-1;Petar Petrović;Ana Anić\nU002;7-1;Marija Ana Marić;Ana Anić');
+    const p = pregledajUvoz(t, [{ sifra: 'U002', razred: '7-1', ime: 'Marija', prezime: '' }]);
+    expect(p.redovi[0]).toMatchObject({ sifra: 'U001', ime: 'Petar', prezime: 'Petrović', stanje: 'novi' });
+    expect(p.redovi[1]).toMatchObject({ ime: 'Marija', prezime: 'Ana Marić', stanje: 'azuriran' });
+    expect(p.razrednici).toEqual({ '7-1': 'Ana Anić' });
+  });
+  it('odvojene kolone Ime i Prezime', () => {
+    const t = tekstUTabelu('Prezime\tIme\tŠifra\tRazred\nPetrović\tPetar\tU005\t6-1');
+    expect(pregledajUvoz(t, []).redovi[0]).toMatchObject({ sifra: 'U005', ime: 'Petar', prezime: 'Petrović', razred: '6-1' });
+  });
 });

@@ -192,44 +192,90 @@ export function DatumPolje({ labela, vrijednost, onChange, obavezno, greska, brz
 
 // ---------- Šifra učenika s autocomplete-om ----------
 
-export interface UcenikZaIzbor { sifra: string; razred: string }
+export interface UcenikZaIzbor { sifra: string; razred: string; ime?: string; prezime?: string }
 
+const veliko = (t: string) => t.toLocaleUpperCase('bs');
+const imeUcenika = (u: UcenikZaIzbor) => [u.ime, u.prezime].filter(Boolean).join(' ');
+
+/** Pretraga po šifri, razredu, imenu ili prezimenu. */
 function useAutocomplete(ucenici: UcenikZaIzbor[], upit: string, iskljuci: string[] = []) {
-  const u = upit.trim().toUpperCase();
+  const u = veliko(upit.trim());
+  const rijeci = u.split(/\s+/).filter(Boolean);
+  const pogodak = (x: UcenikZaIzbor) => {
+    if (!u) return true;
+    if (x.sifra.includes(u.replace(/\s/g, '')) || veliko(x.razred) === u) return true;
+    const ime = veliko(imeUcenika(x));
+    return rijeci.length > 0 && rijeci.every((r) => ime.split(/\s+/).some((d) => d.startsWith(r)));
+  };
   return ucenici
-    .filter((x) => !iskljuci.includes(x.sifra) && (!u || x.sifra.includes(u) || x.razred.toUpperCase() === u))
-    .sort((a, b) => (a.sifra.startsWith(u) ? 0 : 1) - (b.sifra.startsWith(u) ? 0 : 1) || uporediSifre(a.sifra, b.sifra))
+    .filter((x) => !iskljuci.includes(x.sifra) && pogodak(x))
+    .sort((a, b) => (a.sifra.startsWith(u) ? 0 : 1) - (b.sifra.startsWith(u) ? 0 : 1)
+      || (a.prezime ?? '').localeCompare(b.prezime ?? '', 'bs') || uporediSifre(a.sifra, b.sifra))
     .slice(0, 8);
 }
 
-export function SifraPolje({ labela = 'Šifra učenika', vrijednost, onChange, onIzaberi, ucenici, obavezno, greska, autoFokus }: {
+function RedPrijedloga({ u }: { u: UcenikZaIzbor }) {
+  const ime = imeUcenika(u);
+  return (
+    <>
+      <span><strong>{ime || u.sifra}</strong>{ime && <span className="blijedo"> · {u.sifra}</span>}</span>
+      <span className="blijedo">{u.razred}</span>
+    </>
+  );
+}
+
+export function SifraPolje({ labela = 'Učenik (ime ili šifra)', vrijednost, onChange, onIzaberi, ucenici, obavezno, greska, autoFokus, predlozi: predlozenaSifra, razrednik, samoSifra }: {
   labela?: string; vrijednost: string; onChange: (s: string) => void; onIzaberi?: (u: UcenikZaIzbor) => void; ucenici: UcenikZaIzbor[];
-  obavezno?: boolean; greska?: string; autoFokus?: boolean;
+  obavezno?: boolean; greska?: string; autoFokus?: boolean; predlozi?: string; razrednik?: (razred: string) => string | undefined;
+  /** Polje za upis nove šifre (bez pretrage po imenu) – upozorava ako se upiše ime. */
+  samoSifra?: boolean;
 }) {
+  const [sirovoIme, setSirovoIme] = useState(false);
   const id = useId();
   const [otvoreno, setOtvoreno] = useState(false);
   const [aktivni, setAktivni] = useState(-1);
-  const [upozorenje, setUpozorenje] = useState(false);
-  const prijedlozi = useAutocomplete(ucenici, vrijednost);
-  const tacno = ucenici.some((u) => u.sifra === vrijednost);
+  // tekst u polju: šifra ili ime koje se traži
+  const [tekst, setTekst] = useState(vrijednost);
+  useEffect(() => {
+    if (ocistiSifru(tekst) !== vrijednost && !(liciNaIme(tekst) && vrijednost === '')) setTekst(vrijednost);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vrijednost]);
+
+  const trazimIme = !samoSifra && liciNaIme(tekst);
+  const prijedlozi = useAutocomplete(ucenici, tekst);
+  const izabran = ucenici.find((u) => u.sifra === vrijednost);
+  const tacno = !!izabran && !trazimIme;
+  const upozorenje = samoSifra ? sirovoIme : trazimIme && prijedlozi.length === 0 && tekst.trim().length > 2;
 
   const izaberi = (u: UcenikZaIzbor) => {
+    setTekst(u.sifra);
     onChange(u.sifra);
     onIzaberi?.(u);
     setOtvoreno(false);
-    setUpozorenje(false);
   };
 
+  const opisIzabranog = izabran
+    ? [imeUcenika(izabran), izabran.razred && `razred ${izabran.razred}`, izabran.razred && razrednik?.(izabran.razred) && `razrednik: ${razrednik(izabran.razred)}`].filter(Boolean).join(' · ')
+    : '';
+
   return (
-    <Polje labela={labela} id={id} obavezno={obavezno} greska={greska} upozorenje={upozorenje ? PORUKA_IME : undefined}
-      pomoc={!upozorenje && !greska ? 'Slova, brojevi, - i _ (do 20 znakova). Npr. U014' : undefined}>
+    <Polje labela={labela} id={id} obavezno={obavezno} greska={greska}
+      upozorenje={upozorenje ? (samoSifra ? PORUKA_IME : 'Nema učenika s tim imenom. Izaberi s liste ili upiši šifru (npr. U014).') : undefined}
+      pomoc={!upozorenje && !greska ? (samoSifra ? 'Slova, brojevi, - i _ (do 20 znakova). Npr. U014' : opisIzabranog ? <strong style={{ color: 'var(--primarna)' }}>✓ {opisIzabranog}</strong> : 'Kucaj ime, prezime ili šifru (npr. U014).') : undefined}>
       <div className="autocomplete">
-        <input id={id} type="text" className="sifra-unos" value={vrijednost} autoComplete="off" autoCapitalize="characters" spellCheck={false}
-          autoFocus={autoFokus} maxLength={40} role="combobox" aria-expanded={otvoreno && prijedlozi.length > 0} aria-controls={`${id}-lista`} aria-autocomplete="list"
+        <input id={id} type="text" className={trazimIme ? '' : 'sifra-unos'} value={tekst} autoComplete="off" spellCheck={false}
+          autoFocus={autoFokus} maxLength={60} role="combobox" aria-expanded={otvoreno && prijedlozi.length > 0} aria-controls={`${id}-lista`} aria-autocomplete="list"
           onChange={(e) => {
             const sirovo = e.target.value;
-            setUpozorenje(liciNaIme(sirovo));
-            onChange(ocistiSifru(sirovo));
+            setSirovoIme(liciNaIme(sirovo));
+            if (!samoSifra && liciNaIme(sirovo)) {
+              setTekst(sirovo);
+              if (vrijednost) onChange('');
+            } else {
+              const c = ocistiSifru(sirovo);
+              setTekst(c);
+              onChange(c);
+            }
             setOtvoreno(true);
             setAktivni(-1);
           }}
@@ -239,7 +285,7 @@ export function SifraPolje({ labela = 'Šifra učenika', vrijednost, onChange, o
             if (!otvoreno || !prijedlozi.length) return;
             if (e.key === 'ArrowDown') { e.preventDefault(); setAktivni((a) => Math.min(a + 1, prijedlozi.length - 1)); }
             else if (e.key === 'ArrowUp') { e.preventDefault(); setAktivni((a) => Math.max(a - 1, 0)); }
-            else if (e.key === 'Enter' && aktivni >= 0) { e.preventDefault(); izaberi(prijedlozi[aktivni]); }
+            else if (e.key === 'Enter' && (aktivni >= 0 || (trazimIme && prijedlozi.length === 1))) { e.preventDefault(); izaberi(prijedlozi[Math.max(aktivni, 0)]); }
             else if (e.key === 'Escape') setOtvoreno(false);
           }} />
         {otvoreno && prijedlozi.length > 0 && !(tacno && prijedlozi.length === 1) && (
@@ -247,13 +293,18 @@ export function SifraPolje({ labela = 'Šifra učenika', vrijednost, onChange, o
             {prijedlozi.map((u, i) => (
               <li key={u.sifra} role="option" aria-selected={i === aktivni}>
                 <button type="button" className={i === aktivni ? 'aktivno' : ''} onMouseDown={(e) => e.preventDefault()} onClick={() => izaberi(u)}>
-                  <strong>{u.sifra}</strong><span className="blijedo">{u.razred}</span>
+                  <RedPrijedloga u={u} />
                 </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+      {predlozenaSifra && !vrijednost && !trazimIme && (
+        <div className="brzi-datumi">
+          <button type="button" className="chip mali" onClick={() => { setTekst(predlozenaSifra); onChange(predlozenaSifra); }}>Koristi slobodnu šifru {predlozenaSifra}</button>
+        </div>
+      )}
     </Polje>
   );
 }
@@ -277,8 +328,8 @@ export function TagSifre({ labela, vrijednost, onChange, ucenici }: {
   };
 
   return (
-    <Polje labela={labela} id={id} upozorenje={upozorenje ? PORUKA_IME : undefined}
-      pomoc="Upiši šifru i pritisni Enter ili zarez. Učenici će vidjeti ovu radionicu u svom kartonu.">
+    <Polje labela={labela} id={id} upozorenje={upozorenje ? 'Nema učenika s tim imenom. Izaberi s liste ili upiši šifru.' : undefined}
+      pomoc="Kucaj ime ili šifru i izaberi s liste (ili Enter). Radionica će se vidjeti u kartonu tih učenika.">
       {vrijednost.length > 0 && (
         <div className="tagovi">
           {vrijednost.map((s) => (
@@ -289,27 +340,31 @@ export function TagSifre({ labela, vrijednost, onChange, ucenici }: {
         </div>
       )}
       <div className="autocomplete razdvoji">
-        <input id={id} type="text" className="sifra-unos rastegni" value={unos} autoComplete="off" autoCapitalize="characters" spellCheck={false} placeholder="npr. U014"
+        <input id={id} type="text" className="rastegni" value={unos} autoComplete="off" spellCheck={false} placeholder="ime ili šifra"
           onChange={(e) => {
             const v = e.target.value;
             if (/[,;\n]/.test(v)) { v.split(/[,;\n]/).forEach((x) => x.trim() && dodaj(x)); return; }
-            setUpozorenje(liciNaIme(v));
-            setUnos(ocistiSifru(v));
+            setUpozorenje(false);
+            setUnos(liciNaIme(v) ? v : ocistiSifru(v));
             setOtvoreno(true);
           }}
           onFocus={() => setOtvoreno(true)}
           onBlur={() => setTimeout(() => setOtvoreno(false), 150)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') { e.preventDefault(); if (unos) dodaj(unos); }
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              if (liciNaIme(unos)) { if (prijedlozi.length === 1) dodaj(prijedlozi[0].sifra); else setUpozorenje(prijedlozi.length === 0); }
+              else if (unos) dodaj(unos);
+            }
             else if (e.key === 'Backspace' && !unos && vrijednost.length) onChange(vrijednost.slice(0, -1));
           }} style={{ flex: 1 }} />
-        <button type="button" className="dugme" onClick={() => unos && dodaj(unos)} disabled={!unos}>Dodaj</button>
+        <button type="button" className="dugme" onClick={() => (liciNaIme(unos) ? prijedlozi.length === 1 && dodaj(prijedlozi[0].sifra) : unos && dodaj(unos))} disabled={!unos}>Dodaj</button>
         {otvoreno && unos && prijedlozi.length > 0 && (
           <ul role="listbox">
             {prijedlozi.map((u) => (
               <li key={u.sifra}>
                 <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => dodaj(u.sifra)}>
-                  <strong>{u.sifra}</strong><span className="blijedo">{u.razred}</span>
+                  <RedPrijedloga u={u} />
                 </button>
               </li>
             ))}

@@ -300,6 +300,7 @@ input.sifra-unos { text-transform: uppercase; font-weight: 700; letter-spacing: 
 /* ---------- Detalji, karton ---------- */
 
 .karton-zaglavlje { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.ime-krupno { font-size: 1.6rem; font-weight: 800; line-height: 1.15; margin-bottom: 6px; }
 .karton-zaglavlje .sifra-krupno { font-size: 2.2rem; font-weight: 800; letter-spacing: 0.03em; line-height: 1; }
 .podaci { display: grid; grid-template-columns: minmax(110px, 34%) 1fr; gap: 0; margin: 0; }
 .podaci dt { color: var(--tekst-blijed); font-size: 0.875rem; padding: 8px 8px 8px 0; border-top: 1px solid var(--rub); }

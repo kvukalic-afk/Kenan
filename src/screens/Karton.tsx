@@ -9,19 +9,21 @@ import { useToast } from '../components/Toast';
 import { idi } from '../lib/router';
 import { jeIspravnaSifra } from '../lib/sifra';
 import { zadnjiRazgovorPoUceniku } from '../lib/zakazano';
-import { STATUSI_UCENIKA, type StatusUcenika, type Ucenik } from '../types';
+import { punoIme, STATUSI_UCENIKA, type StatusUcenika, type Ucenik } from '../types';
 
 export function Karton({ sifra }: { sifra: string }) {
   const toast = useToast();
   const [uredi, setUredi] = useState(false);
   const podaci = useLiveQuery(async () => {
-    const [ucenik, razgovori, saradnja, radionice] = await Promise.all([
+    const [ucenik, razgovori, saradnja, radionice, razredi] = await Promise.all([
       db.ucenici.where('sifra').equals(sifra).first(),
       db.razgovori.where('sifra').equals(sifra).toArray(),
       db.saradnja.where('sifra').equals(sifra).toArray(),
       db.radionice.where('ucenicizaPracenje').equals(sifra).toArray(),
+      db.razredi.toArray(),
     ]);
-    return { ucenik, razgovori, saradnja, radionice };
+    const razrednik = razredi.find((r) => r.razred === ucenik?.razred)?.razrednik ?? '';
+    return { ucenik, razgovori, saradnja, radionice, razrednik };
   }, [sifra]);
 
   if (!podaci) return <Zaglavlje naslov={sifra} nazadNa="/ucenici" />;
@@ -47,9 +49,11 @@ export function Karton({ sifra }: { sifra: string }) {
       <Zaglavlje naslov="Karton učenika" nazadNa="/ucenici" />
       <main className="sadrzaj">
         <section className="kartica">
+          {punoIme(ucenik) && <div className="ime-krupno">{punoIme(ucenik)}</div>}
           <div className="karton-zaglavlje">
-            <span className="sifra-krupno">{ucenik.sifra}</span>
+            <span className={punoIme(ucenik) ? 'oznaka' : 'sifra-krupno'}>{ucenik.sifra}</span>
             <span><span className="blijedo">Razred</span> <strong>{ucenik.razred || '–'}</strong></span>
+            {podaci.razrednik && <span><span className="blijedo">Razrednik</span> <strong>{podaci.razrednik}</strong></span>}
             <span className={`oznaka ${ucenik.status === 'Aktivan' ? 'zelena' : ''}`}>{ucenik.status}</span>
             {zadnji && <StatusOznaka status={zadnji.statusSlucaja} />}
           </div>
@@ -92,7 +96,7 @@ function UrediUcenika({ ucenik, onZatvori }: { ucenik: Ucenik; onZatvori: () => 
   const sacuvaj = async () => {
     if (!jeIspravnaSifra(p.sifra)) return setGreska('Upiši ispravnu šifru.');
     if (p.sifra !== ucenik.sifra && sviUcenici.some((u) => u.sifra === p.sifra)) return setGreska('Ta šifra je već zauzeta.');
-    await sacuvajUcenika(p);
+    await sacuvajUcenika({ ...p, ime: (p.ime ?? '').trim(), prezime: (p.prezime ?? '').trim() });
     toast('Sačuvano ✓');
     onZatvori();
     if (p.sifra !== ucenik.sifra) idi(`/ucenici/${encodeURIComponent(p.sifra)}`, true);
@@ -101,7 +105,15 @@ function UrediUcenika({ ucenik, onZatvori }: { ucenik: Ucenik; onZatvori: () => 
   return (
     <Modal naslov="Uredi učenika" onZatvori={onZatvori}>
       <form onSubmit={(e) => { e.preventDefault(); void sacuvaj(); }}>
-        <SifraPolje vrijednost={p.sifra} onChange={(s) => { setP({ ...p, sifra: s }); setGreska(''); }} ucenici={[]} obavezno greska={greska} />
+        <div className="dva-stupca">
+          <Polje labela="Ime" id="u-ime">
+            <input id="u-ime" type="text" value={p.ime ?? ''} autoCapitalize="words" onChange={(e) => setP({ ...p, ime: e.target.value })} />
+          </Polje>
+          <Polje labela="Prezime" id="u-prezime">
+            <input id="u-prezime" type="text" value={p.prezime ?? ''} autoCapitalize="words" onChange={(e) => setP({ ...p, prezime: e.target.value })} />
+          </Polje>
+        </div>
+        <SifraPolje labela="Šifra" samoSifra vrijednost={p.sifra} onChange={(s) => { setP({ ...p, sifra: s }); setGreska(''); }} ucenici={[]} obavezno greska={greska} />
         {p.sifra !== ucenik.sifra && <p className="malo blijedo">Promjena šifre se prenosi na sve razgovore, saradnju i radionice ovog učenika.</p>}
         <Polje labela="Razred" id="u-razred">
           <input id="u-razred" type="text" value={p.razred} onChange={(e) => setP({ ...p, razred: e.target.value })} />
@@ -122,7 +134,7 @@ function UrediUcenika({ ucenik, onZatvori }: { ucenik: Ucenik; onZatvori: () => 
       </form>
       {brisanje && (
         <Potvrda naslov="Obrisati učenika?" opasno potvrdi="Obriši"
-          tekst={<p>Biće obrisan učenik <strong>{ucenik.sifra}</strong> i svi njegovi razgovori. Kontakti saradnje ostaju, ali bez šifre. Ovo se ne može poništiti.</p>}
+          tekst={<p>Biće obrisan učenik <strong>{punoIme(ucenik) || ucenik.sifra}</strong> ({ucenik.sifra}) i svi njegovi razgovori. Kontakti saradnje ostaju, ali bez šifre. Ovo se ne može poništiti.</p>}
           onOdustani={() => setBrisanje(false)}
           onPotvrdi={async () => { await obrisiUcenika(ucenik); toast('Učenik obrisan'); onZatvori(); idi('/ucenici', true); }} />
       )}

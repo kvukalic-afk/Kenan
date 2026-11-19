@@ -3,7 +3,7 @@ import { KATEGORIJE } from '../db/defaults';
 import { dodajStavku, izmijeniStavku, obrisiSvePodatke, sacuvajPostavke } from '../db/repo';
 import { izveziKopiju, NijeKopija, primijeniPlan, procitajKopiju } from '../db/kopija';
 import { Ikona } from '../components/Ikona';
-import { Modal, Polje, Potvrda } from '../components/Polja';
+import { Modal, Polje, Potvrda, Prekidac } from '../components/Polja';
 import { Zaglavlje } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { NAZIVI_TABELA, TABELE_KOPIJE, type PlanUvoza } from '../lib/backup';
@@ -54,6 +54,13 @@ export function Postavke({ otvoriKopiju }: { otvoriKopiju?: boolean }) {
         </section>
 
         <section className="kartica">
+          <h2>Imena učenika</h2>
+          <Prekidac labela="Imena učenika u dokumentima za print i u Excelu" vrijednost={postavke.imenaUDokumentima !== false}
+            onChange={(v) => sacuvajOsnovno({ imenaUDokumentima: v })} />
+          <p className="malo blijedo">U appu se imena uvijek vide. Isključi ovo ako dokument ili Excel daješ nekome kome ime učenika ne treba – tada stoji samo šifra.</p>
+        </section>
+
+        <section className="kartica">
           <h2>PIN za otključavanje</h2>
           <p className="malo blijedo">
             {postavke.pinHash ? 'PIN je uključen. App se zaključava pri otvaranju i nakon 5 minuta neaktivnosti.' : 'PIN je isključen. Preporuka: uključi PIN (4–6 cifara).'}
@@ -77,7 +84,7 @@ export function Postavke({ otvoriKopiju }: { otvoriKopiju?: boolean }) {
           </div>
           <div className="red-dugmadi" style={{ marginTop: 8 }}>
             <button type="button" className="dugme" onClick={async () => {
-              const data = await napraviExcel(await snimakBaze(), postavke.skolskaGodinaPocetak);
+              const data = await napraviExcel(await snimakBaze(), postavke.skolskaGodinaPocetak, postavke.imenaUDokumentima !== false);
               preuzmi(data as BlobPart, nazivExcelFajla(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
               toast('Excel fajl je preuzet ✓');
             }}><Ikona ime="excel" /> Izvezi sve u Excel</button>
@@ -93,8 +100,8 @@ export function Postavke({ otvoriKopiju }: { otvoriKopiju?: boolean }) {
         <section className="kartica" style={{ marginTop: 16 }}>
           <h2>O aplikaciji</h2>
           <p className="malo">
-            Svi podaci su samo na ovom uređaju (IndexedDB u pregledniku). Nema servera, računa ni praćenja.
-            Podaci napuštaju uređaj samo kad ih izvezeš (kopija, Excel, print).
+            Svi podaci, uključujući imena učenika, su samo na ovom uređaju (IndexedDB u pregledniku). Nema servera, računa ni praćenja.
+            Podaci napuštaju uređaj samo kad ih izvezeš (šifrovana kopija, Excel, print).
           </p>
           <p className="malo blijedo">PIN zaključava ekran aplikacije. Za punu zaštitu drži telefon i računar zaključanim i čuvaj šifrovanu kopiju.</p>
           <button type="button" className="dugme opasno" onClick={() => setBrisanje(true)}><Ikona ime="obrisi" /> Obriši sve podatke</button>

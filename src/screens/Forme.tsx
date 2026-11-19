@@ -8,7 +8,7 @@ import { useToast } from '../components/Toast';
 import { useForma } from '../lib/forma';
 import { danasIso, prikazVremena } from '../lib/datum';
 import { idi, nazad } from '../lib/router';
-import { opcije, useSifrarnik } from '../lib/podaci';
+import { opcije, useImenik, useSifrarnik } from '../lib/podaci';
 import { jeIspravnaSifra, normalizujRazred } from '../lib/sifra';
 import type { Radionica, Razgovor, Saradnja, VrstaUnosa } from '../types';
 
@@ -131,6 +131,8 @@ export function FormaRazgovor({ editId, sifra: pocetnaSifra, izNacrta }: { editI
   const [snimanje, setSnimanje] = useState(false);
   const [sacuvanId, setSacuvanId] = useState('');
   const { odustani, dijalog } = useOdustajanje(f.izmijenjeno, f.zavrsi, '/');
+  const [noviIme, setNoviIme] = useState({ ime: '', prezime: '' });
+  const imenik = useImenik();
 
   const p = f.podaci;
   if (!p) return null;
@@ -140,7 +142,7 @@ export function FormaRazgovor({ editId, sifra: pocetnaSifra, izNacrta }: { editI
   const sacuvaj = async () => {
     const g: Record<string, string> = {};
     if (!p.datum) g.datum = 'Upiši datum.';
-    if (!p.sifra) g.sifra = 'Upiši šifru učenika.';
+    if (!p.sifra) g.sifra = 'Izaberi učenika s liste ili upiši šifru.';
     else if (!jeIspravnaSifra(p.sifra)) g.sifra = 'Šifra smije imati samo slova, brojeve, - i _ (do 20 znakova).';
     if (noviUcenik && !p.razred.trim()) g.razred = 'Nov učenik – upiši razred (npr. 6-2).';
     setGreske(g);
@@ -148,7 +150,7 @@ export function FormaRazgovor({ editId, sifra: pocetnaSifra, izNacrta }: { editI
     if (Object.keys(g).length) return;
     setSnimanje(true);
     try {
-      const z = await sacuvajRazgovor({ ...p, razred: normalizujRazred(p.razred || postojeci?.razred || '') });
+      const z = await sacuvajRazgovor({ ...p, razred: normalizujRazred(p.razred || postojeci?.razred || '') }, noviUcenik ? noviIme : undefined);
       await f.zavrsi();
       toast('Sačuvano ✓');
       setSacuvanId(z.id);
@@ -171,8 +173,18 @@ export function FormaRazgovor({ editId, sifra: pocetnaSifra, izNacrta }: { editI
               const u = ucenici.find((x) => x.sifra === s);
               if (u) postavi('razred', u.razred);
             }}
-            onIzaberi={(u) => postavi('razred', u.razred)} />
+            onIzaberi={(u) => postavi('razred', u.razred)} razrednik={(r) => imenik.razrednik.get(r)} />
         </div>
+        {noviUcenik && (
+          <div className="dva-stupca">
+            <Polje labela="Ime (nov učenik)" id="novi-ime">
+              <input id="novi-ime" type="text" value={noviIme.ime} autoCapitalize="words" onChange={(e) => setNoviIme({ ...noviIme, ime: e.target.value })} />
+            </Polje>
+            <Polje labela="Prezime" id="novi-prezime">
+              <input id="novi-prezime" type="text" value={noviIme.prezime} autoCapitalize="words" onChange={(e) => setNoviIme({ ...noviIme, prezime: e.target.value })} />
+            </Polje>
+          </div>
+        )}
         {(noviUcenik || postojeci || p.razred) && (
           <Polje labela={noviUcenik ? 'Razred (nov učenik)' : 'Razred'} id="razred" obavezno={noviUcenik} greska={greske.razred}
             pomoc={noviUcenik ? 'Učenik s ovom šifrom još ne postoji – biće kreiran pri snimanju.' : 'Preuzeto iz kartona učenika; može se promijeniti za ovaj razgovor.'}>
@@ -325,11 +337,11 @@ export function FormaSaradnja({ editId, sifra: pocetnaSifra, izNacrta }: { editI
         onSacuvaj={sacuvaj} onOdustani={odustani} snimanje={snimanje}>
         <div className="dva-stupca">
           <DatumPolje labela="Datum" obavezno vrijednost={p.datum} onChange={(v) => postavi('datum', v)} greska={greske.datum} />
-          <SifraPolje labela="Šifra učenika (opcionalno)" vrijednost={p.sifra} greska={greske.sifra} ucenici={ucenici} onChange={(s) => postavi('sifra', s)} />
+          <SifraPolje labela="Učenik (opcionalno)" vrijednost={p.sifra} greska={greske.sifra} ucenici={ucenici} onChange={(s) => postavi('sifra', s)} />
         </div>
         <Chipovi id="ustanova" labela="Ustanova / osoba" obavezno greska={greske.ustanovaOsoba} opcije={opcije(sif, 'ustanovaOsoba', p.ustanovaOsoba)}
           vrijednost={p.ustanovaOsoba} onChange={(v) => postavi('ustanovaOsoba', v)} />
-        <Polje labela="Opis osobe" id="s-opis" pomoc='npr. "razrednik 6-2" – bez imena'>
+        <Polje labela="Opis osobe" id="s-opis" pomoc='npr. "razrednica 6-2, Ana Anić" ili "majka"'>
           <input id="s-opis" type="text" value={p.opisOsobe} onChange={(e) => postavi('opisOsobe', e.target.value)} />
         </Polje>
         <Chipovi id="nacin" labela="Način" opcije={opcije(sif, 'nacin', p.nacin)} vrijednost={p.nacin} onChange={(v) => postavi('nacin', v)} />

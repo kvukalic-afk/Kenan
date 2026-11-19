@@ -5,10 +5,10 @@ import { Ikona } from '../components/Ikona';
 import { TabelaMjeseci, TabelaRaspodjele } from '../components/StatTabele';
 import { danasIso, nazivSkolskeGodine, prikaz } from '../lib/datum';
 import { nazad } from '../lib/router';
-import { usePostavke } from '../lib/podaci';
+import { useImenik, usePostavke } from '../lib/podaci';
 import { izracunajStatistiku, sazetak, type Period, type Statistika } from '../lib/statistika';
 import { zadnjiRazgovorPoUceniku } from '../lib/zakazano';
-import type { Postavke, Radionica, Razgovor, Saradnja } from '../types';
+import { punoIme, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
 import './print.css';
 
 function Dokument({ naslov, podnaslov, nazivFajla, postavke, children }: {
@@ -81,6 +81,20 @@ function Blok({ naslov, tekst }: { naslov: string; tekst: string }) {
   );
 }
 
+/** Ime i razrednik učenika za dokumente (ako je u Postavkama uključeno). */
+function useUcenikZaDokument(sifra: string) {
+  const postavke = usePostavke();
+  const { poSifri, razrednik } = useImenik();
+  const imena = postavke.imenaUDokumentima !== false;
+  const u = poSifri.get(sifra);
+  return {
+    imena,
+    ime: imena ? punoIme(u) : '',
+    razrednik: u?.razred ? razrednik.get(u.razred) ?? '' : '',
+    imeZa: (s: string) => (imena && punoIme(poSifri.get(s)) ? `${punoIme(poSifri.get(s))} (${s})` : s),
+  };
+}
+
 function Ucitavanje() {
   return <p style={{ padding: 24 }}>Učitavam…</p>;
 }
@@ -90,15 +104,18 @@ function Ucitavanje() {
 export function PrintRazgovor({ id }: { id: string }) {
   const postavke = usePostavke();
   const r = useLiveQuery(() => db.razgovori.get(id), [id], null as Razgovor | null | undefined);
+  const uc = useUcenikZaDokument(r?.sifra ?? '');
   if (r === null) return <Ucitavanje />;
   if (!r) return <p style={{ padding: 24 }}>Razgovor ne postoji.</p>;
   return (
-    <Dokument naslov="IZVJEŠTAJ O OBAVLJENOM RAZGOVORU" nazivFajla={`Razgovor_${r.sifra}_${r.datum}`} postavke={postavke}>
+    <Dokument naslov="IZVJEŠTAJ O OBAVLJENOM RAZGOVORU" nazivFajla={`Razgovor_${uc.ime ? uc.ime.replace(/\s+/g, '_') + '_' : ''}${r.sifra}_${r.datum}`} postavke={postavke}>
       <table className="podaci-tab">
         <tbody>
           <Red o="Datum razgovora" v={prikaz(r.datum)} />
-          <Red o="Šifra učenika" v={<strong>{r.sifra}</strong>} />
+          {uc.imena && <Red o="Ime i prezime učenika" v={<strong>{uc.ime}</strong>} />}
+          <Red o="Šifra učenika" v={uc.imena ? r.sifra : <strong>{r.sifra}</strong>} />
           <Red o="Razred" v={r.razred} />
+          <Red o="Razrednik" v={uc.razrednik} />
           <Red o="Vrsta kontakta" v={r.vrstaKontakta} />
           <Red o="Kontakt inicirao" v={r.inicirao} />
           <Red o="Razlog" v={r.razlog} />
@@ -119,6 +136,7 @@ export function PrintRazgovor({ id }: { id: string }) {
 export function PrintRadionica({ id }: { id: string }) {
   const postavke = usePostavke();
   const r = useLiveQuery(() => db.radionice.get(id), [id], null as Radionica | null | undefined);
+  const uc = useUcenikZaDokument('');
   if (r === null) return <Ucitavanje />;
   if (!r) return <p style={{ padding: 24 }}>Radionica ne postoji.</p>;
   return (
@@ -132,7 +150,7 @@ export function PrintRadionica({ id }: { id: string }) {
           <Red o="Ciljna grupa" v={r.ciljnaGrupa} />
           <Red o="Broj učesnika" v={r.brojUcesnika ?? ''} />
           <Red o="Trajanje" v={r.trajanjeMin ? `${r.trajanjeMin} min` : ''} />
-          <Red o="Učenici za praćenje" v={(r.ucenicizaPracenje ?? []).join(', ')} />
+          <Red o="Učenici za praćenje" v={(r.ucenicizaPracenje ?? []).map(uc.imeZa).join(', ')} />
         </tbody>
       </table>
       <Blok naslov="Cilj" tekst={r.cilj} />
@@ -149,6 +167,7 @@ export function PrintRadionica({ id }: { id: string }) {
 export function PrintSaradnja({ id }: { id: string }) {
   const postavke = usePostavke();
   const s = useLiveQuery(() => db.saradnja.get(id), [id], null as Saradnja | null | undefined);
+  const uc = useUcenikZaDokument(s?.sifra ?? '');
   if (s === null) return <Ucitavanje />;
   if (!s) return <p style={{ padding: 24 }}>Zapis ne postoji.</p>;
   return (
@@ -156,7 +175,8 @@ export function PrintSaradnja({ id }: { id: string }) {
       <table className="podaci-tab">
         <tbody>
           <Red o="Datum" v={prikaz(s.datum)} />
-          <Red o="Šifra učenika" v={s.sifra} />
+          <Red o="Učenik" v={s.sifra ? uc.imeZa(s.sifra) : ''} />
+          {s.sifra && <Red o="Razrednik" v={uc.razrednik} />}
           <Red o="Ustanova / osoba" v={s.ustanovaOsoba} />
           <Red o="Opis osobe" v={s.opisOsobe} />
           <Red o="Način kontakta" v={s.nacin} />
@@ -181,6 +201,7 @@ export function PrintKarton({ sifra }: { sifra: string }) {
     ]);
     return { ucenik, razgovori, saradnja, radionice };
   }, [sifra]);
+  const uc = useUcenikZaDokument(sifra);
   if (!p) return <Ucitavanje />;
   if (!p.ucenik) return <p style={{ padding: 24 }}>Učenik ne postoji.</p>;
   const u = p.ucenik;
@@ -189,11 +210,13 @@ export function PrintKarton({ sifra }: { sifra: string }) {
   const zadnji = zadnjiRazgovorPoUceniku(razg).get(sifra);
 
   return (
-    <Dokument naslov="KARTON UČENIKA" nazivFajla={`Karton_${u.sifra}`} postavke={postavke}>
+    <Dokument naslov="KARTON UČENIKA" nazivFajla={`Karton_${uc.ime ? uc.ime.replace(/\s+/g, '_') + '_' : ''}${u.sifra}`} postavke={postavke}>
       <table className="podaci-tab">
         <tbody>
-          <Red o="Šifra učenika" v={<strong>{u.sifra}</strong>} />
+          {uc.imena && <Red o="Ime i prezime" v={<strong>{uc.ime}</strong>} />}
+          <Red o="Šifra učenika" v={uc.imena ? u.sifra : <strong>{u.sifra}</strong>} />
           <Red o="Razred" v={u.razred} />
+          <Red o="Razrednik" v={uc.razrednik} />
           <Red o="Status" v={u.status} />
           <Red o="U praćenju" v={u.uPracenju ? 'Da' : 'Ne'} />
           <Red o="Status zadnjeg slučaja" v={zadnji?.statusSlucaja ?? ''} />

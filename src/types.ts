@@ -9,10 +9,18 @@ export const STATUSI_UCENIKA: StatusUcenika[] = ['Aktivan', 'Ispisan', 'Premješ
 
 export interface Ucenik extends Zapis {
   sifra: string;
+  ime: string;
+  prezime: string;
   razred: string;
   status: StatusUcenika;
   uPracenju: boolean;
   napomena: string;
+}
+
+/** Razred (odjeljenje) i njegov razrednik – razrednik se upisuje jednom po razredu. */
+export interface Razred extends Zapis {
+  razred: string; // npr. "7-1"
+  razrednik: string;
 }
 
 export interface Razgovor extends Zapis {
@@ -62,6 +70,7 @@ export interface Postavke {
   imePsihologa: string;
   skolskaGodinaPocetak: number;
   pinHash: string; // '' = PIN isključen; format "salt:hash" (base64)
+  imenaUDokumentima?: boolean; // imena učenika u printu i Excelu (zadano: da)
   zadnjaKopija: string; // ISO ili ''
   updatedAt: string;
 }
@@ -83,7 +92,7 @@ export interface StavkaSifrarnika extends Zapis {
   sakriveno: boolean;
 }
 
-export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik';
+export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi';
 
 export interface Obrisano {
   id: string;
@@ -99,4 +108,9 @@ export interface Nacrt {
   editId: string;
   podaci: Record<string, unknown>;
   updatedAt: string;
+}
+
+export function punoIme(u: Pick<Ucenik, 'ime' | 'prezime'> | undefined | null): string {
+  if (!u) return '';
+  return [u.ime, u.prezime].map((x) => (x ?? '').trim()).filter(Boolean).join(' ');
 }

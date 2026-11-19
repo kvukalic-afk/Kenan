@@ -105,15 +105,28 @@ export function nazivExcelFajla(d = new Date()): string {
   return `Evidencija_psiholog_${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.xlsx`;
 }
 
-export async function napraviExcel(s: Snimak, skolskaGodina: number): Promise<Uint8Array> {
+export async function napraviExcel(s: Snimak, skolskaGodina: number, imena = true): Promise<Uint8Array> {
   const X = await import('xlsx');
   const wb = X.utils.book_new();
   const dn = (b: boolean) => (b ? 'da' : 'ne');
+  const razrednik = new Map((s.razredi ?? []).map((r) => [r.razred, r.razrednik]));
+  const poSifri = new Map(s.ucenici.map((u) => [u.sifra, u]));
+  const imeZa = (sifra: string) => {
+    const u = poSifri.get(sifra);
+    return u ? [u.ime, u.prezime].filter(Boolean).join(' ') : '';
+  };
+  const kolonaImena = <T,>(sifra: (r: T) => string): Kolona<T>[] => (imena ? [{ naslov: 'Ime i prezime', sirina: 24, vrijednost: (r) => imeZa(sifra(r)) }] : []);
 
-  const ucenici = [...s.ucenici].sort((a, b) => a.razred.localeCompare(b.razred, 'bs', { numeric: true }) || a.sifra.localeCompare(b.sifra, 'bs', { numeric: true }));
+  const ucenici = [...s.ucenici].sort((a, b) => a.razred.localeCompare(b.razred, 'bs', { numeric: true })
+    || (a.prezime ?? '').localeCompare(b.prezime ?? '', 'bs') || a.sifra.localeCompare(b.sifra, 'bs', { numeric: true }));
   X.utils.book_append_sheet(wb, napraviList(X, ucenici, [
     { naslov: 'Šifra', sirina: 10, vrijednost: (u) => u.sifra },
+    ...(imena ? [
+      { naslov: 'Prezime', sirina: 18, vrijednost: (u: (typeof ucenici)[number]) => u.prezime },
+      { naslov: 'Ime', sirina: 14, vrijednost: (u: (typeof ucenici)[number]) => u.ime },
+    ] : []),
     { naslov: 'Razred', sirina: 9, vrijednost: (u) => u.razred },
+    { naslov: 'Razrednik', sirina: 22, vrijednost: (u) => razrednik.get(u.razred) ?? '' },
     { naslov: 'Status', sirina: 12, vrijednost: (u) => u.status },
     { naslov: 'U praćenju', sirina: 11, vrijednost: (u) => dn(u.uPracenju) },
     { naslov: 'Napomena', sirina: 50, vrijednost: (u) => u.napomena },
@@ -123,6 +136,7 @@ export async function napraviExcel(s: Snimak, skolskaGodina: number): Promise<Ui
   X.utils.book_append_sheet(wb, napraviList(X, razgovori, [
     { naslov: 'Datum', sirina: 11, vrijednost: (r) => r.datum, datum: true },
     { naslov: 'Šifra', sirina: 9, vrijednost: (r) => r.sifra },
+    ...kolonaImena<(typeof razgovori)[number]>((r) => r.sifra),
     { naslov: 'Razred', sirina: 8, vrijednost: (r) => r.razred },
     { naslov: 'Vrsta kontakta', sirina: 24, vrijednost: (r) => r.vrstaKontakta },
     { naslov: 'Inicirao', sirina: 16, vrijednost: (r) => r.inicirao },
@@ -147,7 +161,7 @@ export async function napraviExcel(s: Snimak, skolskaGodina: number): Promise<Ui
     { naslov: 'Cilj', sirina: 40, vrijednost: (r) => r.cilj },
     { naslov: 'Tok aktivnosti', sirina: 60, vrijednost: (r) => r.tokAktivnosti },
     { naslov: 'Zapažanja', sirina: 50, vrijednost: (r) => r.zapazanja },
-    { naslov: 'Učenici za praćenje', sirina: 20, vrijednost: (r) => (r.ucenicizaPracenje ?? []).join(', ') },
+    { naslov: 'Učenici za praćenje', sirina: 28, vrijednost: (r) => (r.ucenicizaPracenje ?? []).map((x) => (imena && imeZa(x) ? `${imeZa(x)} (${x})` : x)).join(', ') },
     { naslov: 'Evaluacija', sirina: 40, vrijednost: (r) => r.evaluacija },
     { naslov: 'Napomena', sirina: 30, vrijednost: (r) => r.napomena },
   ]) as never, 'Radionice');
@@ -156,6 +170,7 @@ export async function napraviExcel(s: Snimak, skolskaGodina: number): Promise<Ui
   X.utils.book_append_sheet(wb, napraviList(X, saradnja, [
     { naslov: 'Datum', sirina: 11, vrijednost: (r) => r.datum, datum: true },
     { naslov: 'Šifra učenika', sirina: 10, vrijednost: (r) => r.sifra },
+    ...kolonaImena<(typeof saradnja)[number]>((r) => r.sifra),
     { naslov: 'Ustanova / osoba', sirina: 26, vrijednost: (r) => r.ustanovaOsoba },
     { naslov: 'Opis osobe', sirina: 24, vrijednost: (r) => r.opisOsobe },
     { naslov: 'Način', sirina: 11, vrijednost: (r) => r.nacin },

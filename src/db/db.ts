@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Nacrt, Obrisano, Postavke, Radionica, Razgovor, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
+import type { Nacrt, Obrisano, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
 
 export class EvidencijaDB extends Dexie {
   ucenici!: Table<Ucenik, string>;
@@ -10,6 +10,7 @@ export class EvidencijaDB extends Dexie {
   sifrarnik!: Table<StavkaSifrarnika, string>;
   obrisano!: Table<Obrisano, string>;
   nacrti!: Table<Nacrt, string>;
+  razredi!: Table<Razred, string>;
 
   constructor(ime = 'evidencija-psihologa') {
     super(ime);
@@ -23,6 +24,15 @@ export class EvidencijaDB extends Dexie {
       obrisano: 'id, tabela',
       nacrti: 'kljuc, updatedAt',
     });
+    // v2: imena učenika i razredi s razrednicima
+    this.version(2)
+      .stores({ razredi: 'id, &razred' })
+      .upgrade((tx) =>
+        tx.table('ucenici').toCollection().modify((u: Partial<Ucenik>) => {
+          if (u.ime === undefined) u.ime = '';
+          if (u.prezime === undefined) u.prezime = '';
+        }),
+      );
   }
 }
 

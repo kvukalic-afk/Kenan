@@ -6,6 +6,7 @@ import { RedStavke, StatusOznaka, Zaglavlje, type StavkaVremena } from '../compo
 import { danasIso, MJESECI, prikaz, razlikaDana } from '../lib/datum';
 import { izracunajZakazano, tekstOznake, zadnjiRazgovorPoUceniku } from '../lib/zakazano';
 import { usePostavke } from '../lib/podaci';
+import { punoIme } from '../types';
 
 export function Pocetna() {
   const postavke = usePostavke();
@@ -25,6 +26,8 @@ export function Pocetna() {
   const uPracenju = podaci.ucenici.filter((u) => u.uPracenju).length;
   const otvoreni = [...zadnjiRazgovorPoUceniku(podaci.razgovori).values()].filter((r) => r.statusSlucaja === 'Otvoren').length;
   const zakazano = izracunajZakazano(podaci.razgovori, danas);
+  const poSifri = new Map(podaci.ucenici.map((u) => [u.sifra, u]));
+  const imeZa = (sifra: string) => punoIme(poSifri.get(sifra)) || sifra;
 
   const sve: StavkaVremena[] = [
     ...podaci.razgovori.map((z) => ({ vrsta: 'razgovor' as const, z })),
@@ -76,7 +79,7 @@ export function Pocetna() {
               <li key={z.sifra}>
                 <a className="stavka" href={`#/ucenici/${encodeURIComponent(z.sifra)}`}>
                   <span className="glavno">
-                    <span className="red1"><span className="sifra-velika">{z.sifra}</span><span className="blijedo">{z.razred}</span><StatusOznaka status={z.statusSlucaja} /></span>
+                    <span className="red1"><span className="sifra-velika">{imeZa(z.sifra)}</span><span className="blijedo">{z.razred}</span><StatusOznaka status={z.statusSlucaja} /></span>
                     <span className="red2 broj">{prikaz(z.datum)}</span>
                   </span>
                   <span className={`oznaka ${z.oznaka === 'kasni' ? 'crvena' : z.oznaka === 'danas' ? 'narandzasta' : ''}`}>{tekstOznake(z)}</span>
@@ -91,7 +94,7 @@ export function Pocetna() {
           <Prazno>Još nema unosa. Dodaj prvi preko dugmeta +.</Prazno>
         ) : (
           <ul className="lista">
-            {nedavno.map((s) => <li key={s.z.id}><RedStavke s={s} /></li>)}
+            {nedavno.map((s) => <li key={s.z.id}><RedStavke s={s} imeZa={imeZa} /></li>)}
           </ul>
         )}
       </main>

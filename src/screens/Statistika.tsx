@@ -39,7 +39,7 @@ export function Statistika() {
   const excel = async () => {
     setIzvoz(true);
     try {
-      const data = await napraviExcel(await snimakBaze(), izabrana);
+      const data = await napraviExcel(await snimakBaze(), izabrana, postavke.imenaUDokumentima !== false);
       preuzmi(data as BlobPart, nazivExcelFajla(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       toast('Excel fajl je preuzet ✓');
     } catch (e) {
