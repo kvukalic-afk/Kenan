@@ -73,6 +73,7 @@ export function Pocetna() {
         </div>
 
         <div className="red-dugmadi" style={{ marginBottom: 8 }}>
+          <a className="dugme" href="#/unos-tekst"><Ikona ime="posalji" /> Unos iz teksta (AI)</a>
           <a className="dugme" href={`#/izvjestaj?od=${danas}&do=${danas}`}><Ikona ime="print" /> Dnevni izvještaj</a>
           <a className="dugme" href={`#/izvjestaj?od=${pocetakSedmice(danas)}&do=${dodajDane(pocetakSedmice(danas), 6)}`}><Ikona ime="print" /> Sedmični izvještaj</a>
         </div>

@@ -18,6 +18,7 @@ import { Detalji } from './screens/Detalji';
 import { FormaAktivnost, FormaRadionica, FormaRazgovor, FormaSaradnja } from './screens/Forme';
 import { Zakljucano } from './screens/Zakljucano';
 import { IzvjestajPeriod } from './screens/IzvjestajPeriod';
+import { UnosIzTeksta } from './screens/UnosIzTeksta';
 import { PrintAktivnost, PrintIzvjestaj, PrintPeriod, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
 import type { Period } from './lib/statistika';
 
@@ -109,6 +110,7 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
   else if (d0 === 'ucenici') { ekran = <Karton key={d1} sifra={d1} />; fab = true; }
   else if (d0 === 'radionice') { ekran = <Radionice key={ruta.upit.get('prikaz') ?? ''} pocetniPrikaz={ruta.upit.get('prikaz') === 'aktivnosti' ? 'aktivnosti' : 'radionice'} />; fab = true; }
   else if (d0 === 'statistika') { ekran = <Statistika />; fab = true; }
+  else if (d0 === 'unos-tekst') { ekran = <UnosIzTeksta />; navigacija = false; }
   else if (d0 === 'izvjestaj') ekran = <IzvjestajPeriod od={ruta.upit.get('od') ?? undefined} do={ruta.upit.get('do') ?? undefined} />;
   else if (d0 === 'postavke') ekran = <Postavke otvoriKopiju={ruta.upit.get('kopija') === '1'} />;
   else if (d0 === 'zapis' && VRSTE.includes(d1 as VrstaUnosa)) ekran = <Detalji key={d2} vrsta={d1 as VrstaUnosa} id={d2} />;

@@ -137,6 +137,33 @@ Nova šifra upisana pri unosu razgovora automatski kreira učenika. App tada tra
 
 Ništa se ne šalje automatski: tekst ide u ChatGPT samo kad ga ti zalijepiš.
 
+### Unos iz teksta (uz ChatGPT ili Claude)
+
+Umjesto kucanja po formama možeš AI-ju ispričati šta si radio/la, a on vrati sređen tekst koji app sam pretvori u unose.
+
+1. **+ → Unos iz teksta (AI)** (ili dugme na Početnoj) → **Kopiraj uputu za AI**. Uputu zalijepi u ChatGPT ili Claude, jednom na početku razgovora. U njoj su format i tvoj šifrarnik.
+2. Ispričaj šta je bilo, npr. *„3. čas zamjena u 7-1, matematika. Poslije razgovor s U056 zbog izostanaka, opet za 7 dana.“* **Učenike navodi šiframa, ne imenima**, jer tekst odlazi na AI servere.
+3. Kopiraj odgovor, zalijepi ga u app i klikni **Pregledaj**. Za svaki unos vidiš šta će biti sačuvano, uz upozorenja (npr. „nema datuma – uzet je današnji“) i greške (npr. nepoznata šifra). Isključi unose koje ne želiš i klikni **Sačuvaj**.
+
+Isti format možeš pisati i sam/a, bez AI-ja:
+
+```
+### RAZGOVOR
+datum: 20.11.2026
+ucenik: U056
+razlog: Izostanci
+biljeske: …
+sljedeci kontakt: za 7 dana
+status: U praćenju
+
+### ZAMJENA
+razred: 7-1
+cas: 3
+predmet: Matematika
+```
+
+Bloka može biti **RAZGOVOR, RADIONICA, SARADNJA, AKTIVNOST, ZAMJENA** ili **ČAS ODJELJENSKE ZAJEDNICE**. Datum može biti i „danas“ ili „jučer“, a sljedeći kontakt i „za 7 dana“.
+
 ## 7. Ostalo što je dobro znati
 
 - **PIN** (Postavke): 4–6 cifara. Traži se pri otvaranju i nakon 5 minuta neaktivnosti. Čuva se samo kao hash. **Zaboravljen PIN se ne može vratiti.** Tada ostaje samo „Obriši sve podatke“ i vraćanje iz rezervne kopije. PIN zaključava ekran appa, a za punu zaštitu drži i telefon i računar zaključanim.
