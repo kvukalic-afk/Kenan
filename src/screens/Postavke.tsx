@@ -103,6 +103,7 @@ export function Postavke({ otvoriKopiju }: { otvoriKopiju?: boolean }) {
             Svi podaci, uključujući imena učenika, su samo na ovom uređaju (IndexedDB u pregledniku). Nema servera, računa ni praćenja.
             Podaci napuštaju uređaj samo kad ih izvezeš (šifrovana kopija, Excel, print).
           </p>
+          <p className="malo"><strong>Verzija appa:</strong> {__VERZIJA__}</p>
           <p className="malo blijedo">PIN zaključava ekran aplikacije. Za punu zaštitu drži telefon i računar zaključanim i čuvaj šifrovanu kopiju.</p>
           <button type="button" className="dugme opasno" onClick={() => setBrisanje(true)}><Ikona ime="obrisi" /> Obriši sve podatke</button>
         </section>
