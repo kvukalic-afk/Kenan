@@ -1,8 +1,9 @@
 name: Objavi na GitHub Pages
 
-# App se objavljuje na Netlify-u (automatski s grane main).
-# GitHub Pages je rezervna opcija: pokreće se samo ručno (Actions → Run workflow).
+# App se objavljuje na GitHub Pages automatski sa svakim pushom na granu main.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

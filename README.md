@@ -37,7 +37,9 @@ Ostale komande:
 
 App je samo skup statičnih fajlova. Server ne vidi tvoje podatke jer oni nikad ne napuštaju uređaj. Adresa služi samo da se app učita i instalira.
 
-### Varijanta A: Netlify (preporuka, repozitorij može ostati privatan)
+### Varijanta A: Netlify
+
+Na besplatnom planu Netlify troši mjesečne kredite na svaku objavu. Kad ih nestane, sajt se pauzira. Za app koji se često ažurira bolji je GitHub Pages (varijanta B), koji ovaj app trenutno koristi: **https://kvukalic-afk.github.io/Kenan/**.
 
 **Najbrže, bez GitHuba:**
 1. Na računaru pokreni `npm install`, pa `npm run build`.
@@ -56,7 +58,7 @@ Na besplatnom GitHub planu repozitorij mora biti **javan**. Kod je tada javan, a
 
 1. Na GitHubu otvori repozitorij → **Settings → Pages**.
 2. Pod *Build and deployment → Source* izaberi **GitHub Actions**.
-3. U tabu **Actions** izaberi „Objavi na GitHub Pages“ → **Run workflow**. Workflow `.github/workflows/deploy.yml` pokreće testove, pravi build i objavljuje. Pokreće se samo ručno, jer se app po zadanim postavkama objavljuje na Netlify-u.
+3. Svaki push na granu `main` automatski pokreće workflow `.github/workflows/deploy.yml`: testovi, build i objava. Ručno se pokreće u tabu **Actions** → „Objavi na GitHub Pages“ → **Run workflow**.
 4. Nakon 1–2 minute app je na adresi `https://<korisnik>.github.io/<ime-repozitorija>/`. Tačan link je u *Settings → Pages* i u tabu *Actions*.
 
 > Adresa mora biti **https** da bi instalacija i offline rad radili. Netlify i GitHub Pages to daju automatski.
