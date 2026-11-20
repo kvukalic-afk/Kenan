@@ -2,7 +2,7 @@ import { db } from './db';
 import { pocetneStavke, pocetnePostavke } from './defaults';
 import { normalizujRazred } from '../lib/sifra';
 import type {
-  Aktivnost, Kategorija, Postavke, Radionica, Razgovor, Saradnja, StavkaSifrarnika, Tabela, Ucenik,
+  Aktivnost, Kategorija, PlanStavka, Postavke, Radionica, Razgovor, Saradnja, StavkaSifrarnika, Tabela, Ucenik,
 } from '../types';
 
 export function uuid(): string {
@@ -18,11 +18,13 @@ export function uuid(): string {
 const sada = () => new Date().toISOString();
 
 export async function inicijalizuj(): Promise<void> {
-  await db.transaction('rw', db.postavke, db.sifrarnik, async () => {
+  await db.transaction('rw', db.postavke, db.sifrarnik, db.obrisano, async () => {
     if (!(await db.postavke.get('postavke'))) await db.postavke.put(pocetnePostavke());
-    // dodaj početne stavke za kategorije koje još nemaju nijednu (npr. nova kategorija nakon ažuriranja appa)
-    const postojece = new Set((await db.sifrarnik.toArray()).map((s) => s.kategorija));
-    const nedostaju = pocetneStavke().filter((s) => !postojece.has(s.kategorija));
+    // dodaj početne stavke koje nedostaju (nova kategorija ili nova zadana stavka nakon ažuriranja appa);
+    // stavke se ne brišu (samo sakrivaju), pa nedostajući ID znači novu stavku
+    const postojeci = new Set(await db.sifrarnik.toCollection().primaryKeys());
+    const obrisani = new Set((await db.obrisano.where('tabela').equals('sifrarnik').toArray()).map((o) => o.id));
+    const nedostaju = pocetneStavke().filter((s) => !postojeci.has(s.id) && !obrisani.has(s.id));
     if (nedostaju.length) await db.sifrarnik.bulkPut(nedostaju);
   });
 }
@@ -135,6 +137,14 @@ export async function sacuvajSaradnju(podaci: Novo<Saradnja>): Promise<Saradnja>
 
 export async function sacuvajAktivnost(podaci: Novo<Aktivnost>): Promise<Aktivnost> {
   return sacuvaj<Aktivnost>('aktivnosti', { ...podaci, razred: normalizujRazred(podaci.razred) });
+}
+
+export async function sacuvajPlanStavku(podaci: Novo<PlanStavka>): Promise<PlanStavka> {
+  const t = sada();
+  const stari = podaci.id ? await db.plan.get(podaci.id) : undefined;
+  const zapis: PlanStavka = { ...podaci, id: stari?.id ?? podaci.id ?? uuid(), createdAt: stari?.createdAt ?? t, updatedAt: t };
+  await db.plan.put(zapis);
+  return zapis;
 }
 
 /** Brisanje ostavlja "trag" (tombstone) da se brisanje prenese i kroz rezervnu kopiju. */

@@ -459,3 +459,20 @@ export function Grafikon({ naslov, podaci }: { naslov: string; podaci: { naziv: 
     </section>
   );
 }
+
+// ---------- Trajanje (za dnevnik rada) ----------
+
+export function TrajanjePolje({ vrijednost, onChange }: { vrijednost: number | null | undefined; onChange: (v: number | null) => void }) {
+  const id = useId();
+  return (
+    <Polje labela="Trajanje (minuta)" id={id} pomoc="Za dnevnik rada i evidenciju 40-satne sedmice.">
+      <div className="razdvoji">
+        <input id={id} type="number" inputMode="numeric" min={0} style={{ width: 100 }} value={vrijednost ?? ''}
+          onChange={(e) => onChange(e.target.value === '' ? null : Math.max(0, Math.round(Number(e.target.value))))} />
+        {[15, 30, 45, 60, 90].map((m) => (
+          <button key={m} type="button" className="chip mali" aria-pressed={vrijednost === m} onClick={() => onChange(m)}>{m}</button>
+        ))}
+      </div>
+    </Polje>
+  );
+}

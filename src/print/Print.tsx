@@ -3,11 +3,13 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Ikona } from '../components/Ikona';
 import { TabelaMjeseci, TabelaRaspodjele } from '../components/StatTabele';
-import { danasIso, nazivSkolskeGodine, prikaz } from '../lib/datum';
+import { danasIso, MJESECI, nazivSkolskeGodine, prikaz } from '../lib/datum';
 import { nazad } from '../lib/router';
 import { useImenik, usePostavke } from '../lib/podaci';
 import { izracunajStatistiku, sazetak, type Period, type Statistika } from '../lib/statistika';
 import { zadnjiRazgovorPoUceniku } from '../lib/zakazano';
+import { evidencijaPoPodrucjima, IZVOR_NORME, PODRUCJA, satiTekst, stavkeDnevnika, uMjesecu, vrijemeRealizacije, zaokruzi, type RedEvidencije } from '../lib/podrucja';
+import { radnihSedmica } from '../screens/PlanRada';
 import { brojPerioda, nazivDana, naslovIzvjestaja, opisPerioda, sazetakPerioda, stavkePerioda, vrstaPerioda } from '../lib/periodIzvjestaj';
 import { procitajTekst } from '../screens/IzvjestajPeriod';
 import { punoIme, type Aktivnost, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
@@ -411,6 +413,13 @@ export function PrintPeriod({ od, do: doDatum, biljeske }: { od: string; do: str
         </tbody>
       </table>
 
+      {vrsta === 'sedmica' && (
+        <>
+          <h2>Evidencioni list 40-satne radne sedmice</h2>
+          <TabelaEvidencije redovi={evidencijaPoPodrucjima(stavkeDnevnika(ulaz, od, doDatum), 1)} napomena="Norma za jednu sedmicu." />
+        </>
+      )}
+
       <h2>Hronološki pregled aktivnosti</h2>
       {stavke.length === 0 ? <p>U ovom periodu nema evidentiranih aktivnosti.</p> : (
         <table className="lista-tab">
@@ -438,5 +447,131 @@ export function PrintPeriod({ od, do: doDatum, biljeske }: { od: string; do: str
         </table>
       )}
     </Dokument>
+  );
+}
+
+// ---------- 6. Godišnji program / mjesečni plan rada psihologa ----------
+
+export function PrintPlan({ godina, mjesec }: { godina: number; mjesec?: string }) {
+  const postavke = usePostavke();
+  const plan = useLiveQuery(() => db.plan.where('skolskaGodina').equals(godina).toArray(), [godina]);
+  if (!plan) return <Ucitavanje />;
+  const stavke = plan.filter((s) => !mjesec || uMjesecu(s.mjeseci, mjesec));
+  const naziv = mjesec ? `${MJESECI[Number(mjesec.slice(5)) - 1]} ${mjesec.slice(0, 4)}.` : '';
+  let rb = 0;
+  return (
+    <Dokument naslov={mjesec ? 'MJESEČNI PLAN RADA PSIHOLOGA' : 'GODIŠNJI PROGRAM RADA PSIHOLOGA'}
+      podnaslov={mjesec ? `${naziv[0].toUpperCase()}${naziv.slice(1)} – školska ${nazivSkolskeGodine(godina)}. godina` : `Školska ${nazivSkolskeGodine(godina)}. godina`}
+      nazivFajla={mjesec ? `Mjesecni_plan_${mjesec}` : `Godisnji_program_rada_${godina}-${godina + 1}`} postavke={postavke}>
+      {!mjesec && (
+        <>
+          <h2>Struktura 40-satne radne sedmice</h2>
+          <table className="tabela">
+            <thead><tr><th>R. br.</th><th>Područje rada</th><th className="n">Sati sedmično</th></tr></thead>
+            <tbody>
+              {PODRUCJA.map((p) => <tr key={p.kod}><td className="n">{p.kod}.</td><td>{p.naziv}</td><td className="n">{p.sati}</td></tr>)}
+              <tr className="zbir ukupno"><td></td><td>UKUPNO</td><td className="n">40</td></tr>
+            </tbody>
+          </table>
+          <p className="malo" style={{ fontSize: '9pt' }}>Izvor: {IZVOR_NORME}</p>
+        </>
+      )}
+      <h2>{mjesec ? 'Planirani sadržaji rada' : 'Sadržaji rada po područjima'}</h2>
+      {stavke.length === 0 ? <p>Plan još nije unesen.</p> : (
+        <table className="lista-tab">
+          <thead>
+            <tr>
+              <th style={{ width: '6%' }}>R. br.</th>
+              <th>Sadržaj rada</th>
+              {!mjesec && <th style={{ width: '18%' }}>Vrijeme realizacije</th>}
+              <th style={{ width: '20%' }}>Saradnici</th>
+              {mjesec && <th style={{ width: '13%' }}>Realizovano</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {PODRUCJA.map((p) => {
+              const lista = stavke.filter((s) => s.podrucje === p.kod);
+              if (!lista.length) return null;
+              return [
+                <tr key={`h${p.kod}`}><td colSpan={mjesec ? 4 : 4} style={{ background: '#eee', fontWeight: 'bold' }}>{p.kod}. {p.naziv} ({p.sati} h sedmično)</td></tr>,
+                ...lista.map((s) => (
+                  <tr key={s.id}>
+                    <td className="n">{++rb}.</td>
+                    <td className="tekst-celija">{s.sadrzaj}{s.napomena ? ` (${s.napomena})` : ''}</td>
+                    {!mjesec && <td>{vrijemeRealizacije(s.mjeseci)}</td>}
+                    <td>{s.saradnici}</td>
+                    {mjesec && <td>{s.realizovano.includes(mjesec) ? 'da' : ''}</td>}
+                  </tr>
+                )),
+              ];
+            })}
+          </tbody>
+        </table>
+      )}
+    </Dokument>
+  );
+}
+
+// ---------- 7. Dnevnik rada psihologa (mjesec) ----------
+
+export function PrintDnevnik({ mjesec }: { mjesec: string }) {
+  const postavke = usePostavke();
+  const { poSifri } = useImenik();
+  const ulaz = useLiveQuery(async () => {
+    const [razgovori, radionice, saradnja, aktivnosti] = await Promise.all([db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray(), db.aktivnosti.toArray()]);
+    return { razgovori, radionice, saradnja, aktivnosti };
+  }, []);
+  if (!ulaz) return <Ucitavanje />;
+  const [g, m] = mjesec.split('-').map(Number);
+  const od = `${mjesec}-01`, doD = `${mjesec}-${String(new Date(g, m, 0).getDate()).padStart(2, '0')}`;
+  const stavke = stavkeDnevnika(ulaz, od, doD);
+  const sedmica = radnihSedmica(mjesec);
+  const ev = evidencijaPoPodrucjima(stavke, sedmica);
+  const imena = postavke.imenaUDokumentima !== false;
+  const ucenik = (s: string) => (s ? (imena && punoIme(poSifri.get(s)) ? `${punoIme(poSifri.get(s))} (${s})` : s) : '');
+  const ukupnoMin = stavke.reduce((s, x) => s + x.minuta, 0);
+  const naziv = `${MJESECI[m - 1]} ${g}.`;
+  return (
+    <Dokument naslov="DNEVNIK RADA PSIHOLOGA" podnaslov={`${naziv[0].toUpperCase()}${naziv.slice(1)}`} nazivFajla={`Dnevnik_rada_${mjesec}`} postavke={postavke}>
+      {stavke.length === 0 ? <p>U ovom mjesecu nema evidentiranog rada.</p> : (
+        <table className="lista-tab">
+          <thead>
+            <tr><th style={{ width: '13%' }}>Datum</th><th style={{ width: '7%' }}>Pod.</th><th>Opis rada</th><th style={{ width: '20%' }}>Učenik</th><th style={{ width: '9%' }} className="n">Trajanje</th></tr>
+          </thead>
+          <tbody>
+            {stavke.map((s, i) => (
+              <tr key={s.id}>
+                <td>{i === 0 || stavke[i - 1].datum !== s.datum ? `${nazivDana(s.datum).slice(0, 3)}, ${prikaz(s.datum)}` : ''}</td>
+                <td className="n">{s.podrucje || '–'}</td>
+                <td className="tekst-celija">{s.opis}</td>
+                <td>{ucenik(s.sifra)}</td>
+                <td className="n">{satiTekst(s.minuta)}</td>
+              </tr>
+            ))}
+            <tr className="zbir"><td colSpan={4}>Ukupno evidentirano</td><td className="n">{satiTekst(ukupnoMin)}</td></tr>
+          </tbody>
+        </table>
+      )}
+      <h2>Evidencija 40-satne radne sedmice za mjesec</h2>
+      <TabelaEvidencije redovi={ev} napomena={`Norma = sedmična norma × ${sedmica} radnih sedmica (bez praznika). „Pod.“ u dnevniku je broj područja rada.`} />
+    </Dokument>
+  );
+}
+
+function TabelaEvidencije({ redovi, napomena }: { redovi: RedEvidencije[]; napomena: string }) {
+  const n = redovi.reduce((s, r) => s + r.norma, 0), o = redovi.reduce((s, r) => s + r.ostvareno, 0);
+  return (
+    <>
+      <table className="tabela">
+        <thead><tr><th>Područje rada</th><th className="n">Norma (h)</th><th className="n">Evidentirano (h)</th></tr></thead>
+        <tbody>
+          {redovi.map((r) => (
+            <tr key={r.kod}><td>{r.kod ? `${r.kod}. ` : ''}{r.naziv}</td><td className="n">{r.norma ? zaokruzi(r.norma) : '–'}</td><td className="n">{r.ostvareno || '–'}</td></tr>
+          ))}
+          <tr className="zbir ukupno"><td>UKUPNO</td><td className="n">{zaokruzi(n)}</td><td className="n">{zaokruzi(o)}</td></tr>
+        </tbody>
+      </table>
+      <p style={{ fontSize: '9pt' }}>{napomena} Evidentirano je samo ono što je uneseno u app (razgovori, radionice, saradnja, ostale aktivnosti); priprema za rad i dokumentacija se evidentiraju kao „Ostala aktivnost“. Izvor norme: {IZVOR_NORME}</p>
+    </>
   );
 }

@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { sacuvajAktivnost, sacuvajRadionicu, sacuvajRazgovor, sacuvajSaradnju } from '../db/repo';
-import { Chipovi, DatumPolje, Izbor, Modal, Polje, Potvrda, SifraPolje, TagSifre, TekstPolje } from '../components/Polja';
+import { Chipovi, DatumPolje, Izbor, Modal, Polje, Potvrda, SifraPolje, TagSifre, TekstPolje, TrajanjePolje } from '../components/Polja';
+import { PODRUCJA, podrucje as podrucjePoKodu, podrucjeAktivnosti } from '../lib/podrucja';
 import { Ikona } from '../components/Ikona';
 import { useToast } from '../components/Toast';
 import { useForma } from '../lib/forma';
@@ -113,7 +114,7 @@ function skrol(greske: Record<string, string>) {
 
 const prazanRazgovor = (sifra = ''): Bez<Razgovor> => ({
   datum: danasIso(), sifra, razred: '', vrstaKontakta: 'Individualni razgovor s učenikom', inicirao: '', razlog: '',
-  biljeske: '', zakljucak: '', preporuke: '', sljedeciKorak: '', datumSljedecegKontakta: '', statusSlucaja: 'Otvoren',
+  biljeske: '', zakljucak: '', preporuke: '', sljedeciKorak: '', datumSljedecegKontakta: '', statusSlucaja: 'Otvoren', trajanjeMin: 45,
 });
 
 export function FormaRazgovor({ editId, sifra: pocetnaSifra, izNacrta }: { editId?: string; sifra?: string; izNacrta?: boolean }) {
@@ -205,6 +206,7 @@ export function FormaRazgovor({ editId, sifra: pocetnaSifra, izNacrta }: { editI
           brzi={[{ naziv: '+7 dana', dana: 7 }, { naziv: '+14 dana', dana: 14 }, { naziv: '+30 dana', dana: 30 }]} />
         <Chipovi id="status" labela="Status slučaja" opcije={opcije(sif, 'statusSlucaja', p.statusSlucaja)} vrijednost={p.statusSlucaja}
           onChange={(v) => postavi('statusSlucaja', v)} mozeOdznaciti={false} />
+        <TrajanjePolje vrijednost={p.trajanjeMin} onChange={(v) => postavi('trajanjeMin', v)} />
       </OkvirForme>
       {dijalog}
       {sacuvanId && <PoslijeSnimanja vrsta="razgovor" id={sacuvanId} onGotovo={() => idi(`/ucenici/${encodeURIComponent(p.sifra)}`, true)} />}
@@ -293,7 +295,7 @@ export function FormaRadionica({ editId, izNacrta }: { editId?: string; izNacrta
 // ---------- Saradnja ----------
 
 const praznaSaradnja = (sifra = ''): Bez<Saradnja> => ({
-  datum: danasIso(), sifra, ustanovaOsoba: '', opisOsobe: '', nacin: 'Sastanak', razlog: '', dogovorIshod: '',
+  datum: danasIso(), sifra, ustanovaOsoba: '', opisOsobe: '', nacin: 'Sastanak', razlog: '', dogovorIshod: '', trajanjeMin: 30,
 });
 
 export function FormaSaradnja({ editId, sifra: pocetnaSifra, izNacrta }: { editId?: string; sifra?: string; izNacrta?: boolean }) {
@@ -347,6 +349,7 @@ export function FormaSaradnja({ editId, sifra: pocetnaSifra, izNacrta }: { editI
         <Chipovi id="nacin" labela="Način" opcije={opcije(sif, 'nacin', p.nacin)} vrijednost={p.nacin} onChange={(v) => postavi('nacin', v)} />
         <TekstPolje labela="Razlog" kratko vrijednost={p.razlog} onChange={(v) => postavi('razlog', v)} />
         <TekstPolje labela="Dogovor / ishod" vrijednost={p.dogovorIshod} onChange={(v) => postavi('dogovorIshod', v)} />
+        <TrajanjePolje vrijednost={p.trajanjeMin} onChange={(v) => postavi('trajanjeMin', v)} />
       </OkvirForme>
       {dijalog}
       {sacuvanId && <PoslijeSnimanja vrsta="saradnja" id={sacuvanId}
@@ -364,7 +367,7 @@ const PREDMETI = [
 ];
 
 const praznaAktivnost = (): Bez<Aktivnost> => ({
-  datum: danasIso(), vrsta: 'Zamjena nastavnika', razred: '', cas: '', umjestoKoga: '', predmet: '', tema: '', zapazanja: '', napomena: '',
+  datum: danasIso(), vrsta: 'Zamjena nastavnika', razred: '', cas: '', umjestoKoga: '', predmet: '', tema: '', zapazanja: '', napomena: '', trajanjeMin: 45, podrucje: null,
 });
 
 export function FormaAktivnost({ editId, izNacrta }: { editId?: string; izNacrta?: boolean }) {
@@ -445,6 +448,15 @@ export function FormaAktivnost({ editId, izNacrta }: { editId?: string; izNacrta
         <TekstPolje labela={jeZamjena ? 'Tema / sadržaj časa' : 'Opis / sadržaj'} kratko vrijednost={p.tema} onChange={(v) => postavi('tema', v)} />
         <TekstPolje labela="Zapažanja" vrijednost={p.zapazanja} onChange={(v) => postavi('zapazanja', v)} />
         <TekstPolje labela="Napomena" kratko vrijednost={p.napomena} onChange={(v) => postavi('napomena', v)} />
+        <TrajanjePolje vrijednost={p.trajanjeMin} onChange={(v) => postavi('trajanjeMin', v)} />
+        <Polje labela="Područje rada (dnevnik, 40-satna sedmica)" id="a-podrucje"
+          pomoc={p.podrucje == null ? `Automatski: ${podrucjePoKodu(podrucjeAktivnosti({ vrsta: p.vrsta })).naziv}` : undefined}>
+          <select id="a-podrucje" value={p.podrucje ?? ''} onChange={(e) => postavi('podrucje', e.target.value === '' ? null : Number(e.target.value))}>
+            <option value="">Automatski (prema vrsti)</option>
+            {PODRUCJA.map((x) => <option key={x.kod} value={x.kod}>{x.kod}. {x.naziv}</option>)}
+            <option value={0}>Drugi poslovi po nalogu direktora (izvan 40 sati)</option>
+          </select>
+        </Polje>
       </OkvirForme>
       {dijalog}
       {sacuvanId && <PoslijeSnimanja vrsta="aktivnost" id={sacuvanId} onGotovo={() => idi(`/zapis/aktivnost/${sacuvanId}`, true)} />}

@@ -73,6 +73,10 @@ export const POCETNI_SIFRARNIK: Record<Kategorija, string[]> = {
     'Sjednica vijeća / aktiva',
     'Stručno usavršavanje',
     'Ostalo',
+    'Psihološko testiranje / ispitivanje',
+    'Ispitivanje spremnosti za školu (upis u 1. razred)',
+    'Psihološka dokumentacija',
+    'Pripremanje za rad',
   ],
 };
 

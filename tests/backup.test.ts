@@ -14,7 +14,7 @@ const rz = (id: string, updatedAt = T1, p: Partial<Razgovor> = {}): Razgovor => 
   id, createdAt: T1, updatedAt, datum: '2026-11-01', sifra: 'U1', razred: '6-1', vrstaKontakta: '', inicirao: '', razlog: '',
   biljeske: '', zakljucak: '', preporuke: '', sljedeciKorak: '', datumSljedecegKontakta: '', statusSlucaja: 'Otvoren', ...p,
 });
-const prazan = (): Snimak => ({ ucenici: [], razgovori: [], radionice: [], saradnja: [], sifrarnik: [], razredi: [], aktivnosti: [], obrisano: [], postavke: null });
+const prazan = (): Snimak => ({ ucenici: [], razgovori: [], radionice: [], saradnja: [], sifrarnik: [], razredi: [], aktivnosti: [], plan: [], obrisano: [], postavke: null });
 
 describe('uvoz rezervne kopije bez duplikata', () => {
   it('dodaje nove, ažurira novije, preskače iste i starije', () => {

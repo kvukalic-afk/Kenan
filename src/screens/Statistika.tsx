@@ -6,7 +6,7 @@ import { Grafikon } from '../components/Polja';
 import { Zaglavlje } from '../components/Okvir';
 import { TabelaMjeseci } from '../components/StatTabele';
 import { useToast } from '../components/Toast';
-import { nazivSkolskeGodine, skolskaGodinaZaDatum, skolskaGodinaZaIso } from '../lib/datum';
+import { danasIso, nazivSkolskeGodine, skolskaGodinaZaDatum, skolskaGodinaZaIso } from '../lib/datum';
 import { izracunajStatistiku, NAZIV_PERIODA, type Period } from '../lib/statistika';
 import { snimakBaze, usePostavke } from '../lib/podaci';
 import { preuzmi } from '../lib/preuzimanje';
@@ -74,6 +74,8 @@ export function Statistika() {
           <a className="dugme" href={`#/print/izvjestaj/${izabrana}/godina`}><Ikona ime="print" /> Preuzmi godišnji izvještaj (print)</a>
           <a className="dugme" href={`#/print/izvjestaj/${izabrana}/${period === 'II' ? 'II' : 'I'}`}><Ikona ime="print" /> Preuzmi polugodišnji izvještaj (print)</a>
           <a className="dugme" href="#/izvjestaj"><Ikona ime="kalendar" /> Dnevni / sedmični izvještaj</a>
+          <a className="dugme" href={`#/plan?godina=${izabrana}`}><Ikona ime="aktivnost" /> Plan rada</a>
+          <a className="dugme" href={`#/print/dnevnik/${danasIso().slice(0, 7)}`}><Ikona ime="print" /> Dnevnik rada (ovaj mjesec)</a>
           <button type="button" className="dugme" onClick={excel} disabled={izvoz}><Ikona ime="excel" /> {izvoz ? 'Pravim…' : 'Izvezi sve u Excel'}</button>
         </div>
 

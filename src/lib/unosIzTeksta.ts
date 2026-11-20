@@ -63,7 +63,7 @@ const POLJA: Record<VrstaUnosa, Record<string, string>> = {
     inicirao: 'inicirao', 'ko je inicirao': 'inicirao', razlog: 'razlog',
     biljeske: 'biljeske', biljeska: 'biljeske', zakljucak: 'zakljucak', preporuke: 'preporuke', preporuka: 'preporuke',
     'sljedeci korak': 'sljedeciKorak', 'sljedeci kontakt': 'datumSljedecegKontakta', 'datum sljedeceg kontakta': 'datumSljedecegKontakta',
-    status: 'statusSlucaja', 'status slucaja': 'statusSlucaja',
+    status: 'statusSlucaja', 'status slucaja': 'statusSlucaja', trajanje: 'trajanjeMin', 'trajanje min': 'trajanjeMin',
   },
   radionica: {
     datum: 'datum', razred: 'razred', tema: 'tema', oblast: 'oblast', 'ciljna grupa': 'ciljnaGrupa', grupa: 'ciljnaGrupa',
@@ -74,11 +74,11 @@ const POLJA: Record<VrstaUnosa, Record<string, string>> = {
   saradnja: {
     datum: 'datum', ucenik: 'ucenik', sifra: 'ucenik', razred: 'razred', ustanova: 'ustanovaOsoba', 'ustanova osoba': 'ustanovaOsoba', osoba: 'ustanovaOsoba', sa: 'ustanovaOsoba',
     opis: 'opisOsobe', 'opis osobe': 'opisOsobe', nacin: 'nacin', razlog: 'razlog',
-    dogovor: 'dogovorIshod', ishod: 'dogovorIshod', 'dogovor ishod': 'dogovorIshod',
+    dogovor: 'dogovorIshod', ishod: 'dogovorIshod', 'dogovor ishod': 'dogovorIshod', trajanje: 'trajanjeMin', 'trajanje min': 'trajanjeMin',
   },
   aktivnost: {
     datum: 'datum', vrsta: 'vrsta', razred: 'razred', cas: 'cas', umjesto: 'umjestoKoga', 'umjesto koga': 'umjestoKoga',
-    predmet: 'predmet', tema: 'tema', sadrzaj: 'tema', opis: 'tema', zapazanja: 'zapazanja', napomena: 'napomena',
+    predmet: 'predmet', tema: 'tema', sadrzaj: 'tema', opis: 'tema', zapazanja: 'zapazanja', napomena: 'napomena', trajanje: 'trajanjeMin', 'trajanje min': 'trajanjeMin',
   },
 };
 
@@ -224,6 +224,7 @@ export function parsirajTekst(tekst: string, k: Kontekst): ParsiranUnos[] {
           inicirao: sel('inicirao', 'inicirao', 'Inicirao'), razlog: sel('razlog', 'razlog', 'Razlog'),
           biljeske: p.biljeske ?? '', zakljucak: p.zakljucak ?? '', preporuke: p.preporuke ?? '', sljedeciKorak: p.sljedeciKorak ?? '',
           datumSljedecegKontakta: sljedeci || '', statusSlucaja: sel('statusSlucaja', 'statusSlucaja', 'Status', 'Otvoren'),
+          trajanjeMin: p.trajanjeMin ? broj(p.trajanjeMin) : 45,
         },
       };
     }
@@ -258,7 +259,7 @@ export function parsirajTekst(tekst: string, k: Kontekst): ParsiranUnos[] {
         tip: 'saradnja', ...meta,
         podaci: {
           datum: d, sifra, ustanovaOsoba: ustanova, opisOsobe: p.opisOsobe ?? '', nacin: sel('nacin', 'nacin', 'Način', 'Sastanak'),
-          razlog: p.razlog ?? '', dogovorIshod: p.dogovorIshod ?? '',
+          razlog: p.razlog ?? '', dogovorIshod: p.dogovorIshod ?? '', trajanjeMin: p.trajanjeMin ? broj(p.trajanjeMin) : 30,
         },
       };
     }
@@ -269,7 +270,7 @@ export function parsirajTekst(tekst: string, k: Kontekst): ParsiranUnos[] {
       podaci: {
         datum: d, vrsta, razred: normalizujRazred(p.razred ?? ''), cas: p.cas ? String(broj(p.cas) ?? p.cas) : '',
         umjestoKoga: p.umjestoKoga ?? '', predmet: p.predmet ?? (/odjeljensk/i.test(vrsta) ? 'Čas odjeljenske zajednice' : ''),
-        tema: p.tema ?? '', zapazanja: p.zapazanja ?? '', napomena: p.napomena ?? '',
+        tema: p.tema ?? '', zapazanja: p.zapazanja ?? '', napomena: p.napomena ?? '', trajanjeMin: p.trajanjeMin ? broj(p.trajanjeMin) : 45,
       },
     };
   });
@@ -301,6 +302,7 @@ preporuke: …
 sljedeci korak: …
 sljedeci kontakt: DD.MM.YYYY
 status: ${op('statusSlucaja')}
+trajanje: minuta (ako kažem)
 
 ### RADIONICA
 datum: DD.MM.YYYY
@@ -335,6 +337,7 @@ umjesto: koga sam mijenjao/la (npr. razrednik 7-1)
 predmet: …
 tema: …
 zapazanja: …
+trajanje: minuta (ako kažem)
 
 Potvrdi da si razumio/la, pa čekaj moj opis.`;
 }

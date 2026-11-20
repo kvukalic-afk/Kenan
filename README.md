@@ -164,6 +164,17 @@ predmet: Matematika
 
 Bloka može biti **RAZGOVOR, RADIONICA, SARADNJA, AKTIVNOST, ZAMJENA** ili **ČAS ODJELJENSKE ZAJEDNICE**. Datum može biti i „danas“ ili „jučer“, a sljedeći kontakt i „za 7 dana“.
 
+### Plan rada, dnevnik rada i 40-satna sedmica
+
+Područja rada i sedmična norma sati su po **Pedagoškim standardima i normativima za osnovno obrazovanje USK (Sl. glasnik USK 20/2024, čl. 13.)**: 11 područja, ukupno 40 sati.
+
+- **Plan rada** (Statistika → **Plan rada**): godišnji program po 11 područja. Dugme **Popuni prijedlogom** ubacuje tipične sadržaje rada koje onda prilagodiš. Za svaku stavku biraš mjesece i saradnike. Klikom na mjesec dobiješ **mjesečni plan**, gdje kvačicom označavaš šta je realizovano i vidiš koliko je sati evidentirano po područjima.
+- **Print:** *Godišnji program rada psihologa* (sa strukturom 40-satne sedmice), *Mjesečni plan rada psihologa* (s kolonom „Realizovano“) i *Dnevnik rada psihologa* za mjesec (datum, područje, opis, učenik, trajanje, uz evidenciju sati po područjima).
+- **Sedmični izvještaj** sadrži i *Evidencioni list 40-satne radne sedmice* (norma i evidentirano po područjima).
+- Svaki unos ima **trajanje u minutama** (razgovor 45, saradnja 30, aktivnost 45, ako se ne promijeni). Rad se u područja svrstava automatski: razgovor s učenikom ide u 5, s roditeljem u 8, s nastavnikom u 4, institucije u 7. Kod „Ostale aktivnosti“ područje možeš izabrati i sam/a. Pripremu za rad i vođenje dokumentacije evidentiraš kao ostalu aktivnost („Pripremanje za rad“, „Psihološka dokumentacija“).
+
+Zvanični obrazac dnevnika rada za USK nije javno dostupan na internetu. Ako škola ili Pedagoški zavod imaju svoj obrazac, print se može prilagoditi po njemu.
+
 ## 7. Ostalo što je dobro znati
 
 - **PIN** (Postavke): 4–6 cifara. Traži se pri otvaranju i nakon 5 minuta neaktivnosti. Čuva se samo kao hash. **Zaboravljen PIN se ne može vratiti.** Tada ostaje samo „Obriši sve podatke“ i vraćanje iz rezervne kopije. PIN zaključava ekran appa, a za punu zaštitu drži i telefon i računar zaključanim.

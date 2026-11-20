@@ -36,6 +36,7 @@ export interface Razgovor extends Zapis {
   sljedeciKorak: string;
   datumSljedecegKontakta: string; // YYYY-MM-DD ili ''
   statusSlucaja: string;
+  trajanjeMin?: number | null; // za dnevnik rada (zadano 45)
 }
 
 export interface Radionica extends Zapis {
@@ -62,6 +63,7 @@ export interface Saradnja extends Zapis {
   nacin: string;
   razlog: string;
   dogovorIshod: string;
+  trajanjeMin?: number | null; // za dnevnik rada (zadano 30)
 }
 
 /** Ostale aktivnosti psihologa: zamjene, čas odjeljenske zajednice, dežurstvo, sjednice… */
@@ -74,6 +76,19 @@ export interface Aktivnost extends Zapis {
   predmet: string;
   tema: string;
   zapazanja: string;
+  napomena: string;
+  trajanjeMin?: number | null; // za dnevnik rada (zadano 45)
+  podrucje?: number | null; // područje rada po USK standardima (1–11), prazno = automatski
+}
+
+/** Stavka plana rada psihologa (godišnji program; mjesečni plan se dobija po mjesecima). */
+export interface PlanStavka extends Zapis {
+  skolskaGodina: number; // početna godina, npr. 2026 za 2026/2027
+  podrucje: number; // 1–11 po USK pedagoškim standardima
+  sadrzaj: string;
+  mjeseci: number[]; // 1–12; prazno = tokom cijele godine
+  saradnici: string;
+  realizovano: string[]; // mjeseci "YYYY-MM" u kojima je stavka realizovana
   napomena: string;
 }
 
@@ -106,7 +121,7 @@ export interface StavkaSifrarnika extends Zapis {
   sakriveno: boolean;
 }
 
-export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti';
+export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan';
 
 export interface Obrisano {
   id: string;

@@ -19,7 +19,8 @@ import { FormaAktivnost, FormaRadionica, FormaRazgovor, FormaSaradnja } from './
 import { Zakljucano } from './screens/Zakljucano';
 import { IzvjestajPeriod } from './screens/IzvjestajPeriod';
 import { UnosIzTeksta } from './screens/UnosIzTeksta';
-import { PrintAktivnost, PrintIzvjestaj, PrintPeriod, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
+import { PlanRada } from './screens/PlanRada';
+import { PrintAktivnost, PrintDnevnik, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
 import type { Period } from './lib/statistika';
 
 const NEAKTIVNOST_MS = 5 * 60 * 1000;
@@ -110,6 +111,7 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
   else if (d0 === 'ucenici') { ekran = <Karton key={d1} sifra={d1} />; fab = true; }
   else if (d0 === 'radionice') { ekran = <Radionice key={ruta.upit.get('prikaz') ?? ''} pocetniPrikaz={ruta.upit.get('prikaz') === 'aktivnosti' ? 'aktivnosti' : 'radionice'} />; fab = true; }
   else if (d0 === 'statistika') { ekran = <Statistika />; fab = true; }
+  else if (d0 === 'plan') ekran = <PlanRada godina={ruta.upit.get('godina') ? Number(ruta.upit.get('godina')) : undefined} mjesec={ruta.upit.get('mjesec') ?? undefined} />;
   else if (d0 === 'unos-tekst') { ekran = <UnosIzTeksta />; navigacija = false; }
   else if (d0 === 'izvjestaj') ekran = <IzvjestajPeriod od={ruta.upit.get('od') ?? undefined} do={ruta.upit.get('do') ?? undefined} />;
   else if (d0 === 'postavke') ekran = <Postavke otvoriKopiju={ruta.upit.get('kopija') === '1'} />;
@@ -130,6 +132,8 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
       : d1 === 'saradnja' ? <PrintSaradnja id={d2} />
       : d1 === 'aktivnost' ? <PrintAktivnost id={d2} />
       : d1 === 'karton' ? <PrintKarton sifra={d2} />
+      : d1 === 'plan' ? <PrintPlan godina={Number(d2)} mjesec={d3} />
+      : d1 === 'dnevnik' ? <PrintDnevnik mjesec={d2} />
       : d1 === 'period' ? <PrintPeriod od={d2} do={d3} biljeske={ruta.upit.get('biljeske') === '1'} />
       : <PrintIzvjestaj godina={Number(d2)} period={(['I', 'II'].includes(d3) ? d3 : 'godina') as Period} />;
   } else {
