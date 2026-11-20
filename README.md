@@ -56,7 +56,7 @@ Na besplatnom GitHub planu repozitorij mora biti **javan**. Kod je tada javan, a
 
 1. Na GitHubu otvori repozitorij → **Settings → Pages**.
 2. Pod *Build and deployment → Source* izaberi **GitHub Actions**.
-3. Spoji radnu granu u granu `main` (pull request → *Merge*). Workflow `.github/workflows/deploy.yml` sam pokreće testove, pravi build i objavljuje.
+3. U tabu **Actions** izaberi „Objavi na GitHub Pages“ → **Run workflow**. Workflow `.github/workflows/deploy.yml` pokreće testove, pravi build i objavljuje. Pokreće se samo ručno, jer se app po zadanim postavkama objavljuje na Netlify-u.
 4. Nakon 1–2 minute app je na adresi `https://<korisnik>.github.io/<ime-repozitorija>/`. Tačan link je u *Settings → Pages* i u tabu *Actions*.
 
 > Adresa mora biti **https** da bi instalacija i offline rad radili. Netlify i GitHub Pages to daju automatski.
