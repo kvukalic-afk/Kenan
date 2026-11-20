@@ -8,7 +8,9 @@ import { nazad } from '../lib/router';
 import { useImenik, usePostavke } from '../lib/podaci';
 import { izracunajStatistiku, sazetak, type Period, type Statistika } from '../lib/statistika';
 import { zadnjiRazgovorPoUceniku } from '../lib/zakazano';
-import { punoIme, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
+import { brojPerioda, nazivDana, naslovIzvjestaja, opisPerioda, sazetakPerioda, stavkePerioda, vrstaPerioda } from '../lib/periodIzvjestaj';
+import { procitajTekst } from '../screens/IzvjestajPeriod';
+import { punoIme, type Aktivnost, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
 import './print.css';
 
 function Dokument({ naslov, podnaslov, nazivFajla, postavke, children }: {
@@ -164,6 +166,31 @@ export function PrintRadionica({ id }: { id: string }) {
 
 // ---------- Saradnja ----------
 
+export function PrintAktivnost({ id }: { id: string }) {
+  const postavke = usePostavke();
+  const a = useLiveQuery(() => db.aktivnosti.get(id), [id], null as Aktivnost | null | undefined);
+  if (a === null) return <Ucitavanje />;
+  if (!a) return <p style={{ padding: 24 }}>Zapis ne postoji.</p>;
+  const naslov = /zamjena/i.test(a.vrsta) ? 'EVIDENCIJA O ZAMJENI' : /odjeljensk/i.test(a.vrsta) ? 'ZAPISNIK SA ČASA ODJELJENSKE ZAJEDNICE' : 'ZAPISNIK O AKTIVNOSTI';
+  return (
+    <Dokument naslov={naslov} nazivFajla={`Aktivnost_${a.datum}`} postavke={postavke}>
+      <table className="podaci-tab">
+        <tbody>
+          <Red o="Datum" v={prikaz(a.datum)} />
+          <Red o="Vrsta aktivnosti" v={<strong>{a.vrsta}</strong>} />
+          <Red o="Razred" v={a.razred} />
+          <Red o="Čas" v={a.cas ? `${a.cas}. čas` : ''} />
+          <Red o="Umjesto koga" v={a.umjestoKoga} />
+          <Red o="Predmet" v={a.predmet} />
+        </tbody>
+      </table>
+      <Blok naslov="Tema / sadržaj" tekst={a.tema} />
+      <Blok naslov="Zapažanja" tekst={a.zapazanja} />
+      <Blok naslov="Napomena" tekst={a.napomena} />
+    </Dokument>
+  );
+}
+
 export function PrintSaradnja({ id }: { id: string }) {
   const postavke = usePostavke();
   const s = useLiveQuery(() => db.saradnja.get(id), [id], null as Saradnja | null | undefined);
@@ -286,12 +313,12 @@ function TabelaPolugodista({ s, period }: { s: Statistika; period: 'I' | 'II' })
   const z = period === 'I' ? s.polugodisteI : s.polugodisteII;
   return (
     <table className="tabela">
-      <thead><tr><th>Mjesec</th><th className="n">Razgovori</th><th className="n">Radionice</th><th className="n">Učesnici rad.</th><th className="n">Saradnja</th></tr></thead>
+      <thead><tr><th>Mjesec</th><th className="n">Razgovori</th><th className="n">Radionice</th><th className="n">Učesnici rad.</th><th className="n">Saradnja</th><th className="n">Ost. aktivnosti</th></tr></thead>
       <tbody>
         {mjeseci.map((m) => (
-          <tr key={m.kljuc}><td>{m.naziv} {m.kljuc.slice(0, 4)}.</td><td className="n">{m.razgovori}</td><td className="n">{m.radionice}</td><td className="n">{m.ucesnici}</td><td className="n">{m.saradnja}</td></tr>
+          <tr key={m.kljuc}><td>{m.naziv} {m.kljuc.slice(0, 4)}.</td><td className="n">{m.razgovori}</td><td className="n">{m.radionice}</td><td className="n">{m.ucesnici}</td><td className="n">{m.saradnja}</td><td className="n">{m.aktivnosti}</td></tr>
         ))}
-        <tr className="zbir ukupno"><td>{z.naziv}</td><td className="n">{z.razgovori}</td><td className="n">{z.radionice}</td><td className="n">{z.ucesnici}</td><td className="n">{z.saradnja}</td></tr>
+        <tr className="zbir ukupno"><td>{z.naziv}</td><td className="n">{z.razgovori}</td><td className="n">{z.radionice}</td><td className="n">{z.ucesnici}</td><td className="n">{z.saradnja}</td><td className="n">{z.aktivnosti}</td></tr>
       </tbody>
     </table>
   );
@@ -300,8 +327,8 @@ function TabelaPolugodista({ s, period }: { s: Statistika; period: 'I' | 'II' })
 export function PrintIzvjestaj({ godina, period }: { godina: number; period: Period }) {
   const postavke = usePostavke();
   const ulaz = useLiveQuery(async () => {
-    const [ucenici, razgovori, radionice, saradnja] = await Promise.all([db.ucenici.toArray(), db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray()]);
-    return { ucenici, razgovori, radionice, saradnja };
+    const [ucenici, razgovori, radionice, saradnja, aktivnosti] = await Promise.all([db.ucenici.toArray(), db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray(), db.aktivnosti.toArray()]);
+    return { ucenici, razgovori, radionice, saradnja, aktivnosti };
   }, []);
   if (!ulaz) return <Ucitavanje />;
   const s = izracunajStatistiku(ulaz, godina, period);
@@ -336,6 +363,80 @@ export function PrintIzvjestaj({ godina, period }: { godina: number; period: Per
       <TabelaRaspodjele naslov="Oblast" podaci={s.radionicePoOblasti} />
       <h2>Saradnja po ustanovi / osobi</h2>
       <TabelaRaspodjele naslov="Ustanova / osoba" podaci={s.saradnjaPoUstanovi} />
+      <h2>Ostali poslovi psihologa</h2>
+      <TabelaRaspodjele naslov="Vrsta aktivnosti (zamjene, čas odjeljenske zajednice…)" podaci={s.aktivnostiPoVrsti} />
+    </Dokument>
+  );
+}
+
+// ---------- 5. Dnevni / sedmični / mjesečni izvještaj (period) ----------
+
+export function PrintPeriod({ od, do: doDatum, biljeske }: { od: string; do: string; biljeske: boolean }) {
+  const postavke = usePostavke();
+  const { poSifri } = useImenik();
+  const ulaz = useLiveQuery(async () => {
+    const [ucenici, razgovori, radionice, saradnja, aktivnosti] = await Promise.all([
+      db.ucenici.toArray(), db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray(), db.aktivnosti.toArray(),
+    ]);
+    return { ucenici, razgovori, radionice, saradnja, aktivnosti };
+  }, []);
+  if (!ulaz) return <Ucitavanje />;
+  const stavke = stavkePerioda(ulaz, od, doDatum);
+  const b = brojPerioda(ulaz, od, doDatum);
+  const tekst = procitajTekst(od, doDatum).trim();
+  const imena = postavke.imenaUDokumentima !== false;
+  const ucenik = (s: string) => {
+    if (!s) return '';
+    const u = poSifri.get(s);
+    const ime = imena ? punoIme(u) : '';
+    return `${ime ? `${ime} (${s})` : s}${u?.razred ? `, ${u.razred}` : ''}`;
+  };
+  const vrsta = vrstaPerioda(od, doDatum);
+
+  return (
+    <Dokument naslov={naslovIzvjestaja(od, doDatum)} podnaslov={opisPerioda(od, doDatum)}
+      nazivFajla={`Izvjestaj_${vrsta === 'dan' ? od : `${od}_${doDatum}`}`} postavke={postavke}>
+      <h2>{tekst ? 'Izvještaj' : 'Sažetak'}</h2>
+      <p className="sazetak" style={{ whiteSpace: 'pre-wrap' }}>{tekst || sazetakPerioda(b, od, doDatum)}</p>
+
+      <h2>Pregled</h2>
+      <table className="tabela">
+        <tbody>
+          <tr><td>Razgovori (broj učenika)</td><td className="n">{b.razgovori} ({b.ucenika})</td></tr>
+          <tr><td>Radionice (broj učesnika)</td><td className="n">{b.radionice} ({b.ucesnici})</td></tr>
+          <tr><td>Kontakti saradnje</td><td className="n">{b.saradnja}</td></tr>
+          <tr><td>Zamjene nastavnika</td><td className="n">{b.zamjene}</td></tr>
+          <tr><td>Časovi odjeljenske zajednice</td><td className="n">{b.casoviOZ}</td></tr>
+          <tr><td>Ostale aktivnosti</td><td className="n">{b.aktivnosti - b.zamjene - b.casoviOZ}</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Hronološki pregled aktivnosti</h2>
+      {stavke.length === 0 ? <p>U ovom periodu nema evidentiranih aktivnosti.</p> : (
+        <table className="lista-tab">
+          <thead>
+            <tr>
+              <th style={{ width: vrsta === 'dan' ? '0' : '14%', display: vrsta === 'dan' ? 'none' : undefined }}>Datum</th>
+              <th style={{ width: '28%' }}>Aktivnost</th>
+              <th style={{ width: '22%' }}>Učenik / razred</th>
+              <th>Opis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stavke.map((s) => (
+              <tr key={s.id}>
+                <td style={{ display: vrsta === 'dan' ? 'none' : undefined }}>{nazivDana(s.datum).slice(0, 3)}, {prikaz(s.datum)}</td>
+                <td>{s.naslov}</td>
+                <td>{ucenik(s.ucenik) || s.detalji.find((d) => d.startsWith('razred'))?.replace('razred ', '') || ''}</td>
+                <td className="tekst-celija">
+                  {[s.umjesto && `umjesto: ${s.umjesto}`, ...s.detalji.filter((d) => !d.startsWith('razred'))].filter(Boolean).join('; ')}
+                  {biljeske && s.tekst ? `\n${s.tekst}` : ''}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </Dokument>
   );
 }

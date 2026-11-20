@@ -64,6 +64,19 @@ export interface Saradnja extends Zapis {
   dogovorIshod: string;
 }
 
+/** Ostale aktivnosti psihologa: zamjene, čas odjeljenske zajednice, dežurstvo, sjednice… */
+export interface Aktivnost extends Zapis {
+  datum: string;
+  vrsta: string;
+  razred: string;
+  cas: string; // broj časa, npr. "3"
+  umjestoKoga: string; // nastavnik/razrednik kojeg je psiholog mijenjao
+  predmet: string;
+  tema: string;
+  zapazanja: string;
+  napomena: string;
+}
+
 export interface Postavke {
   id: 'postavke';
   nazivSkole: string;
@@ -83,7 +96,8 @@ export type Kategorija =
   | 'oblast'
   | 'ciljnaGrupa'
   | 'ustanovaOsoba'
-  | 'nacin';
+  | 'nacin'
+  | 'vrstaAktivnosti';
 
 export interface StavkaSifrarnika extends Zapis {
   kategorija: Kategorija;
@@ -92,7 +106,7 @@ export interface StavkaSifrarnika extends Zapis {
   sakriveno: boolean;
 }
 
-export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi';
+export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti';
 
 export interface Obrisano {
   id: string;
@@ -100,7 +114,7 @@ export interface Obrisano {
   deletedAt: string;
 }
 
-export type VrstaUnosa = 'razgovor' | 'radionica' | 'saradnja';
+export type VrstaUnosa = 'razgovor' | 'radionica' | 'saradnja' | 'aktivnost';
 
 export interface Nacrt {
   kljuc: string; // npr. "razgovor:novi" ili "razgovor:<id>"

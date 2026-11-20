@@ -29,13 +29,13 @@ export async function procitajKopiju(tekst: string, lozinka: string): Promise<{ 
   const dolazno = await desifruj<Snimak>(json, lozinka);
   const plan = napraviPlan(await snimakBaze(), {
     ucenici: dolazno.ucenici ?? [], razgovori: dolazno.razgovori ?? [], radionice: dolazno.radionice ?? [], saradnja: dolazno.saradnja ?? [],
-    sifrarnik: dolazno.sifrarnik ?? [], razredi: dolazno.razredi ?? [], obrisano: dolazno.obrisano ?? [], postavke: dolazno.postavke ?? null,
+    sifrarnik: dolazno.sifrarnik ?? [], razredi: dolazno.razredi ?? [], aktivnosti: dolazno.aktivnosti ?? [], obrisano: dolazno.obrisano ?? [], postavke: dolazno.postavke ?? null,
   });
   return { plan, snimak: dolazno };
 }
 
 export async function primijeniPlan(plan: PlanUvoza): Promise<void> {
-  await db.transaction('rw', [db.ucenici, db.razgovori, db.radionice, db.saradnja, db.sifrarnik, db.razredi, db.obrisano, db.postavke], async () => {
+  await db.transaction('rw', [db.ucenici, db.razgovori, db.radionice, db.saradnja, db.sifrarnik, db.razredi, db.aktivnosti, db.obrisano, db.postavke], async () => {
     for (const t of TABELE_KOPIJE) {
       const tabela = db.table(t);
       if (plan.obrisati[t].length) await tabela.bulkDelete(plan.obrisati[t]);

@@ -19,14 +19,14 @@ export function Statistika() {
   const [period, setPeriod] = useState<Period>('godina');
   const [izvoz, setIzvoz] = useState(false);
   const podaci = useLiveQuery(async () => {
-    const [ucenici, razgovori, radionice, saradnja] = await Promise.all([db.ucenici.toArray(), db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray()]);
-    return { ucenici, razgovori, radionice, saradnja };
+    const [ucenici, razgovori, radionice, saradnja, aktivnosti] = await Promise.all([db.ucenici.toArray(), db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray(), db.aktivnosti.toArray()]);
+    return { ucenici, razgovori, radionice, saradnja, aktivnosti };
   }, []);
 
   const izabrana = godina ?? postavke.skolskaGodinaPocetak;
   const godine = useMemo(() => {
     const g = new Set<number>([postavke.skolskaGodinaPocetak, skolskaGodinaZaDatum(new Date())]);
-    for (const z of [...(podaci?.razgovori ?? []), ...(podaci?.radionice ?? []), ...(podaci?.saradnja ?? [])]) {
+    for (const z of [...(podaci?.razgovori ?? []), ...(podaci?.radionice ?? []), ...(podaci?.saradnja ?? []), ...(podaci?.aktivnosti ?? [])]) {
       const sg = skolskaGodinaZaIso(z.datum);
       if (sg) g.add(sg);
     }
@@ -73,6 +73,7 @@ export function Statistika() {
         <div className="red-dugmadi" style={{ marginBottom: 16 }}>
           <a className="dugme" href={`#/print/izvjestaj/${izabrana}/godina`}><Ikona ime="print" /> Preuzmi godišnji izvještaj (print)</a>
           <a className="dugme" href={`#/print/izvjestaj/${izabrana}/${period === 'II' ? 'II' : 'I'}`}><Ikona ime="print" /> Preuzmi polugodišnji izvještaj (print)</a>
+          <a className="dugme" href="#/izvjestaj"><Ikona ime="kalendar" /> Dnevni / sedmični izvještaj</a>
           <button type="button" className="dugme" onClick={excel} disabled={izvoz}><Ikona ime="excel" /> {izvoz ? 'Pravim…' : 'Izvezi sve u Excel'}</button>
         </div>
 
@@ -94,6 +95,7 @@ export function Statistika() {
           <Grafikon naslov="Status slučajeva (zadnji razgovor po učeniku)" podaci={s.statusSlucajeva} />
           <Grafikon naslov="Radionice po oblasti" podaci={s.radionicePoOblasti} />
           <Grafikon naslov="Saradnja po ustanovi / osobi" podaci={s.saradnjaPoUstanovi} />
+          <Grafikon naslov="Ostale aktivnosti po vrsti" podaci={s.aktivnostiPoVrsti} />
         </div>
       </main>
     </>

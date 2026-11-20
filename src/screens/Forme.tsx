@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { sacuvajRadionicu, sacuvajRazgovor, sacuvajSaradnju } from '../db/repo';
+import { sacuvajAktivnost, sacuvajRadionicu, sacuvajRazgovor, sacuvajSaradnju } from '../db/repo';
 import { Chipovi, DatumPolje, Izbor, Modal, Polje, Potvrda, SifraPolje, TagSifre, TekstPolje } from '../components/Polja';
 import { Ikona } from '../components/Ikona';
 import { useToast } from '../components/Toast';
@@ -10,7 +10,7 @@ import { danasIso, prikazVremena } from '../lib/datum';
 import { idi, nazad } from '../lib/router';
 import { opcije, useImenik, useSifrarnik } from '../lib/podaci';
 import { jeIspravnaSifra, normalizujRazred } from '../lib/sifra';
-import type { Radionica, Razgovor, Saradnja, VrstaUnosa } from '../types';
+import type { Aktivnost, Radionica, Razgovor, Saradnja, VrstaUnosa } from '../types';
 
 type Bez<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -351,6 +351,103 @@ export function FormaSaradnja({ editId, sifra: pocetnaSifra, izNacrta }: { editI
       {dijalog}
       {sacuvanId && <PoslijeSnimanja vrsta="saradnja" id={sacuvanId}
         onGotovo={() => idi(p.sifra ? `/ucenici/${encodeURIComponent(p.sifra)}` : `/zapis/saradnja/${sacuvanId}`, true)} />}
+    </>
+  );
+}
+
+// ---------- Ostala aktivnost (zamjena, čas odjeljenske zajednice…) ----------
+
+const PREDMETI = [
+  'Bosanski jezik i književnost', 'Matematika', 'Engleski jezik', 'Njemački jezik', 'Arapski jezik', 'Turski jezik', 'Priroda', 'Biologija', 'Hemija', 'Fizika',
+  'Geografija', 'Historija', 'Informatika', 'Tehnička kultura', 'Muzička kultura', 'Likovna kultura', 'Tjelesni i zdravstveni odgoj',
+  'Vjeronauka', 'Moja okolina', 'Društvo', 'Čas odjeljenske zajednice',
+];
+
+const praznaAktivnost = (): Bez<Aktivnost> => ({
+  datum: danasIso(), vrsta: 'Zamjena nastavnika', razred: '', cas: '', umjestoKoga: '', predmet: '', tema: '', zapazanja: '', napomena: '',
+});
+
+export function FormaAktivnost({ editId, izNacrta }: { editId?: string; izNacrta?: boolean }) {
+  const toast = useToast();
+  const sif = useSifrarnik();
+  const imenik = useImenik();
+  const f = useForma<Bez<Aktivnost> & { id?: string }>('aktivnost', editId, async () => (editId ? db.aktivnosti.get(editId) : praznaAktivnost()), !!izNacrta);
+  const [greske, setGreske] = useState<Record<string, string>>({});
+  const postavi = saBrisanjemGreske(f.postavi, setGreske);
+  const [snimanje, setSnimanje] = useState(false);
+  const [sacuvanId, setSacuvanId] = useState('');
+  const { odustani, dijalog } = useOdustajanje(f.izmijenjeno, f.zavrsi, '/radionice?prikaz=aktivnosti');
+
+  const p = f.podaci;
+  if (!p) return null;
+  const jeZamjena = /zamjena|odjeljensk/i.test(p.vrsta);
+  const razrednikRazreda = imenik.razrednik.get(normalizujRazred(p.razred));
+  const razredi = [...new Set([...imenik.razredi.map((r) => r.razred), ...imenik.ucenici.map((u) => u.razred)].filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'bs', { numeric: true }));
+  const nastavnici = [...new Set(imenik.razredi.map((r) => r.razrednik).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'bs'));
+
+  const sacuvaj = async () => {
+    const g: Record<string, string> = {};
+    if (!p.datum) g.datum = 'Upiši datum.';
+    if (!p.vrsta) g.vrsta = 'Izaberi vrstu aktivnosti.';
+    setGreske(g);
+    skrol(g);
+    if (Object.keys(g).length) return;
+    setSnimanje(true);
+    try {
+      const z = await sacuvajAktivnost(p);
+      await f.zavrsi();
+      toast('Sačuvano ✓');
+      setSacuvanId(z.id);
+    } catch (e) {
+      toast('Snimanje nije uspjelo: ' + (e as Error).message, 'greska');
+    } finally {
+      setSnimanje(false);
+    }
+  };
+
+  return (
+    <>
+      <OkvirForme naslov={editId ? 'Uredi aktivnost' : 'Ostala aktivnost'} nacrt={f.nacrt} onNastavi={f.nastaviNacrt} onOdbaci={f.odbaciNacrt}
+        onSacuvaj={sacuvaj} onOdustani={odustani} snimanje={snimanje}>
+        <Chipovi id="vrsta-akt" labela="Vrsta aktivnosti" obavezno greska={greske.vrsta} opcije={opcije(sif, 'vrstaAktivnosti', p.vrsta)}
+          vrijednost={p.vrsta} onChange={(v) => {
+            postavi('vrsta', v);
+            if (/odjeljensk/i.test(v) && !p.predmet) postavi('predmet', 'Čas odjeljenske zajednice');
+          }} mozeOdznaciti={false} />
+        <div className="dva-stupca">
+          <DatumPolje labela="Datum" obavezno vrijednost={p.datum} onChange={(v) => postavi('datum', v)} greska={greske.datum} />
+          <div className="dva-stupca" style={{ gridTemplateColumns: '1fr 90px' }}>
+            <Polje labela="Razred" id="a-razred">
+              <input id="a-razred" type="text" list="a-razredi" placeholder="npr. 7-1" value={p.razred}
+                onChange={(e) => postavi('razred', e.target.value)} onBlur={(e) => postavi('razred', normalizujRazred(e.target.value))} />
+              <datalist id="a-razredi">{razredi.map((r) => <option key={r} value={r} />)}</datalist>
+            </Polje>
+            <Polje labela="Čas" id="a-cas">
+              <input id="a-cas" type="text" inputMode="numeric" placeholder="npr. 3" value={p.cas} onChange={(e) => postavi('cas', e.target.value.slice(0, 10))} />
+            </Polje>
+          </div>
+        </div>
+        {jeZamjena && (
+          <Polje labela="Umjesto koga" id="a-umjesto" pomoc={razrednikRazreda && p.umjestoKoga !== razrednikRazreda ? (
+            <button type="button" className="chip mali" onClick={() => postavi('umjestoKoga', razrednikRazreda)}>Razrednik {normalizujRazred(p.razred)}: {razrednikRazreda}</button>
+          ) : 'Nastavnik ili razrednik kojeg si mijenjao/la'}>
+            <input id="a-umjesto" type="text" list="a-nastavnici" value={p.umjestoKoga} autoCapitalize="words" onChange={(e) => postavi('umjestoKoga', e.target.value)} />
+            <datalist id="a-nastavnici">{nastavnici.map((n) => <option key={n} value={n} />)}</datalist>
+          </Polje>
+        )}
+        {jeZamjena && (
+          <Polje labela="Predmet" id="a-predmet">
+            <input id="a-predmet" type="text" list="a-predmeti" value={p.predmet} onChange={(e) => postavi('predmet', e.target.value)} />
+            <datalist id="a-predmeti">{PREDMETI.map((n) => <option key={n} value={n} />)}</datalist>
+          </Polje>
+        )}
+        <TekstPolje labela={jeZamjena ? 'Tema / sadržaj časa' : 'Opis / sadržaj'} kratko vrijednost={p.tema} onChange={(v) => postavi('tema', v)} />
+        <TekstPolje labela="Zapažanja" vrijednost={p.zapazanja} onChange={(v) => postavi('zapazanja', v)} />
+        <TekstPolje labela="Napomena" kratko vrijednost={p.napomena} onChange={(v) => postavi('napomena', v)} />
+      </OkvirForme>
+      {dijalog}
+      {sacuvanId && <PoslijeSnimanja vrsta="aktivnost" id={sacuvanId} onGotovo={() => idi(`/zapis/aktivnost/${sacuvanId}`, true)} />}
     </>
   );
 }

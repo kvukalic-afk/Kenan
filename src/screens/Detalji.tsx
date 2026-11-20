@@ -8,10 +8,10 @@ import { NAZIV_VRSTE, StatusOznaka, Zaglavlje } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { prikaz, prikazVremena } from '../lib/datum';
 import { nazad } from '../lib/router';
-import { punoIme, type Radionica, type Razgovor, type Saradnja, type VrstaUnosa } from '../types';
+import { punoIme, type Aktivnost, type Radionica, type Razgovor, type Saradnja, type VrstaUnosa } from '../types';
 import { useImenik } from '../lib/podaci';
 
-const TABELA = { razgovor: 'razgovori', radionica: 'radionice', saradnja: 'saradnja' } as const;
+const TABELA = { razgovor: 'razgovori', radionica: 'radionice', saradnja: 'saradnja', aktivnost: 'aktivnosti' } as const;
 
 function Red({ o, children }: { o: string; children: ReactNode }) {
   if (children === '' || children === null || children === undefined) return null;
@@ -90,6 +90,23 @@ export function Detalji({ vrsta, id }: { vrsta: VrstaUnosa; id: string }) {
         <Blok naslov="Zapažanja" tekst={r.zapazanja} />
         <Blok naslov="Evaluacija" tekst={r.evaluacija} />
         <Blok naslov="Napomena" tekst={r.napomena} />
+      </>
+    );
+  } else if (vrsta === 'aktivnost') {
+    const a = zapis as Aktivnost;
+    sadrzaj = (
+      <>
+        <dl className="podaci">
+          <Red o="Datum">{prikaz(a.datum)}</Red>
+          <Red o="Vrsta"><strong>{a.vrsta}</strong></Red>
+          <Red o="Razred">{a.razred}</Red>
+          <Red o="Čas">{a.cas ? `${a.cas}. čas` : ''}</Red>
+          <Red o="Umjesto koga">{a.umjestoKoga}</Red>
+          <Red o="Predmet">{a.predmet}</Red>
+        </dl>
+        <Blok naslov="Tema / sadržaj" tekst={a.tema} />
+        <Blok naslov="Zapažanja" tekst={a.zapazanja} />
+        <Blok naslov="Napomena" tekst={a.napomena} />
       </>
     );
   } else {

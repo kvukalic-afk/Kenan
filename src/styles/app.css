@@ -27,6 +27,7 @@
   --boja-razgovor: #17556b;
   --boja-radionica: #6b4f8a;
   --boja-saradnja: #8a6a1f;
+  --boja-aktivnost: #3d6b4a;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
   --nav-visina: 64px;
   color-scheme: light;
@@ -57,6 +58,7 @@
     --boja-razgovor: #5fb0c4;
     --boja-radionica: #b49ad6;
     --boja-saradnja: #d6b45f;
+    --boja-aktivnost: #7fc79a;
     color-scheme: dark;
   }
 }
@@ -162,8 +164,9 @@ a { color: var(--primarna); }
 .red-dugmadi { display: flex; flex-wrap: wrap; gap: 8px; }
 .red-dugmadi > .dugme { flex: 1 1 auto; }
 
-.brzi-unos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
-.brzi-unos .dugme { flex-direction: column; min-height: 76px; font-size: 0.95rem; padding: 10px 6px; }
+.brzi-unos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+@media (min-width: 560px) { .brzi-unos { grid-template-columns: repeat(4, 1fr); } }
+.brzi-unos .dugme { flex-direction: column; min-height: 68px; font-size: 0.95rem; padding: 10px 6px; }
 .brzi-unos .dugme svg { width: 26px; height: 26px; }
 
 /* ---------- Kartice i liste ---------- */
@@ -204,9 +207,11 @@ a { color: var(--primarna); }
 .vrsta.razgovor { background: var(--boja-razgovor); }
 .vrsta.radionica { background: var(--boja-radionica); }
 .vrsta.saradnja { background: var(--boja-saradnja); }
+.vrsta.aktivnost { background: var(--boja-aktivnost); }
 .oznaka.razgovor { color: var(--boja-razgovor); background: color-mix(in srgb, var(--boja-razgovor) 14%, transparent); }
 .oznaka.radionica { color: var(--boja-radionica); background: color-mix(in srgb, var(--boja-radionica) 14%, transparent); }
 .oznaka.saradnja { color: var(--boja-saradnja); background: color-mix(in srgb, var(--boja-saradnja) 16%, transparent); }
+.oznaka.aktivnost { color: var(--boja-aktivnost); background: color-mix(in srgb, var(--boja-aktivnost) 16%, transparent); }
 
 .prazno { text-align: center; padding: 28px 16px; color: var(--tekst-blijed); background: var(--povrsina); border: 1px dashed var(--rub-jak); border-radius: var(--radijus); }
 .prazno svg { width: 36px; height: 36px; margin-bottom: 6px; opacity: 0.6; }

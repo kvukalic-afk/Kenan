@@ -27,6 +27,7 @@ const PUTANJE: Record<string, string> = {
   excel: 'M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 12l6 6M15 12l-6 6',
   kopija: 'M12 3 4 7v5c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V7zM9 12l2 2 4-4',
   prazno: 'M4 5h16v14H4zM4 9h16M9 13h6',
+  aktivnost: 'M9 4h6v3H9zM9 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-3M9 14l2 2 4-4',
 };
 
 export function Ikona({ ime, naslov }: { ime: keyof typeof PUTANJE | string; naslov?: string }) {

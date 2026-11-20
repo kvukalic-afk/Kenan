@@ -4,26 +4,54 @@ import { db } from '../db/db';
 import { Prazno } from '../components/Polja';
 import { Zaglavlje } from '../components/Okvir';
 import { nazivMjeseca, prikaz } from '../lib/datum';
+import { idi } from '../lib/router';
 
-export function Radionice() {
-  const [oblast, setOblast] = useState('');
+type Prikaz = 'radionice' | 'aktivnosti';
+
+export function Radionice({ pocetniPrikaz = 'radionice' }: { pocetniPrikaz?: Prikaz }) {
+  const [prikazTip, setPrikazTip] = useState<Prikaz>(pocetniPrikaz);
+  const [filter, setFilter] = useState('');
   const [mjesec, setMjesec] = useState('');
-  const radionice = useLiveQuery(() => db.radionice.orderBy('datum').reverse().toArray(), []);
+  const podaci = useLiveQuery(async () => {
+    const [radionice, aktivnosti] = await Promise.all([
+      db.radionice.orderBy('datum').reverse().toArray(),
+      db.aktivnosti.orderBy('datum').reverse().toArray(),
+    ]);
+    return { radionice, aktivnosti };
+  }, []);
 
-  const oblasti = useMemo(() => [...new Set((radionice ?? []).map((r) => r.oblast).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'bs')), [radionice]);
-  const mjeseci = useMemo(() => [...new Set((radionice ?? []).map((r) => r.datum.slice(0, 7)).filter(Boolean))].sort().reverse(), [radionice]);
-  const prikazane = (radionice ?? []).filter((r) => (!oblast || r.oblast === oblast) && (!mjesec || r.datum.startsWith(mjesec)));
+  const jeRad = prikazTip === 'radionice';
+  const zapisi = useMemo(
+    () => (jeRad ? (podaci?.radionice ?? []).map((r) => ({ ...r, grupa: r.oblast })) : (podaci?.aktivnosti ?? []).map((a) => ({ ...a, grupa: a.vrsta }))),
+    [podaci, jeRad],
+  );
+  const grupe = useMemo(() => [...new Set(zapisi.map((r) => r.grupa).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'bs')), [zapisi]);
+  const mjeseci = useMemo(() => [...new Set(zapisi.map((r) => r.datum.slice(0, 7)).filter(Boolean))].sort().reverse(), [zapisi]);
+
+  const promijeni = (p: Prikaz) => {
+    setPrikazTip(p);
+    setFilter('');
+    setMjesec('');
+    idi(p === 'aktivnosti' ? '/radionice?prikaz=aktivnosti' : '/radionice', true);
+  };
+
+  const radionice = (podaci?.radionice ?? []).filter((r) => (!filter || r.oblast === filter) && (!mjesec || r.datum.startsWith(mjesec)));
+  const aktivnosti = (podaci?.aktivnosti ?? []).filter((a) => (!filter || a.vrsta === filter) && (!mjesec || a.datum.startsWith(mjesec)));
 
   return (
     <>
-      <Zaglavlje naslov="Radionice" />
+      <Zaglavlje naslov={jeRad ? 'Radionice' : 'Ostale aktivnosti'} />
       <main className="sadrzaj sirok">
+        <div className="filteri" role="tablist" aria-label="Prikaz">
+          <button type="button" role="tab" className="chip" aria-pressed={jeRad} aria-selected={jeRad} onClick={() => promijeni('radionice')}>Radionice</button>
+          <button type="button" role="tab" className="chip" aria-pressed={!jeRad} aria-selected={!jeRad} onClick={() => promijeni('aktivnosti')}>Ostale aktivnosti</button>
+        </div>
         <div className="mreza-2" style={{ marginBottom: 12 }}>
           <label>
-            <span className="sr-only">Oblast</span>
-            <select value={oblast} onChange={(e) => setOblast(e.target.value)}>
-              <option value="">Sve oblasti</option>
-              {oblasti.map((o) => <option key={o}>{o}</option>)}
+            <span className="sr-only">{jeRad ? 'Oblast' : 'Vrsta'}</span>
+            <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <option value="">{jeRad ? 'Sve oblasti' : 'Sve vrste'}</option>
+              {grupe.map((o) => <option key={o}>{o}</option>)}
             </select>
           </label>
           <label>
@@ -34,23 +62,48 @@ export function Radionice() {
             </select>
           </label>
         </div>
-        {!radionice ? null : radionice.length === 0 ? (
-          <Prazno>Još nema radionica. Dodaj prvu preko dugmeta +.</Prazno>
-        ) : prikazane.length === 0 ? (
-          <Prazno>Nema radionica za izabrani filter.</Prazno>
+
+        {!podaci ? null : jeRad ? (
+          podaci.radionice.length === 0 ? (
+            <Prazno>Još nema radionica. Dodaj prvu preko dugmeta +.</Prazno>
+          ) : radionice.length === 0 ? (
+            <Prazno>Nema radionica za izabrani filter.</Prazno>
+          ) : (
+            <>
+              <p className="blijedo malo">{radionice.length} radionica · {radionice.reduce((s, r) => s + (r.brojUcesnika ?? 0), 0)} učesnika</p>
+              <ul className="lista">
+                {radionice.map((r) => (
+                  <li key={r.id}>
+                    <a className="stavka" href={`#/zapis/radionica/${r.id}`}>
+                      <span className="vrsta radionica" aria-hidden />
+                      <span className="glavno">
+                        <span className="red1">{r.tema || 'Bez teme'}</span>
+                        <span className="red2">{[r.razred, r.oblast].filter(Boolean).join(' · ')}</span>
+                      </span>
+                      <span className="desno broj">{prikaz(r.datum)}<br />{r.brojUcesnika != null ? `${r.brojUcesnika} uč.` : ''}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )
+        ) : podaci.aktivnosti.length === 0 ? (
+          <Prazno>Još nema ostalih aktivnosti (zamjene, čas odjeljenske zajednice, dežurstvo…). Dodaj prvu preko dugmeta + → Ostala aktivnost.</Prazno>
+        ) : aktivnosti.length === 0 ? (
+          <Prazno>Nema aktivnosti za izabrani filter.</Prazno>
         ) : (
           <>
-            <p className="blijedo malo">{prikazane.length} radionica · {prikazane.reduce((s, r) => s + (r.brojUcesnika ?? 0), 0)} učesnika</p>
+            <p className="blijedo malo">{aktivnosti.length} aktivnosti</p>
             <ul className="lista">
-              {prikazane.map((r) => (
-                <li key={r.id}>
-                  <a className="stavka" href={`#/zapis/radionica/${r.id}`}>
-                    <span className="vrsta radionica" aria-hidden />
+              {aktivnosti.map((a) => (
+                <li key={a.id}>
+                  <a className="stavka" href={`#/zapis/aktivnost/${a.id}`}>
+                    <span className="vrsta aktivnost" aria-hidden />
                     <span className="glavno">
-                      <span className="red1">{r.tema || 'Bez teme'}</span>
-                      <span className="red2">{[r.razred, r.oblast].filter(Boolean).join(' · ')}</span>
+                      <span className="red1">{a.vrsta}</span>
+                      <span className="red2">{[a.razred, a.cas && `${a.cas}. čas`, a.umjestoKoga && `umjesto: ${a.umjestoKoga}`, a.predmet, a.tema].filter(Boolean).join(' · ')}</span>
                     </span>
-                    <span className="desno broj">{prikaz(r.datum)}<br />{r.brojUcesnika != null ? `${r.brojUcesnika} uč.` : ''}</span>
+                    <span className="desno broj">{prikaz(a.datum)}</span>
                   </a>
                 </li>
               ))}

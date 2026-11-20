@@ -15,13 +15,14 @@ import { Radionice } from './screens/Radionice';
 import { Statistika } from './screens/Statistika';
 import { Postavke } from './screens/Postavke';
 import { Detalji } from './screens/Detalji';
-import { FormaRadionica, FormaRazgovor, FormaSaradnja } from './screens/Forme';
+import { FormaAktivnost, FormaRadionica, FormaRazgovor, FormaSaradnja } from './screens/Forme';
 import { Zakljucano } from './screens/Zakljucano';
-import { PrintIzvjestaj, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
+import { IzvjestajPeriod } from './screens/IzvjestajPeriod';
+import { PrintAktivnost, PrintIzvjestaj, PrintPeriod, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
 import type { Period } from './lib/statistika';
 
 const NEAKTIVNOST_MS = 5 * 60 * 1000;
-const VRSTE: VrstaUnosa[] = ['razgovor', 'radionica', 'saradnja'];
+const VRSTE: VrstaUnosa[] = ['razgovor', 'radionica', 'saradnja', 'aktivnost'];
 
 export function App() {
   const [spremno, setSpremno] = useState(false);
@@ -106,8 +107,9 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
   if (!d0) { ekran = <Pocetna />; fab = true; }
   else if (d0 === 'ucenici' && !d1) { ekran = <Ucenici pocetniFilter={ruta.upit.get('filter') ?? undefined} />; fab = true; }
   else if (d0 === 'ucenici') { ekran = <Karton key={d1} sifra={d1} />; fab = true; }
-  else if (d0 === 'radionice') { ekran = <Radionice />; fab = true; }
+  else if (d0 === 'radionice') { ekran = <Radionice key={ruta.upit.get('prikaz') ?? ''} pocetniPrikaz={ruta.upit.get('prikaz') === 'aktivnosti' ? 'aktivnosti' : 'radionice'} />; fab = true; }
   else if (d0 === 'statistika') { ekran = <Statistika />; fab = true; }
+  else if (d0 === 'izvjestaj') ekran = <IzvjestajPeriod od={ruta.upit.get('od') ?? undefined} do={ruta.upit.get('do') ?? undefined} />;
   else if (d0 === 'postavke') ekran = <Postavke otvoriKopiju={ruta.upit.get('kopija') === '1'} />;
   else if (d0 === 'zapis' && VRSTE.includes(d1 as VrstaUnosa)) ekran = <Detalji key={d2} vrsta={d1 as VrstaUnosa} id={d2} />;
   else if ((d0 === 'novi' || d0 === 'uredi') && VRSTE.includes(d1 as VrstaUnosa)) {
@@ -117,13 +119,16 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
     const sifra = ruta.upit.get('sifra') ?? undefined;
     ekran = d1 === 'razgovor' ? <FormaRazgovor key={kljuc} editId={editId} sifra={sifra} izNacrta={izNacrta} />
       : d1 === 'radionica' ? <FormaRadionica key={kljuc} editId={editId} izNacrta={izNacrta} />
+      : d1 === 'aktivnost' ? <FormaAktivnost key={kljuc} editId={editId} izNacrta={izNacrta} />
       : <FormaSaradnja key={kljuc} editId={editId} sifra={sifra} izNacrta={izNacrta} />;
   } else if (d0 === 'print') {
     navigacija = false;
     ekran = d1 === 'razgovor' ? <PrintRazgovor id={d2} />
       : d1 === 'radionica' ? <PrintRadionica id={d2} />
       : d1 === 'saradnja' ? <PrintSaradnja id={d2} />
+      : d1 === 'aktivnost' ? <PrintAktivnost id={d2} />
       : d1 === 'karton' ? <PrintKarton sifra={d2} />
+      : d1 === 'period' ? <PrintPeriod od={d2} do={d3} biljeske={ruta.upit.get('biljeske') === '1'} />
       : <PrintIzvjestaj godina={Number(d2)} period={(['I', 'II'].includes(d3) ? d3 : 'godina') as Period} />;
   } else {
     ekran = <Pocetna />;
@@ -154,7 +159,7 @@ function PitanjeNacrta() {
   const n = nacrti[0];
   const opis = (x: Nacrt) => {
     const p = x.podaci as Record<string, string>;
-    return [NAZIV_VRSTE[x.vrsta], p.sifra || p.tema || p.ustanovaOsoba, x.editId ? '(izmjena)' : ''].filter(Boolean).join(' – ');
+    return [NAZIV_VRSTE[x.vrsta], p.sifra || p.tema || p.ustanovaOsoba || p.vrsta, x.editId ? '(izmjena)' : ''].filter(Boolean).join(' – ');
   };
   return (
     <Modal naslov="Nastavi nedovršeni unos?" onZatvori={() => setNacrti([])}>

@@ -55,9 +55,9 @@ function listStatistike(X: XLSXMod, s: Statistika) {
   const aoa: (string | number)[][] = [];
   aoa.push([`Statistika za školsku ${nazivSkolskeGodine(s.pocetak)}. godinu`]);
   aoa.push([]);
-  aoa.push(['Mjesec', 'Razgovori', 'Radionice', 'Učesnici radionica', 'Kontakti saradnje']);
-  for (const m of s.mjeseci) aoa.push([m.naziv, m.razgovori, m.radionice, m.ucesnici, m.saradnja]);
-  for (const z of [s.polugodisteI, s.polugodisteII, s.ukupno]) aoa.push([z.naziv, z.razgovori, z.radionice, z.ucesnici, z.saradnja]);
+  aoa.push(['Mjesec', 'Razgovori', 'Radionice', 'Učesnici radionica', 'Kontakti saradnje', 'Ostale aktivnosti']);
+  for (const m of s.mjeseci) aoa.push([m.naziv, m.razgovori, m.radionice, m.ucesnici, m.saradnja, m.aktivnosti]);
+  for (const z of [s.polugodisteI, s.polugodisteII, s.ukupno]) aoa.push([z.naziv, z.razgovori, z.radionice, z.ucesnici, z.saradnja, z.aktivnosti]);
   aoa.push([]);
   aoa.push(['Broj različitih učenika s kojima je rađeno', s.razlicitihUcenika]);
   aoa.push(['Učenici u praćenju', s.uPracenju]);
@@ -68,6 +68,7 @@ function listStatistike(X: XLSXMod, s: Statistika) {
     ['Status slučajeva (zadnji razgovor po učeniku)', s.statusSlucajeva],
     ['Radionice po oblasti', s.radionicePoOblasti],
     ['Saradnja po ustanovi/osobi', s.saradnjaPoUstanovi],
+    ['Ostale aktivnosti po vrsti', s.aktivnostiPoVrsti],
   ];
   for (const [naslov, r] of raspodjele) {
     aoa.push([]);
@@ -76,7 +77,7 @@ function listStatistike(X: XLSXMod, s: Statistika) {
     for (const x of r) aoa.push([x.naziv, x.broj]);
   }
   const ws = X.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{ wch: 46 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 18 }];
+  ws['!cols'] = [{ wch: 46 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
   return ws;
 }
 
@@ -177,6 +178,19 @@ export async function napraviExcel(s: Snimak, skolskaGodina: number, imena = tru
     { naslov: 'Razlog', sirina: 40, vrijednost: (r) => r.razlog },
     { naslov: 'Dogovor / ishod', sirina: 50, vrijednost: (r) => r.dogovorIshod },
   ]) as never, 'Saradnja');
+
+  const aktivnosti = [...(s.aktivnosti ?? [])].sort((a, b) => a.datum.localeCompare(b.datum));
+  X.utils.book_append_sheet(wb, napraviList(X, aktivnosti, [
+    { naslov: 'Datum', sirina: 11, vrijednost: (r) => r.datum, datum: true },
+    { naslov: 'Vrsta', sirina: 26, vrijednost: (r) => r.vrsta },
+    { naslov: 'Razred', sirina: 8, vrijednost: (r) => r.razred },
+    { naslov: 'Čas', sirina: 6, vrijednost: (r) => r.cas },
+    { naslov: 'Umjesto koga', sirina: 24, vrijednost: (r) => r.umjestoKoga },
+    { naslov: 'Predmet', sirina: 18, vrijednost: (r) => r.predmet },
+    { naslov: 'Tema / sadržaj', sirina: 40, vrijednost: (r) => r.tema },
+    { naslov: 'Zapažanja', sirina: 50, vrijednost: (r) => r.zapazanja },
+    { naslov: 'Napomena', sirina: 30, vrijednost: (r) => r.napomena },
+  ]) as never, 'Ostale aktivnosti');
 
   const stat = izracunajStatistiku(s, skolskaGodina, 'godina');
   X.utils.book_append_sheet(wb, listStatistike(X, stat), 'Statistika');

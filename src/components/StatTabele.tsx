@@ -8,6 +8,7 @@ export function TabelaMjeseci({ s }: { s: Statistika }) {
       <td className="n">{z.radionice}</td>
       <td className="n">{z.ucesnici}</td>
       <td className="n">{z.saradnja}</td>
+      <td className="n">{z.aktivnosti}</td>
     </tr>
   );
   return (
@@ -19,6 +20,7 @@ export function TabelaMjeseci({ s }: { s: Statistika }) {
           <th className="n"><span className="dugo">Radionice</span><span className="kratko">Rad.</span></th>
           <th className="n"><span className="dugo">Učesnici rad.</span><span className="kratko">Učes.</span></th>
           <th className="n"><span className="dugo">Saradnja</span><span className="kratko">Sar.</span></th>
+          <th className="n"><span className="dugo">Ost. aktivnosti</span><span className="kratko">Akt.</span></th>
         </tr>
       </thead>
       <tbody>
@@ -29,6 +31,7 @@ export function TabelaMjeseci({ s }: { s: Statistika }) {
             <td className="n">{m.radionice}</td>
             <td className="n">{m.ucesnici}</td>
             <td className="n">{m.saradnja}</td>
+            <td className="n">{m.aktivnosti}</td>
           </tr>
         ))}
         {red(s.polugodisteI, 'zbir')}

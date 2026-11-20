@@ -3,7 +3,7 @@ import { db } from '../db/db';
 import { Ikona } from '../components/Ikona';
 import { Prazno } from '../components/Polja';
 import { RedStavke, StatusOznaka, Zaglavlje, type StavkaVremena } from '../components/Okvir';
-import { danasIso, MJESECI, prikaz, razlikaDana } from '../lib/datum';
+import { danasIso, dodajDane, MJESECI, pocetakSedmice, prikaz, razlikaDana } from '../lib/datum';
 import { izracunajZakazano, tekstOznake, zadnjiRazgovorPoUceniku } from '../lib/zakazano';
 import { usePostavke } from '../lib/podaci';
 import { punoIme } from '../types';
@@ -11,10 +11,10 @@ import { punoIme } from '../types';
 export function Pocetna() {
   const postavke = usePostavke();
   const podaci = useLiveQuery(async () => {
-    const [razgovori, radionice, saradnja, ucenici] = await Promise.all([
-      db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray(), db.ucenici.toArray(),
+    const [razgovori, radionice, saradnja, ucenici, aktivnosti] = await Promise.all([
+      db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray(), db.ucenici.toArray(), db.aktivnosti.toArray(),
     ]);
-    return { razgovori, radionice, saradnja, ucenici };
+    return { razgovori, radionice, saradnja, ucenici, aktivnosti };
   }, []);
 
   if (!podaci) return <Zaglavlje naslov="Evidencija psihologa" />;
@@ -33,6 +33,7 @@ export function Pocetna() {
     ...podaci.razgovori.map((z) => ({ vrsta: 'razgovor' as const, z })),
     ...podaci.radionice.map((z) => ({ vrsta: 'radionica' as const, z })),
     ...podaci.saradnja.map((z) => ({ vrsta: 'saradnja' as const, z })),
+    ...podaci.aktivnosti.map((z) => ({ vrsta: 'aktivnost' as const, z })),
   ];
   const nedavno = sve.sort((a, b) => b.z.createdAt.localeCompare(a.z.createdAt)).slice(0, 6);
 
@@ -60,6 +61,7 @@ export function Pocetna() {
           <a className="dugme primarno" href="#/novi/razgovor"><Ikona ime="razgovor" />+ Razgovor</a>
           <a className="dugme primarno" href="#/novi/radionica"><Ikona ime="radionica" />+ Radionica</a>
           <a className="dugme primarno" href="#/novi/saradnja"><Ikona ime="saradnja" />+ Saradnja</a>
+          <a className="dugme primarno" href="#/novi/aktivnost"><Ikona ime="aktivnost" />+ Aktivnost</a>
         </div>
 
         <h2 className="sr-only">Ovaj mjesec</h2>
@@ -68,6 +70,11 @@ export function Pocetna() {
           <div className="brojka"><div className="v">{radionicaMjesec}</div><div className="o">radionica ({nazivMj})</div></div>
           <a className="brojka" href="#/ucenici?filter=pracenje" style={{ textDecoration: 'none' }}><div className="v">{uPracenju}</div><div className="o">učenika u praćenju</div></a>
           <a className="brojka" href="#/ucenici?filter=otvoreni" style={{ textDecoration: 'none' }}><div className="v">{otvoreni}</div><div className="o">otvorenih slučajeva</div></a>
+        </div>
+
+        <div className="red-dugmadi" style={{ marginBottom: 8 }}>
+          <a className="dugme" href={`#/izvjestaj?od=${danas}&do=${danas}`}><Ikona ime="print" /> Dnevni izvještaj</a>
+          <a className="dugme" href={`#/izvjestaj?od=${pocetakSedmice(danas)}&do=${dodajDane(pocetakSedmice(danas), 6)}`}><Ikona ime="print" /> Sedmični izvještaj</a>
         </div>
 
         <div className="naslov-sekcije"><h2>Zakazano</h2></div>

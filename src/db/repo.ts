@@ -2,7 +2,7 @@ import { db } from './db';
 import { pocetneStavke, pocetnePostavke } from './defaults';
 import { normalizujRazred } from '../lib/sifra';
 import type {
-  Kategorija, Postavke, Radionica, Razgovor, Saradnja, StavkaSifrarnika, Tabela, Ucenik,
+  Aktivnost, Kategorija, Postavke, Radionica, Razgovor, Saradnja, StavkaSifrarnika, Tabela, Ucenik,
 } from '../types';
 
 export function uuid(): string {
@@ -20,7 +20,10 @@ const sada = () => new Date().toISOString();
 export async function inicijalizuj(): Promise<void> {
   await db.transaction('rw', db.postavke, db.sifrarnik, async () => {
     if (!(await db.postavke.get('postavke'))) await db.postavke.put(pocetnePostavke());
-    if ((await db.sifrarnik.count()) === 0) await db.sifrarnik.bulkPut(pocetneStavke());
+    // dodaj početne stavke za kategorije koje još nemaju nijednu (npr. nova kategorija nakon ažuriranja appa)
+    const postojece = new Set((await db.sifrarnik.toArray()).map((s) => s.kategorija));
+    const nedostaju = pocetneStavke().filter((s) => !postojece.has(s.kategorija));
+    if (nedostaju.length) await db.sifrarnik.bulkPut(nedostaju);
   });
 }
 
@@ -96,7 +99,7 @@ export async function postaviUPracenju(id: string, uPracenju: boolean) {
 type Novo<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt'> & { id?: string };
 
 async function sacuvaj<T extends { id: string; createdAt: string; updatedAt: string }>(
-  tabela: 'razgovori' | 'radionice' | 'saradnja',
+  tabela: 'razgovori' | 'radionice' | 'saradnja' | 'aktivnosti',
   podaci: Novo<T>,
 ): Promise<T> {
   const t = sada();
@@ -128,6 +131,10 @@ export async function sacuvajSaradnju(podaci: Novo<Saradnja>): Promise<Saradnja>
     if (podaci.sifra) await osigurajUcenika(podaci.sifra, '');
     return sacuvaj<Saradnja>('saradnja', podaci);
   });
+}
+
+export async function sacuvajAktivnost(podaci: Novo<Aktivnost>): Promise<Aktivnost> {
+  return sacuvaj<Aktivnost>('aktivnosti', { ...podaci, razred: normalizujRazred(podaci.razred) });
 }
 
 /** Brisanje ostavlja "trag" (tombstone) da se brisanje prenese i kroz rezervnu kopiju. */

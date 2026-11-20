@@ -124,7 +124,20 @@ Uvoz **spaja** podatke bez duplikata:
 
 Nova šifra upisana pri unosu razgovora automatski kreira učenika. App tada traži razred, a po želji i ime i prezime.
 
-## 6. Ostalo što je dobro znati
+## 6. Ostale aktivnosti i izvještaji za dan / sedmicu
+
+**Ostale aktivnosti** (dugme **+ → Ostala aktivnost** ili **+ Aktivnost** na početnoj) služe za zamjene nastavnika, časove odjeljenske zajednice umjesto razrednika, dežurstvo, sjednice i stručno usavršavanje. Upisuješ datum, razred, čas, koga mijenjaš (app nudi razrednika tog razreda), predmet i temu. Lista je na tabu **Radionice → Ostale aktivnosti**. U statistici i godišnjem izvještaju aktivnosti se broje posebno, ne kao radionice. Vrste aktivnosti mijenjaš u Postavke → Šifrarnik.
+
+**Dnevni, sedmični i mjesečni izvještaj:** na Početnoj klikni **Dnevni izvještaj** ili **Sedmični izvještaj**, ili u Statistici **Dnevni / sedmični izvještaj**. Izaberi period (Danas, Jučer, Ova sedmica, Prošla sedmica, Ovaj mjesec ili od–do) i klikni **Preuzmi izvještaj za print**. Dokument sadrži sažetak, tabelu s brojevima i hronološki spisak svega urađenog.
+
+**Tekst izvještaja uz pomoć AI-ja (npr. ChatGPT):**
+1. Na ekranu izvještaja klikni **Kopiraj za AI**. Kopira se uputa i spisak aktivnosti, **samo sa šiframa učenika, bez imena učenika i nastavnika**. Bilješke se dodaju samo ako uključiš „U tekst za AI uključi i bilješke“. Tada se poznata imena učenika zamjenjuju šiframa, ali druge osobe (roditelji, nastavnici) se ne prepoznaju, pa tekst pregledaj prije slanja.
+2. Klikni **Otvori ChatGPT**, zalijepi tekst i pošalji.
+3. Odgovor zalijepi u polje **Tekst izvještaja**, pregledaj ga i ispravi. Taj tekst ide u print umjesto automatskog sažetka i pamti se za taj period.
+
+Ništa se ne šalje automatski: tekst ide u ChatGPT samo kad ga ti zalijepiš.
+
+## 7. Ostalo što je dobro znati
 
 - **PIN** (Postavke): 4–6 cifara. Traži se pri otvaranju i nakon 5 minuta neaktivnosti. Čuva se samo kao hash. **Zaboravljen PIN se ne može vratiti.** Tada ostaje samo „Obriši sve podatke“ i vraćanje iz rezervne kopije. PIN zaključava ekran appa, a za punu zaštitu drži i telefon i računar zaključanim.
 - **Diktiranje:** dugme mikrofona pored tekstualnih polja (Chrome na Androidu i računaru, jezik hr-HR). Diktiranje u pregledniku obično traži internet. Gdje ne radi, koristi mikrofon na tastaturi telefona.
@@ -136,7 +149,7 @@ Nova šifra upisana pri unosu razgovora automatski kreira učenika. App tada tra
 
 ---
 
-## 7. Tehnički pregled
+## 8. Tehnički pregled
 
 React 18 + TypeScript + Vite, Dexie.js (IndexedDB), `vite-plugin-pwa` (service worker i manifest), SheetJS `xlsx` 0.20.3 uključen lokalno (`vendor/`). Nema eksternih fontova, CDN-ova ni analitike.
 

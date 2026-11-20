@@ -17,10 +17,12 @@ describe('Excel izvoz', () => {
       ucenici: [{ id: '1', sifra: 'U014', ime: 'Petar', prezime: 'Petrović', razred: '6-2', status: 'Aktivan', uPracenju: true, napomena: '', createdAt: T, updatedAt: T }],
       razgovori: [{ id: 'r', createdAt: T, updatedAt: T, datum: '2026-11-19', sifra: 'U014', razred: '6-2', vrstaKontakta: 'Grupni razgovor', inicirao: '', razlog: 'Izostanci',
         biljeske: 'Dug tekst '.repeat(30), zakljucak: '', preporuke: '', sljedeciKorak: '', datumSljedecegKontakta: '', statusSlucaja: 'Otvoren' }],
-      radionice: [], saradnja: [], sifrarnik: [], razredi: [{ id: 'r', razred: '6-2', razrednik: 'Ana Anić', createdAt: T, updatedAt: T }], obrisano: [], postavke: null,
+      radionice: [], saradnja: [], sifrarnik: [], razredi: [{ id: 'r', razred: '6-2', razrednik: 'Ana Anić', createdAt: T, updatedAt: T }],
+      aktivnosti: [{ id: 'a', createdAt: T, updatedAt: T, datum: '2026-11-19', vrsta: 'Zamjena nastavnika', razred: '7-1', cas: '3', umjestoKoga: 'Ana Anić', predmet: 'Matematika', tema: 'Ponavljanje', zapazanja: '', napomena: '' }], obrisano: [], postavke: null,
     }, 2026);
     const wb = XLSX.read(data, { type: 'array', cellStyles: true, cellNF: true });
-    expect(wb.SheetNames).toEqual(['Učenici', 'Razgovori', 'Radionice', 'Saradnja', 'Statistika']);
+    expect(wb.SheetNames).toEqual(['Učenici', 'Razgovori', 'Radionice', 'Saradnja', 'Ostale aktivnosti', 'Statistika']);
+    expect(wb.Sheets['Ostale aktivnosti']['B2'].v).toBe('Zamjena nastavnika');
     const ws = wb.Sheets['Razgovori'];
     expect(ws['A1'].v).toBe('Datum');
     expect(ws['A2'].v).toBe(46345);

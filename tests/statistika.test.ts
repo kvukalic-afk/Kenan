@@ -51,6 +51,11 @@ describe('statistika po mjesecima i polugodištima', () => {
     ],
     radionice: [rad('2026-10-10', 24), rad('2027-03-03', 20, { oblast: 'Tehnike učenja' }), rad('2027-03-04', 0, { brojUcesnika: null })],
     saradnja: [sar('2026-11-11'), sar('2027-06-30', { ustanovaOsoba: 'Centar za socijalni rad' })],
+    aktivnosti: [
+      { ...baza, id: 'a1', datum: '2026-11-20', vrsta: 'Zamjena nastavnika', razred: '7-1', cas: '3', umjestoKoga: '', predmet: '', tema: '', zapazanja: '', napomena: '' },
+      { ...baza, id: 'a2', datum: '2026-11-21', vrsta: 'Zamjena nastavnika', razred: '7-2', cas: '', umjestoKoga: '', predmet: '', tema: '', zapazanja: '', napomena: '' },
+      { ...baza, id: 'a3', datum: '2027-02-02', vrsta: 'Čas odjeljenske zajednice', razred: '8-1', cas: '', umjestoKoga: '', predmet: '', tema: '', zapazanja: '', napomena: '' },
+    ],
   };
   const s = izracunajStatistiku(ulaz, 2026);
 
@@ -65,9 +70,10 @@ describe('statistika po mjesecima i polugodištima', () => {
     expect(po['2026-11'].saradnja).toBe(1);
   });
   it('sabira polugodišta (I: sep–dec, II: jan–jun) i ukupno', () => {
-    expect(s.polugodisteI).toMatchObject({ razgovori: 3, radionice: 1, ucesnici: 24, saradnja: 1 });
-    expect(s.polugodisteII).toMatchObject({ razgovori: 1, radionice: 2, ucesnici: 20, saradnja: 1 });
-    expect(s.ukupno).toMatchObject({ razgovori: 5, radionice: 3, ucesnici: 44, saradnja: 2 });
+    expect(s.polugodisteI).toMatchObject({ razgovori: 3, radionice: 1, ucesnici: 24, saradnja: 1, aktivnosti: 2 });
+    expect(s.polugodisteII).toMatchObject({ razgovori: 1, radionice: 2, ucesnici: 20, saradnja: 1, aktivnosti: 1 });
+    expect(s.ukupno).toMatchObject({ razgovori: 5, radionice: 3, ucesnici: 44, saradnja: 2, aktivnosti: 3 });
+    expect(s.aktivnostiPoVrsti[0]).toEqual({ naziv: 'Zamjena nastavnika', broj: 2 });
   });
   it('raspodjele i brojevi', () => {
     expect(s.poRazlogu[0]).toEqual({ naziv: 'Problemi u učenju', broj: 4 });
@@ -82,6 +88,7 @@ describe('statistika po mjesecima i polugodištima', () => {
     expect(s1.ucenikaURazgovorima).toBe(2);
     expect(s1.radionicePoOblasti).toEqual([{ naziv: 'Prevencija nasilja', broj: 1 }]);
     expect(sazetak(s1)).toContain('U I polugodištu školske 2026/2027. godine obavljena su 3 razgovora s 2 učenika.');
+    expect(sazetak(s1)).toContain('evidentirane su 2 ostale aktivnosti: zamjena nastavnika (2).');
   });
   it('gramatika sažetka', () => {
     const veliki = {

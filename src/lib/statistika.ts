@@ -1,6 +1,6 @@
 import { MJESECI, nazivSkolskeGodine } from './datum';
 import { zadnjiRazgovorPoUceniku } from './zakazano';
-import type { Radionica, Razgovor, Saradnja, Ucenik } from '../types';
+import type { Aktivnost, Radionica, Razgovor, Saradnja, Ucenik } from '../types';
 
 export type Period = 'godina' | 'I' | 'II';
 
@@ -56,6 +56,7 @@ export interface RedMjeseca {
   radionice: number;
   ucesnici: number;
   saradnja: number;
+  aktivnosti: number;
 }
 
 export interface Zbir extends Omit<RedMjeseca, 'kljuc'> {}
@@ -65,6 +66,7 @@ export interface Ulaz {
   razgovori: Razgovor[];
   radionice: Radionica[];
   saradnja: Saradnja[];
+  aktivnosti?: Aktivnost[];
 }
 
 export interface Raspodjela {
@@ -85,6 +87,7 @@ export interface Statistika {
   statusSlucajeva: Raspodjela[];
   radionicePoOblasti: Raspodjela[];
   saradnjaPoUstanovi: Raspodjela[];
+  aktivnostiPoVrsti: Raspodjela[];
   razlicitihUcenika: number;
   ucenikaURazgovorima: number;
   uPracenju: number;
@@ -100,8 +103,9 @@ function zbroji(redovi: RedMjeseca[], naziv: string): Zbir {
       radionice: s.radionice + r.radionice,
       ucesnici: s.ucesnici + r.ucesnici,
       saradnja: s.saradnja + r.saradnja,
+      aktivnosti: s.aktivnosti + r.aktivnosti,
     }),
-    { naziv, razgovori: 0, radionice: 0, ucesnici: 0, saradnja: 0 },
+    { naziv, razgovori: 0, radionice: 0, ucesnici: 0, saradnja: 0, aktivnosti: 0 },
   );
 }
 
@@ -120,7 +124,7 @@ function prebroji(vrijednosti: string[]): Raspodjela[] {
  */
 export function izracunajStatistiku(ulaz: Ulaz, pocetak: number, period: Period = 'godina'): Statistika {
   const mjeseci = mjeseciSkolskeGodine(pocetak);
-  const redovi: RedMjeseca[] = mjeseci.map((m) => ({ kljuc: m.kljuc, naziv: m.naziv, razgovori: 0, radionice: 0, ucesnici: 0, saradnja: 0 }));
+  const redovi: RedMjeseca[] = mjeseci.map((m) => ({ kljuc: m.kljuc, naziv: m.naziv, razgovori: 0, radionice: 0, ucesnici: 0, saradnja: 0, aktivnosti: 0 }));
   const indeks = new Map(redovi.map((r) => [r.kljuc, r]));
 
   for (const r of ulaz.razgovori) {
@@ -139,6 +143,11 @@ export function izracunajStatistiku(ulaz: Ulaz, pocetak: number, period: Period 
     if (red) red.saradnja++;
   }
 
+  for (const a of ulaz.aktivnosti ?? []) {
+    const red = indeks.get(a.datum?.slice(0, 7));
+    if (red) red.aktivnosti++;
+  }
+
   const redI = redovi.filter((_, i) => mjeseci[i].polugodiste === 'I');
   const redII = redovi.filter((_, i) => mjeseci[i].polugodiste === 'II');
 
@@ -146,6 +155,7 @@ export function izracunajStatistiku(ulaz: Ulaz, pocetak: number, period: Period 
   const razg = ulaz.razgovori.filter((r) => uPeriodu(r.datum, g));
   const rad = ulaz.radionice.filter((r) => uPeriodu(r.datum, g));
   const sar = ulaz.saradnja.filter((s) => uPeriodu(s.datum, g));
+  const akt = (ulaz.aktivnosti ?? []).filter((a) => uPeriodu(a.datum, g));
 
   // Status slučajeva: po učeniku, status iz zadnjeg razgovora u periodu.
   const zadnji = zadnjiRazgovorPoUceniku(razg);
@@ -168,6 +178,7 @@ export function izracunajStatistiku(ulaz: Ulaz, pocetak: number, period: Period 
     statusSlucajeva: prebroji([...zadnji.values()].map((r) => r.statusSlucaja)),
     radionicePoOblasti: prebroji(rad.map((r) => r.oblast)),
     saradnjaPoUstanovi: prebroji(sar.map((s) => s.ustanovaOsoba)),
+    aktivnostiPoVrsti: prebroji(akt.map((a) => a.vrsta)),
     razlicitihUcenika: sveSifre.size,
     ucenikaURazgovorima: sifreRazgovora.size,
     uPracenju: ulaz.ucenici.filter((u) => u.uPracenju).length,
@@ -205,6 +216,10 @@ export function sazetak(s: Statistika): string {
   } else dijelovi.push('Nije evidentirana nijedna radionica.');
   if (z.saradnja) {
     dijelovi.push(`${glagol(z.saradnja, 'Ostvaren je', 'Ostvarena su', 'Ostvareno je')} ${z.saradnja} ${oblik(z.saradnja, 'kontakt', 'kontakta', 'kontakata')} saradnje s roditeljima, nastavnicima i ustanovama.`);
+  }
+  if (z.aktivnosti) {
+    const vrste = s.aktivnostiPoVrsti.map((a) => `${a.naziv.toLowerCase()} (${a.broj})`);
+    dijelovi.push(`Pored toga, ${glagol(z.aktivnosti, 'evidentirana je', 'evidentirane su', 'evidentirano je')} ${z.aktivnosti} ${oblik(z.aktivnosti, 'ostala aktivnost', 'ostale aktivnosti', 'ostalih aktivnosti')}: ${vrste.join(', ')}.`);
   }
   if (s.poRazlogu.length && z.razgovori) {
     const top = s.poRazlogu.slice(0, 3).map((r) => `${r.naziv.toLowerCase()} (${r.broj})`);

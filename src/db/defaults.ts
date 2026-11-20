@@ -10,6 +10,7 @@ export const KATEGORIJE: { kljuc: Kategorija; naziv: string }[] = [
   { kljuc: 'ciljnaGrupa', naziv: 'Ciljna grupa' },
   { kljuc: 'ustanovaOsoba', naziv: 'Ustanova / osoba' },
   { kljuc: 'nacin', naziv: 'Način kontakta' },
+  { kljuc: 'vrstaAktivnosti', naziv: 'Vrsta ostale aktivnosti' },
 ];
 
 export const POCETNI_SIFRARNIK: Record<Kategorija, string[]> = {
@@ -65,6 +66,14 @@ export const POCETNI_SIFRARNIK: Record<Kategorija, string[]> = {
     'Ostalo',
   ],
   nacin: ['Sastanak', 'Telefon', 'Dopis', 'E-mail', 'Online'],
+  vrstaAktivnosti: [
+    'Zamjena nastavnika',
+    'Čas odjeljenske zajednice',
+    'Dežurstvo',
+    'Sjednica vijeća / aktiva',
+    'Stručno usavršavanje',
+    'Ostalo',
+  ],
 };
 
 /** Statusi koji znače da je slučaj završen (ne prikazuju se u "Zakazano"). */

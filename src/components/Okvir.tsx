@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Ikona } from './Ikona';
 import { idi, nazad } from '../lib/router';
 import { prikaz } from '../lib/datum';
-import type { Radionica, Razgovor, Saradnja, VrstaUnosa } from '../types';
+import type { Aktivnost, Radionica, Razgovor, Saradnja, VrstaUnosa } from '../types';
 
 export function Zaglavlje({ naslov, nazadNa, desno }: { naslov: string; nazadNa?: string; desno?: ReactNode }) {
   return (
@@ -49,6 +49,7 @@ export function PlutajuceDugme() {
           <button role="menuitem" className="dugme primarno" onClick={() => izaberi('/novi/razgovor')}><Ikona ime="razgovor" /> Razgovor</button>
           <button role="menuitem" className="dugme primarno" onClick={() => izaberi('/novi/radionica')}><Ikona ime="radionica" /> Radionica</button>
           <button role="menuitem" className="dugme primarno" onClick={() => izaberi('/novi/saradnja')}><Ikona ime="saradnja" /> Saradnja</button>
+          <button role="menuitem" className="dugme primarno" onClick={() => izaberi('/novi/aktivnost')}><Ikona ime="aktivnost" /> Ostala aktivnost</button>
         </div>
       )}
       <button type="button" className="fab" aria-label={otvoreno ? 'Zatvori meni' : 'Novi unos'} aria-expanded={otvoreno} onClick={() => setOtvoreno((o) => !o)}>
@@ -58,16 +59,18 @@ export function PlutajuceDugme() {
   );
 }
 
-export const NAZIV_VRSTE: Record<VrstaUnosa, string> = { razgovor: 'Razgovor', radionica: 'Radionica', saradnja: 'Saradnja' };
+export const NAZIV_VRSTE: Record<VrstaUnosa, string> = { razgovor: 'Razgovor', radionica: 'Radionica', saradnja: 'Saradnja', aktivnost: 'Aktivnost' };
 
 export type StavkaVremena =
   | { vrsta: 'razgovor'; z: Razgovor }
   | { vrsta: 'radionica'; z: Radionica }
-  | { vrsta: 'saradnja'; z: Saradnja };
+  | { vrsta: 'saradnja'; z: Saradnja }
+  | { vrsta: 'aktivnost'; z: Aktivnost };
 
 export function naslovStavke(s: StavkaVremena, imeZa: (sifra: string) => string = (x) => x): { glavno: string; opis: string } {
   if (s.vrsta === 'razgovor') return { glavno: `${imeZa(s.z.sifra)}${s.z.razred ? ` · ${s.z.razred}` : ''}`, opis: [s.z.razlog, s.z.vrstaKontakta].filter(Boolean).join(' · ') || s.z.biljeske };
   if (s.vrsta === 'radionica') return { glavno: s.z.tema || 'Radionica', opis: [s.z.razred, s.z.oblast].filter(Boolean).join(' · ') };
+  if (s.vrsta === 'aktivnost') return { glavno: s.z.vrsta || 'Aktivnost', opis: [s.z.razred, s.z.cas && `${s.z.cas}. čas`, s.z.umjestoKoga && `umjesto: ${s.z.umjestoKoga}`, s.z.tema].filter(Boolean).join(' · ') };
   return { glavno: s.z.ustanovaOsoba || 'Saradnja', opis: [s.z.sifra && imeZa(s.z.sifra), s.z.opisOsobe, s.z.nacin].filter(Boolean).join(' · ') };
 }
 
