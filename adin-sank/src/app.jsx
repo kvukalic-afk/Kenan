@@ -185,6 +185,7 @@ var Logika = (function () {
     });
     if (izv.kasa_razlog) L.push('Razlog: ' + izv.kasa_razlog);
     (izv.usluge || []).forEach(function (u) { L.push(u.naziv + ': ' + u.kom + ' × = ' + km(u.km) + ' KM'); });
+    (izv.napomene || []).forEach(function (n) { L.push('Napomena ' + n.vrijeme + ': ' + n.tekst); });
     return L.join('\n');
   }
 
@@ -708,6 +709,7 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
           <button className="btn2" style={{ flex: 2 }} onClick={() => setSheet('dopuna')}>+ DOPUNA ZALIHE</button>
           <button className="btn2" style={{ flex: 1 }} onClick={() => setSheet('ispravka')}>Ispravka</button>
         </div>
+        <button className="btn2" onClick={() => setSheet('napomena')}>✎ Napomena za vlasnika</button>
       </div>
 
       {zadnji && (
@@ -728,6 +730,9 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
       {sheet === 'dopuna' && <Dopuna proizvodi={proizvodi.filter(p => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id))}
         zatvori={() => setSheet(null)}
         potvrdi={(p, kol) => { dodaj('RESTOCK', p.product_id, kol); setSheet(null); pokaziToast('✓ Dopuna: ' + p.naziv + ' +' + kol, 'ok'); }} />}
+
+      {sheet === 'napomena' && <Napomena zatvori={() => setSheet(null)}
+        posalji={t => { dodaj('NAPOMENA', '', 0, t); setSheet(null); pokaziToast('✓ Napomena zapisana. Vlasnik je vidi u izvještaju.', 'ok'); }} />}
 
       {sheet === 'ispravka' && <Ispravka proizvodi={obicni} st={st} zatvori={() => setSheet(null)}
         ponisti={p => { dodaj('UNDO_SALE', p.product_id, 1, 'Ispravka'); vibriraj(10); }} />}
@@ -788,6 +793,17 @@ function Dopuna({ proizvodi, zatvori, potvrdi }) {
           <button className="btn2" style={{ marginTop: 10 }} onClick={() => setP(null)}>Nazad na listu</button>
         </>
       )}
+    </Sheet>
+  );
+}
+
+function Napomena({ zatvori, posalji }) {
+  const [t, setT] = useState('');
+  return (
+    <Sheet naslov="Napomena za vlasnika" zatvori={zatvori}>
+      <textarea className="inp" data-testid="napomena" autoFocus maxLength={500} value={t} onChange={e => setT(e.target.value)}
+        placeholder="npr. Frižider ne hladi, nestalo čaša, član X dolazi sutra platiti…" style={{ minHeight: 120, resize: 'vertical' }} />
+      <button className="btn" style={{ marginTop: 12 }} disabled={!t.trim()} onClick={() => posalji(t.trim())}>Zapiši napomenu</button>
     </Sheet>
   );
 }
@@ -1074,6 +1090,13 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
         </div>
       )}
 
+      {izv.napomene && izv.napomene.length > 0 && (
+        <div className="card">
+          <div className="lab">NAPOMENE RADNIKA</div>
+          {izv.napomene.map((n, i) => <div className="ln" key={i} style={{ justifyContent: 'flex-start' }}><span className="sit" style={{ marginTop: 0, minWidth: 44 }}>{n.vrijeme}</span><span>{n.tekst}</span></div>)}
+        </div>
+      )}
+
       <button className="btn2" onClick={kopiraj}>Kopiraj izvještaj (Viber / WhatsApp)</button>
       {pokaziTekst && <textarea className="inp" readOnly value={tekst} style={{ minHeight: 180, fontSize: 13 }} onFocus={e => e.target.select()} />}
       {!uAdminu && <button className="btn" onClick={onNovo}>Gotovo</button>}
@@ -1128,13 +1151,16 @@ function Admin({ nazad, pokaziToast }) {
         <button className="chip" onClick={() => ucitaj(pin)} disabled={radi}>{radi ? '…' : '↻ Osvježi'}</button>
       </div>
       <div className="tabs">
-        {[['danas', 'Danas'], ['zalihe', 'Zalihe'], ['clanovi', 'Članovi'], ['smjene', 'Smjene'], ['mjesec', 'Mjesec']].map(([k, n]) =>
+        {[['danas', 'Danas'], ['vrata', 'Vrata'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['proizvodi', 'Proizvodi'], ['mjesec', 'Mjesec'], ['postavke', 'Postavke']].map(([k, n]) =>
           <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>)}
       </div>
       {greska && <div className="err">{greska}</div>}
       {d && tab === 'danas' && <AdminDanas d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'zalihe' && <AdminZalihe d={d} />}
-      {d && tab === 'clanovi' && <AdminClanovi d={d} />}
+      {d && tab === 'clanovi' && <AdminClanovi d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
+      {d && tab === 'proizvodi' && <AdminProizvodi d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
+      {d && tab === 'vrata' && <AdminVrata pin={pin} pokaziToast={pokaziToast} />}
+      {d && tab === 'postavke' && <AdminPostavke pin={pin} setPin={p => { setPin(p); try { sessionStorage.setItem('adin_pin', p); } catch (e) { /* */ } }} pokaziToast={pokaziToast} />}
       {d && tab === 'smjene' && <AdminSmjene pin={pin} pokaziToast={pokaziToast} />}
       {d && tab === 'mjesec' && <AdminMjesec d={d} />}
       <button className="btn2" style={{ marginTop: 10 }} onClick={() => { try { sessionStorage.removeItem('adin_pin'); } catch (e) { /* */ } nazad(); }}>Izađi iz pregleda</button>
@@ -1222,8 +1248,11 @@ function Telefon({ broj }) {
   return <a href={'tel:' + String(broj).replace(/[^\d+]/g, '')} className="chip" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>📞 {broj}</a>;
 }
 
-function AdminClanovi({ d }) {
+function AdminClanovi({ d, pin, osvjezi, pokaziToast }) {
   const c = d.clanovi;
+  const [upit, setUpit] = useState('');
+  const [uredi, setUredi] = useState(null);
+  const svi = Logika.traziClanove(d.svi_clanovi || [], upit);
   const red = (x, boja, tekst) => (
     <div className="row" key={x.member_id} style={{ minHeight: 60 }}>
       <span style={{ fontSize: 15 }}>{x.ime}<div className="sit" style={{ color: boja }}>{tekst}</div></span>
@@ -1243,7 +1272,291 @@ function AdminClanovi({ d }) {
         {!c.istekli.length && <div className="info" style={{ border: 'none' }}>Niko.</div>}
         {c.istekli.map(x => red(x, 'var(--red)', 'isteklo ' + dT(x.istek)))}
       </div>
+      <div className="grp">SVI ČLANOVI ({(d.svi_clanovi || []).length})</div>
+      <input className="inp" placeholder="Traži po imenu ili telefonu…" value={upit} onChange={e => setUpit(e.target.value)} />
+      <div className="card0">
+        {svi.slice(0, 60).map(x => (
+          <button key={x.member_id} className="listbtn" onClick={() => setUredi({ ...x })}>
+            <span>{x.ime}<div className="sit">{x.telefon || 'bez telefona'}{x.brava_id ? ' · čip/šifra: ' + x.brava_id : ''}{x.aktivan ? '' : ' · NEAKTIVAN'}</div></span>
+            <span className="sit" style={{ textAlign: 'right' }}>{x.istek ? 'do ' + dT(x.istek) : ''}<br />uredi ›</span>
+          </button>
+        ))}
+      </div>
+      {uredi && <UrediClana c={uredi} pin={pin} zatvori={() => setUredi(null)} gotovo={() => { setUredi(null); pokaziToast('✓ Član sačuvan.', 'ok'); osvjezi(); }} />}
     </>
+  );
+}
+
+function UrediClana({ c, pin, zatvori, gotovo }) {
+  const [x, setX] = useState(c);
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState('');
+  const sacuvaj = async () => {
+    setRadi(true); setGr('');
+    try { await api('saveMember', pin, { member_id: x.member_id, ime: x.ime, telefon: x.telefon, napomena: x.napomena, brava_id: x.brava_id, aktivan: x.aktivan }); gotovo(); }
+    catch (e) { setGr(e.message); } finally { setRadi(false); }
+  };
+  return (
+    <Sheet naslov={'Član — ' + c.ime} zatvori={zatvori}>
+      <div className="lab">IME I PREZIME</div>
+      <input className="inp" value={x.ime} onChange={e => setX({ ...x, ime: e.target.value })} />
+      <div className="lab" style={{ marginTop: 12 }}>TELEFON</div>
+      <input className="inp" inputMode="tel" value={x.telefon || ''} onChange={e => setX({ ...x, telefon: e.target.value })} />
+      <div className="lab" style={{ marginTop: 12 }}>ČIP / ŠIFRA U BRAVI (ID IZ TUYA APLIKACIJE)</div>
+      <input className="inp" value={x.brava_id || ''} placeholder="npr. broj kartice ili ime korisnika u bravi" onChange={e => setX({ ...x, brava_id: e.target.value })} />
+      <div className="sit" style={{ marginTop: 6 }}>Ovim se ulazak na vrata povezuje s članom i njegovom članarinom.</div>
+      <div className="lab" style={{ marginTop: 12 }}>NAPOMENA</div>
+      <input className="inp" value={x.napomena || ''} onChange={e => setX({ ...x, napomena: e.target.value })} />
+      <button className={'chip' + (x.aktivan ? ' on' : '')} style={{ marginTop: 12, width: '100%' }} onClick={() => setX({ ...x, aktivan: !x.aktivan })}>
+        {x.aktivan ? '✓ Aktivan član' : 'Neaktivan (sakriven radniku)'}
+      </button>
+      {gr && <div className="err" style={{ marginTop: 10 }}>{gr}</div>}
+      <button className="btn" style={{ marginTop: 12 }} disabled={radi || !x.ime.trim()} onClick={sacuvaj}>{radi ? 'Čuvam…' : 'Sačuvaj'}</button>
+    </Sheet>
+  );
+}
+
+/* ═══════ VLASNIK: PROIZVODI ═══════ */
+function AdminProizvodi({ d, pin, osvjezi, pokaziToast }) {
+  const [uredi, setUredi] = useState(null);
+  const kategorije = [];
+  d.proizvodi.forEach(p => { if (kategorije.indexOf(p.kategorija) < 0) kategorije.push(p.kategorija); });
+  return (
+    <>
+      <div className="info">Ovdje dodaješ nove stvari i mijenjaš cijene. Proizvod se nikad ne briše, samo isključi (da historija ostane tačna). Radnik promjenu vidi kad ponovo otvori aplikaciju.</div>
+      <button className="btn" onClick={() => setUredi({ product_id: '', naziv: '', kategorija: kategorije[0] || 'Ostalo', cijena: '', nabavna: '', minimum: 3, prati_zalihu: true, aktivan: true, clanarina_mjeseci: 0 })}>+ Novi proizvod</button>
+      {Logika.grupisi(d.proizvodi).map(g => (
+        <div key={g.ime}>
+          <div className="grp">{g.ime.toUpperCase()}</div>
+          <div className="card0">
+            {g.stavke.map(p => (
+              <button key={p.product_id} className="listbtn" data-proizvod={p.product_id} onClick={() => setUredi({ ...p, cijena: String(p.cijena).replace('.', ','), nabavna: String(p.nabavna).replace('.', ',') })}
+                style={p.aktivan ? {} : { opacity: .45 }}>
+                <span>{p.naziv}<div className="sit">{p.aktivan ? '' : 'ISKLJUČEN · '}nabavna {km(p.nabavna)}{p.prati_zalihu ? ' · min ' + p.minimum : ' · bez zalihe'}</div></span>
+                <b style={{ color: 'var(--gold)' }}>{km(p.cijena)} KM</b>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      {uredi && <UrediProizvod p={uredi} kategorije={kategorije} pin={pin} zatvori={() => setUredi(null)}
+        gotovo={novi => { setUredi(null); pokaziToast(novi ? '✓ Proizvod dodan.' : '✓ Proizvod sačuvan.', 'ok'); osvjezi(); }} />}
+    </>
+  );
+}
+
+function UrediProizvod({ p, kategorije, pin, zatvori, gotovo }) {
+  const [x, setX] = useState(p);
+  const [novaKat, setNovaKat] = useState(false);
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState('');
+  const broj = v => Number(String(v).replace(',', '.'));
+  const clanarina = x.clanarina_mjeseci > 0;
+  const sacuvaj = async () => {
+    setRadi(true); setGr('');
+    try {
+      const r = await api('saveProduct', pin, { ...x, cijena: broj(x.cijena), nabavna: broj(x.nabavna || 0) });
+      gotovo(r.novi);
+    } catch (e) { setGr(e.message); } finally { setRadi(false); }
+  };
+  const decimal = v => v.replace(/[^\d.,]/g, '').slice(0, 8);
+  return (
+    <Sheet naslov={p.product_id ? p.naziv : 'Novi proizvod'} zatvori={zatvori}>
+      <div className="lab">NAZIV</div>
+      <input className="inp" data-testid="p-naziv" value={x.naziv} maxLength={60} onChange={e => setX({ ...x, naziv: e.target.value })} placeholder="npr. Monster" />
+      <div className="lab" style={{ marginTop: 12 }}>KATEGORIJA</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {kategorije.map(k => <button key={k} className={'chip' + (!novaKat && x.kategorija === k ? ' on' : '')} onClick={() => { setNovaKat(false); setX({ ...x, kategorija: k }); }}>{k}</button>)}
+        <button className={'chip' + (novaKat ? ' on' : '')} onClick={() => { setNovaKat(true); setX({ ...x, kategorija: '' }); }}>+ nova</button>
+      </div>
+      {novaKat && <input className="inp" style={{ marginTop: 8 }} placeholder="Naziv kategorije" value={x.kategorija} onChange={e => setX({ ...x, kategorija: e.target.value })} />}
+      <div className="two" style={{ marginTop: 12 }}>
+        <div style={{ flex: 1 }}><div className="lab">PRODAJNA (KM)</div>
+          <input className="inp" data-testid="p-cijena" inputMode="decimal" value={x.cijena} onChange={e => setX({ ...x, cijena: decimal(e.target.value) })} placeholder="0,00" /></div>
+        <div style={{ flex: 1 }}><div className="lab">NABAVNA (KM)</div>
+          <input className="inp" data-testid="p-nabavna" inputMode="decimal" value={x.nabavna} onChange={e => setX({ ...x, nabavna: decimal(e.target.value) })} placeholder="0,00" /></div>
+      </div>
+      {!clanarina && (
+        <button className={'chip' + (x.prati_zalihu ? ' on' : '')} style={{ marginTop: 12, width: '100%' }} onClick={() => setX({ ...x, prati_zalihu: !x.prati_zalihu })}>
+          {x.prati_zalihu ? '✓ Broji se na početku i kraju smjene (roba)' : 'Ne broji se (usluga)'}
+        </button>
+      )}
+      {x.prati_zalihu && !clanarina && (
+        <div style={{ marginTop: 12 }}><div className="lab">UPOZORI KAD PADNE NA (KOM)</div>
+          <input className="inp" inputMode="numeric" value={x.minimum} onChange={e => setX({ ...x, minimum: e.target.value.replace(/\D/g, '').slice(0, 4) })} /></div>
+      )}
+      <button className={'chip' + (x.aktivan ? ' on' : '')} style={{ marginTop: 12, width: '100%' }} onClick={() => setX({ ...x, aktivan: !x.aktivan })}>
+        {x.aktivan ? '✓ Uključen (radnik ga vidi)' : 'Isključen (sakriven radniku)'}
+      </button>
+      {gr && <div className="err" style={{ marginTop: 10 }}>{gr}</div>}
+      <button className="btn" style={{ marginTop: 12 }} disabled={radi || !x.naziv.trim() || !(broj(x.cijena) > 0) || !String(x.kategorija).trim()} onClick={sacuvaj}>
+        {radi ? 'Čuvam…' : 'Sačuvaj'}
+      </button>
+    </Sheet>
+  );
+}
+
+/* ═══════ VLASNIK: VRATA, SVJETLA, ULAZI (TUYA) ═══════ */
+function AdminVrata({ pin, pokaziToast }) {
+  const [post, setPost] = useState(null);
+  const [st, setSt] = useState(null);
+  const [ul, setUl] = useState(null);
+  const [gr, setGr] = useState('');
+  const [radi, setRadi] = useState('');
+  const [potvrda, setPotvrda] = useState(false);
+  const [forma, setForma] = useState(false);
+
+  const ucitaj = useCallback(async () => {
+    setGr('');
+    try {
+      const p = await api('getTuyaSettings', pin);
+      setPost(p);
+      if (!p.postavljeno) { setForma(true); return; }
+      api('tuyaStatus', pin).then(setSt).catch(e => setGr(e.message));
+      api('getUlazi', pin, 7, true).then(setUl).catch(e => setGr(e.message));
+    } catch (e) { setGr(e.message); }
+  }, [pin]);
+  useEffect(() => { ucitaj(); }, [ucitaj]);
+
+  const akcija = async (naziv, fn) => {
+    setRadi(naziv); setGr('');
+    try { await fn(); } catch (e) { setGr(e.message); } finally { setRadi(''); }
+  };
+  const otkljucaj = () => akcija('vrata', async () => {
+    const r = await api('tuyaOtkljucaj', pin); setPotvrda(false); pokaziToast('🔓 ' + r.poruka, 'ok'); vibriraj(30);
+    api('getUlazi', pin, 7, false).then(setUl).catch(() => {});
+  });
+  const svjetla = upali => akcija('svjetla', async () => {
+    await api('tuyaSvjetla', pin, upali); setSt(s => s && s.svjetla ? { ...s, svjetla: { ...s.svjetla, upaljeno: upali } } : s);
+    pokaziToast(upali ? '💡 Svjetla upaljena.' : 'Svjetla ugašena.', 'ok');
+  });
+  const automatika = uklj => akcija('auto', async () => {
+    await api('tuyaAutomatika', pin, uklj); setPost(p => ({ ...p, automatika: uklj }));
+    pokaziToast(uklj ? '✓ Ulazi se sami povlače svakih 5 minuta.' : 'Automatsko povlačenje isključeno.', 'ok');
+  });
+
+  if (!post) return <>{gr ? <div className="err">{gr}</div> : <div className="info">Učitavam…</div>}</>;
+
+  return (
+    <>
+      {gr && <div className="err">{gr}</div>}
+      {post.postavljeno && (
+        <>
+          <div className="card">
+            <div className="lab">VRATA</div>
+            {!st ? <div className="sit">Provjeravam bravu…</div> : !st.brava ? <div className="sit">ID brave nije upisan (Postavke veze ispod).</div> : (
+              <div className="ln"><span>{st.brava.naziv}</span>
+                <b style={{ color: st.brava.greska || !st.brava.online ? 'var(--red)' : 'var(--green)' }}>
+                  {st.brava.greska || (st.brava.online ? 'na mreži' : 'NIJE NA MREŽI')}{st.brava.baterija !== null && st.brava.baterija !== undefined ? ' · 🔋 ' + st.brava.baterija + (typeof st.brava.baterija === 'number' ? '%' : '') : ''}
+                </b></div>
+            )}
+            {post.brava_id && <button className="btn" style={{ marginTop: 10 }} onClick={() => setPotvrda(true)}>🔓 OTKLJUČAJ VRATA</button>}
+          </div>
+          {post.svjetla_id && (
+            <div className="card">
+              <div className="lab">SVJETLA</div>
+              {st && st.svjetla && <div className="ln"><span>{st.svjetla.naziv}</span>
+                <b style={{ color: st.svjetla.upaljeno ? 'var(--gold)' : 'var(--dim)' }}>{st.svjetla.greska || (st.svjetla.upaljeno === null ? '—' : st.svjetla.upaljeno ? '💡 upaljena' : 'ugašena')}</b></div>}
+              <div className="two" style={{ marginTop: 8 }}>
+                <button className="btn2" style={{ flex: 1, color: 'var(--gold)', borderColor: 'var(--gold)' }} disabled={!!radi} onClick={() => svjetla(true)}>Upali</button>
+                <button className="btn2" style={{ flex: 1 }} disabled={!!radi} onClick={() => svjetla(false)}>Ugasi</button>
+              </div>
+              <div className="sit" style={{ marginTop: 8 }}>Automatsko paljenje kad član otključa (i gašenje 1 h poslije) podešava se u Tuya aplikaciji — vidi uputu TUYA_POVEZIVANJE.</div>
+            </div>
+          )}
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="lab" style={{ marginBottom: 0 }}>ULAZI (7 DANA)</div>
+              <button className="chip" disabled={!!radi} onClick={() => akcija('ulazi', async () => { const r = await api('getUlazi', pin, 7, true); setUl(r); if (r.poruka) pokaziToast(r.poruka); })}>↻ Povuci s brave</button>
+            </div>
+            {!ul ? <div className="sit" style={{ marginTop: 8 }}>Učitavam…</div> : <>
+              <div style={{ fontSize: 14, marginTop: 10 }}>Danas: <b>{ul.danas}</b> ulazaka{ul.sumnjivi ? <span style={{ color: 'var(--red)' }}> · ⚠ {ul.sumnjivi} za provjeru</span> : null}</div>
+              <button className={'chip' + (post.automatika ? ' on' : '')} style={{ width: '100%', marginTop: 10 }} disabled={!!radi} onClick={() => automatika(!post.automatika)}>
+                {post.automatika ? '✓ Automatski svakih 5 min (klikni da isključiš)' : 'Uključi automatsko povlačenje ulaza'}
+              </button>
+            </>}
+          </div>
+          {ul && ul.ulazi.length > 0 && (
+            <div className="card0">
+              {ul.ulazi.map(u => (
+                <div className="row" key={u.izvor_id} style={u.napomena ? { background: 'rgba(229,84,75,.07)' } : {}}>
+                  <span style={{ fontSize: 14.5 }}>{u.ime || u.korisnik_brave || 'Nepoznat'}
+                    <div className="sit">{u.nacin}{u.clanarina ? ' · ' + u.clanarina : ''}</div>
+                    {u.napomena && <div className="sit" style={{ color: 'var(--red)' }}>⚠ {u.napomena}</div>}
+                  </span>
+                  <span className="sit" style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{dT(u.datum).slice(0, 6)}<br /><b style={{ color: 'var(--text)', fontSize: 15 }}>{u.vrijeme}</b></span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+      {!forma && <button className="btn2" onClick={() => setForma(true)}>Postavke veze s Tuyom</button>}
+      {forma && <TuyaForma post={post} pin={pin} gotovo={poruka => { setForma(false); pokaziToast('✓ ' + poruka, 'ok'); ucitaj(); }} />}
+      {potvrda && (
+        <Sheet naslov="Otključati vrata?" zatvori={() => setPotvrda(false)}>
+          <div className="warn">Vrata će se otključati odmah, odakle god da si. Ulazak se bilježi kao "Daljinski (vlasnik)".</div>
+          <button className="btn" style={{ marginTop: 12 }} disabled={radi === 'vrata'} onClick={otkljucaj}>{radi === 'vrata' ? 'Otključavam…' : 'Da, otključaj'}</button>
+          <button className="btn2" style={{ marginTop: 10 }} onClick={() => setPotvrda(false)}>Odustani</button>
+        </Sheet>
+      )}
+    </>
+  );
+}
+
+function TuyaForma({ post, pin, gotovo }) {
+  const [x, setX] = useState({ access_id: post.access_id || '', secret: '', region: post.region || 'eu', brava_id: post.brava_id || '', svjetla_id: post.svjetla_id || '', svjetla_kod: post.svjetla_kod || 'switch_1' });
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState('');
+  const polje = (k, lab, ph, tip) => (
+    <div style={{ marginTop: 10 }}><div className="lab">{lab}</div>
+      <input className="inp" type={tip || 'text'} autoCapitalize="off" autoCorrect="off" spellCheck={false} value={x[k]} placeholder={ph} onChange={e => setX({ ...x, [k]: e.target.value.trim() })} /></div>
+  );
+  return (
+    <div className="card">
+      <div className="lab">VEZA S TUYOM</div>
+      <div className="sit">Podatke dobiješ na iot.tuya.com (korak po korak u uputi TUYA_POVEZIVANJE). Secret se čuva samo na Google serveru i nikad se više ne prikazuje.</div>
+      {polje('access_id', 'ACCESS ID / CLIENT ID', '')}
+      {polje('secret', 'ACCESS SECRET', post.ima_secret ? '•••••• (sačuvan — ostavi prazno)' : '', 'password')}
+      <div className="lab" style={{ marginTop: 10 }}>DATA CENTAR</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {[['eu', 'Central Europe'], ['weu', 'Western Europe'], ['us', 'America'], ['in', 'India'], ['cn', 'China']].map(([k, n]) =>
+          <button key={k} className={'chip' + (x.region === k ? ' on' : '')} onClick={() => setX({ ...x, region: k })}>{n}</button>)}
+      </div>
+      {polje('brava_id', 'DEVICE ID BRAVE', 'npr. bf12ab34cd56ef7890xyz')}
+      {polje('svjetla_id', 'DEVICE ID PREKIDAČA ZA SVJETLA (NIJE OBAVEZNO)', '')}
+      {polje('svjetla_kod', 'KOD PREKIDAČA', 'switch_1')}
+      {gr && <div className="err" style={{ marginTop: 10 }}>{gr}</div>}
+      <button className="btn" style={{ marginTop: 12 }} disabled={radi || !x.access_id} onClick={async () => {
+        setRadi(true); setGr('');
+        try { const r = await api('saveTuyaSettings', pin, x); gotovo(r.provjera); } catch (e) { setGr(e.message); } finally { setRadi(false); }
+      }}>{radi ? 'Provjeravam vezu…' : 'Sačuvaj i provjeri vezu'}</button>
+    </div>
+  );
+}
+
+/* ═══════ VLASNIK: POSTAVKE ═══════ */
+function AdminPostavke({ pin, setPin, pokaziToast }) {
+  const [novi, setNovi] = useState('');
+  const [opet, setOpet] = useState('');
+  const [gr, setGr] = useState('');
+  const [radi, setRadi] = useState(false);
+  return (
+    <div className="card">
+      <div className="lab">PROMJENA PIN-A</div>
+      <div className="sit">PIN štiti pregled, proizvode, vrata i svjetla. Radnik ga ne smije znati. Nakon 5 pogrešnih pokušaja pristup se zaključa na 10 minuta.</div>
+      <input className="inp" style={{ marginTop: 10, letterSpacing: 6, textAlign: 'center' }} type="password" inputMode="numeric" placeholder="novi PIN (4–8 cifara)"
+        value={novi} onChange={e => setNovi(e.target.value.replace(/\D/g, '').slice(0, 8))} />
+      <input className="inp" style={{ marginTop: 8, letterSpacing: 6, textAlign: 'center' }} type="password" inputMode="numeric" placeholder="ponovi novi PIN"
+        value={opet} onChange={e => setOpet(e.target.value.replace(/\D/g, '').slice(0, 8))} />
+      {opet && novi !== opet && <div className="sit" style={{ color: 'var(--red)' }}>PIN-ovi se ne poklapaju.</div>}
+      {gr && <div className="err" style={{ marginTop: 10 }}>{gr}</div>}
+      <button className="btn" style={{ marginTop: 12 }} disabled={radi || novi.length < 4 || novi !== opet} onClick={async () => {
+        setRadi(true); setGr('');
+        try { await api('changePin', pin, novi); setPin(novi); setNovi(''); setOpet(''); pokaziToast('✓ PIN promijenjen.', 'ok'); }
+        catch (e) { setGr(e.message); } finally { setRadi(false); }
+      }}>Promijeni PIN</button>
+    </div>
   );
 }
 

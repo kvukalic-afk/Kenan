@@ -4,5 +4,5 @@
 2. **Svaka prodaja = jedan tap** na proizvod; pogrešan tap odmah popravi dugmetom **PONIŠTI** (ili kasnije **Ispravka**).
 3. Kad doneseš robu iz magacina, klikni **+ DOPUNA ZALIHE** i upiši koliko si stavio.
 4. Članarinu naplati preko pločice **Članarina**: izaberi člana (ili Novi član) → vrsta → Naplaćeno.
-5. Ako nema interneta, samo nastavi raditi: aplikacija sve pamti i sama pošalje kad se internet vrati.
+5. Sve što vlasnik treba znati (kvar, nestalo nečega, dug) upiši preko **✎ Napomena za vlasnika**. Ako nema interneta, samo nastavi raditi: aplikacija sve pamti i sama pošalje.
 6. Na kraju klikni **ZAVRŠI SMJENU**, ponovo prebroji svu robu, upiši gotovinu iz kase i pošalji izvještaj vlasniku.

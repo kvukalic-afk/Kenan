@@ -1,9 +1,10 @@
 # Adin Šank — postavljanje korak po korak
 
-Aplikacija ima samo dva fajla koja te zanimaju:
+Aplikacija ima tri fajla koja te zanimaju:
 
 - **`Code.gs`** — "mozak" (radi na Googleovom serveru)
-- **`Index.html`** — ekran koji radnik vidi na telefonu
+- **`Tuya.gs`** — vrata, svjetla i ulazi članova (samo za vlasnika; vidi `TUYA_POVEZIVANJE.md`)
+- **`Index.html`** — ekran koji radnik i vlasnik vide na telefonu
 
 Sve se čuva u jednom Google Sheetu. Ne treba ti server, hosting ni ikakav program.
 
@@ -19,8 +20,9 @@ Sve se čuva u jednom Google Sheetu. Ne treba ti server, hosting ni ikakav progr
 
 1. U tabeli: meni **Extensions (Proširenja) → Apps Script**. Otvori se novi tab.
 2. Lijevo je fajl **Code.gs**. Obriši sve što je u njemu i zalijepi **cijeli** sadržaj fajla `Code.gs`. Klikni 💾 (Save).
-3. Lijevo pored "Files" klikni **+** → **HTML**. Nazovi ga tačno **`Index`** (bez `.html`, Google ga sam doda).
-4. Obriši sve u njemu i zalijepi **cijeli** sadržaj fajla `Index.html`. Klikni 💾.
+3. Lijevo pored "Files" klikni **+** → **Script**, nazovi ga **`Tuya`** i zalijepi cijeli `Tuya.gs`. Sačuvaj.
+4. Lijevo pored "Files" klikni **+** → **HTML**. Nazovi ga tačno **`Index`** (bez `.html`, Google ga sam doda).
+5. Obriši sve u njemu i zalijepi **cijeli** sadržaj fajla `Index.html`. Klikni 💾.
 
 ## 3. Vremenska zona
 
@@ -33,7 +35,7 @@ Sve se čuva u jednom Google Sheetu. Ne treba ti server, hosting ni ikakav progr
 2. Gore u padajućem meniju pored dugmeta ▶ Run izaberi funkciju **`setupSpreadsheet`**.
 3. Klikni **▶ Run**.
 4. Google traži dozvolu (vidi tačku 7 ispod): **Review permissions** → izaberi svoj račun → **Advanced / Napredno** → **Go to … (unsafe)** → **Allow**.
-5. Na dnu se pojavi "Execution completed". U tabeli sada imaš tabove: PROIZVODI, SMJENE, DOGADJAJI, INVENTURA, CLANOVI, PREGLED.
+5. Na dnu se pojavi "Execution completed". U tabeli sada imaš tabove: PROIZVODI, SMJENE, DOGADJAJI, INVENTURA, CLANOVI, ULAZI, PREGLED.
 
 > `setupSpreadsheet` možeš pokrenuti koliko god puta hoćeš — **nikad ne briše podatke**. Samo doda ono što fali.
 > U tabeli se pojavi i meni **Adin Šank → Postavi / popravi tabele** za isto.
@@ -65,16 +67,9 @@ Pošto je "Execute as: Me", radnik **ne treba** Google račun i **ne vidi** tvoj
 
 ## 8. PIN i postavke
 
-Na samom vrhu `Code.gs` je blok `CONFIG`:
+Početni PIN je **2580**. **Odmah ga promijeni** u aplikaciji: **Vlasnik › → Postavke → Promjena PIN-a**. Novi PIN se čuva na Google serveru, ne u kodu, pa ga ažuriranje koda ne poništava. Nakon 5 pogrešnih pokušaja pristup se zaključa na 10 minuta.
 
-```js
-ADMIN_PIN: '2580',               // PROMIJENI OVO
-RADNICI: ['Kenan', 'Edvin'],
-PLATA_UDIO: 0.30,
-...
-```
-
-**Odmah promijeni PIN**, sačuvaj i napravi novu verziju (tačka 9). Ako mijenjaš procente (prevoz, plata), pokreni još i funkciju `obnoviPregled` da tab PREGLED dobije nove brojeve.
+Ostale postavke su na samom vrhu `Code.gs`, u bloku `CONFIG` (radnici, procenti, razlozi). Ako mijenjaš procente (prevoz, plata), pokreni još i funkciju `obnoviPregled` da tab PREGLED dobije nove brojeve.
 
 ## 9. Kako kasnije ažurirati kod (URL ostaje isti!)
 
@@ -86,7 +81,7 @@ PLATA_UDIO: 0.30,
 
 ## 10. Proizvodi i cijene
 
-Sve u tabu **PROIZVODI**, bez diranja koda:
+Najlakše u aplikaciji: **Vlasnik › → Proizvodi** (+ Novi proizvod, klik na proizvod za cijenu, nabavnu, minimum ili isključivanje). Ili direktno u tabu **PROIZVODI**:
 - **nova cijena**: promijeni broj u koloni `cijena` (važi od sljedećeg klika; stare prodaje ostaju po staroj cijeni).
 - **novi proizvod**: dodaj red (novi jedinstveni `product_id`, npr. `monster`), štikliraj `prati_zalihu` i `aktivan`.
 - **ukloni proizvod**: odštikliraj `aktivan` (ne briši red — historija ga treba).
@@ -108,7 +103,9 @@ Uradi ovo jednom nakon postavljanja (poslije možeš obrisati redove testa iz SM
 
 ## 12. Šta gdje gledaš (vlasnik)
 
-- U aplikaciji: dno prvog ekrana **Vlasnik ›** → PIN → Danas / Zalihe / Članovi / Smjene / Mjesec.
+- U aplikaciji: dno prvog ekrana **Vlasnik ›** → PIN → Danas / Vrata / Smjene / Članovi / Zalihe / Proizvodi / Mjesec / Postavke.
+- Napomene radnika (dugme "✎ Napomena za vlasnika") vidiš u izvještaju smjene i u tabu Smjene.
+- Vrata, svjetla i ulazi članova: vidi **`TUYA_POVEZIVANJE.md`**.
 - U Sheetu: tab **PREGLED** (promet, profit, plata, top proizvodi, po radniku, članarine, historija). Ne upisuj ništa u PREGLED, to su formule.
 - Zaboravljena otvorena smjena (>14 h) pojavi se crveno u "Danas". Najbolje da radnik sam završi (pri sljedećem otvaranju aplikacije odmah je vidi). Ako ne može, zatvori je "bez brojanja" uz napomenu: brojevi se ne izmišljaju, samo se zabilježi da nije prebrojano.
 

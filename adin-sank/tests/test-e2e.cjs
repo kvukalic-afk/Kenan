@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { napraviOkruzenje } = require('./gas-mock.cjs');
+const { lazniTuya, ID, SECRET, BRAVA, SVJETLA } = require('./lazni-tuya.cjs');
 
 let playwright = null;
 try { playwright = require('playwright'); } catch (e) { /* nema browsera — test se preskače */ }
@@ -187,6 +188,13 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByTestId('radnik').filter({ hasText: 'Edvin' }).waitFor();
     assert.equal((await page.locator('[data-tile="redbull"] .badge').textContent()).trim(), '2');
 
+    // napomena za vlasnika
+    await page.getByRole('button', { name: '✎ Napomena za vlasnika' }).click();
+    await page.getByTestId('napomena').fill('Frižider ne hladi');
+    await page.getByRole('button', { name: 'Zapiši napomenu' }).click();
+    await cekajSync(page);
+    assert.ok(g.__tabela('DOGADJAJI').some(d => d.tip_dogadjaja === 'NAPOMENA' && d.napomena === 'Frižider ne hladi'));
+
     // drugi telefon: odmah na aktivnu smjenu iz Sheeta
     const st2 = { offline: false, pozivi: [] };
     const t2 = await noviTelefon(browser, g, st2);
@@ -225,6 +233,41 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByRole('button', { name: 'Mjesec' }).click();
     await page.getByText('TOP PROIZVODI').waitFor();
     await page.screenshot({ path: path.join(SLIKE, '8-mjesec.png'), fullPage: true });
+
+    // vlasnik dodaje novi proizvod
+    await page.getByRole('button', { name: 'Proizvodi', exact: true }).click();
+    await page.getByRole('button', { name: '+ Novi proizvod' }).click();
+    await page.getByTestId('p-naziv').fill('Monster');
+    await page.getByTestId('p-cijena').fill('4,50');
+    await page.getByTestId('p-nabavna').fill('2,60');
+    await page.getByRole('button', { name: 'Sačuvaj' }).click();
+    await page.locator('[data-proizvod="monster"]').waitFor();
+    assert.equal(g.__tabela('PROIZVODI').find(p => p.product_id === 'monster').cijena, 4.5);
+
+    // vrata: povezivanje s Tuyom, otključavanje, svjetla, ulazi
+    const tuya = lazniTuya([{ id: 7, update_time: Date.now() - 60000, status: [{ code: 'unlock_card', value: 'CHIP-1' }] }]);
+    g.__postaviFetch(tuya.fetch);
+    await page.getByRole('button', { name: 'Vrata', exact: true }).click();
+    await page.getByText('VEZA S TUYOM').waitFor();
+    const inputi = page.locator('.card input');
+    await inputi.nth(0).fill(ID);
+    await inputi.nth(1).fill(SECRET);
+    await inputi.nth(2).fill(BRAVA);
+    await inputi.nth(3).fill(SVJETLA);
+    await page.getByRole('button', { name: 'Sačuvaj i provjeri vezu' }).click();
+    await page.getByText('Veza s Tuyom radi.').waitFor();
+    await page.getByText('Ulazna vrata').waitFor();
+    await page.getByText(/Danas: 1/).waitFor();
+    await page.getByRole('button', { name: '🔓 OTKLJUČAJ VRATA' }).click();
+    await page.getByRole('button', { name: 'Da, otključaj' }).click();
+    await page.getByText('Vrata su otključana.').waitFor();
+    assert.equal(tuya.stanje.otkljucano, 1);
+    await page.getByRole('button', { name: 'Upali' }).click();
+    await page.getByText('💡 upaljena').waitFor();
+    assert.equal(tuya.stanje.svjetlo, true);
+    await pauza(4000);
+    await page.screenshot({ path: path.join(SLIKE, '9-vrata.png'), fullPage: true });
+    assert.equal(tuya.stanje.losPotpis, 0);
 
     assert.deepEqual(greske.filter(x => !/favicon|Failed to load resource/.test(x)), [], 'nema JS grešaka u browseru');
     assert.deepEqual(t2.greske.filter(x => !/favicon|Failed to load resource/.test(x)), []);

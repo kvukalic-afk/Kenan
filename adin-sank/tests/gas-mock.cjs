@@ -147,13 +147,57 @@ function napraviOkruzenje(opcije = {}) {
         releaseLock() { stats.aktivniLock = false; }
       })
     },
-    Utilities: { formatDate, getUuid: () => crypto.randomUUID() },
+    Utilities: {
+      formatDate, getUuid: () => crypto.randomUUID(),
+      DigestAlgorithm: { SHA_256: 'sha256' }, Charset: { UTF_8: 'utf8' },
+      // Apps Script vraća Java bajtove (-128..127)
+      computeDigest: (alg, tekst) => Array.from(crypto.createHash(alg).update(String(tekst), 'utf8').digest()).map(b => b > 127 ? b - 256 : b),
+      computeHmacSha256Signature: (tekst, kljuc) => Array.from(crypto.createHmac('sha256', kljuc).update(String(tekst), 'utf8').digest()).map(b => b > 127 ? b - 256 : b)
+    },
     HtmlService: { createHtmlOutputFromFile: () => chain({}) },
-    Session: { getScriptTimeZone: () => 'Europe/Sarajevo' }
+    Session: { getScriptTimeZone: () => 'Europe/Sarajevo' },
+    PropertiesService: {
+      getScriptProperties: () => ({
+        getProperty: k => (k in props ? props[k] : null),
+        getProperties: () => Object.assign({}, props),
+        setProperty: (k, v) => { props[k] = String(v); },
+        setProperties: o => { Object.keys(o).forEach(k => { props[k] = String(o[k]); }); },
+        deleteProperty: k => { delete props[k]; }
+      })
+    },
+    CacheService: {
+      getScriptCache: () => ({
+        get: k => (k in kes ? kes[k] : null),
+        put: (k, v) => { kes[k] = String(v); },
+        remove: k => { delete kes[k]; }
+      })
+    },
+    UrlFetchApp: {
+      fetch: (url, opcije) => {
+        if (!opcije_ok.fetch) throw new Error('Mock: UrlFetchApp nije podešen');
+        const r = opcije_ok.fetch(url, opcije);
+        return { getContentText: () => JSON.stringify(r), getResponseCode: () => 200 };
+      }
+    },
+    ScriptApp: {
+      getProjectTriggers: () => okidaci.slice(),
+      deleteTrigger: t => { okidaci = okidaci.filter(x => x !== t); },
+      newTrigger: fn => {
+        const b = { timeBased: () => b, everyMinutes: m => { b.min = m; return b; }, create: () => { const t = { getHandlerFunction: () => fn, min: b.min }; okidaci.push(t); return t; } };
+        return b;
+      }
+    }
   };
+  const props = {}, kes = {};
+  let okidaci = [];
+  const opcije_ok = { fetch: opcije.fetch || null };
   vm.createContext(ctx);
-  const kod = fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8');
-  vm.runInContext(kod, ctx, { filename: 'Code.gs' });
+  for (const f of ['Code.gs', 'Tuya.gs']) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'), ctx, { filename: f });
+  }
+  ctx.__postaviFetch = (f) => { opcije_ok.fetch = f; };
+  ctx.__props = props;
+  ctx.__okidaci = () => okidaci;
   let sat = opcije.sada || null;
   ctx.nowDate_ = () => {
     if (!sat) return new Date();

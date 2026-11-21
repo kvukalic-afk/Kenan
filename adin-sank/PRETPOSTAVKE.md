@@ -14,11 +14,16 @@
 | 10 | Članarina se **ne može poništiti** dugmetom PONIŠTI (jer mijenja datum isteka člana). Ako je greška, ispravi ručno u Sheetu (CLANOVI + napomena) | — |
 | 11 | Dva nova stupca u PROIZVODI: `minimum` i `clanarina_mjeseci` (ostale kolone su tačno po specifikaciji) | — |
 | 12 | Vrijeme svake prodaje je vrijeme kad je **server** primio klik. Kod prodaje bez interneta upisuje se i vrijeme sa telefona u napomenu | — |
-| 13 | Početni PIN je **2580**, promijeni ga odmah | `CONFIG.ADMIN_PIN` |
+| 13 | Početni PIN je **2580**, promijeni ga odmah | Vlasnik → Postavke |
 | 14 | Vlasnik može zatvoriti zaboravljenu smjenu samo "bez brojanja": stvarno stanje ostaje prazno, ništa se ne izmišlja | — |
+| 15 | Paljenje/gašenje svjetla pri ulasku radi **Tuya automatizacija**, ne ova aplikacija (zbog brzine) | Smart Life → Scene |
+| 16 | Član se na bravi prepoznaje po **istom imenu** kao u Smart Life ili po koloni `brava_id` | Vlasnik → Članovi |
+| 17 | Data centar Tuye je **Central Europe** | Vlasnik → Vrata → Postavke |
 
 ## Ograničenja koja trebaš znati
 
 - Aplikacija se mora **otvoriti** dok ima interneta (Google je servira). Kad je jednom otvorena, prodaja radi i bez interneta, a sinhronizuje se kasnije.
 - Ko ima link, može otvoriti aplikaciju za radnika (ne i vlasnički pregled). Link ne objavljuj javno.
 - Tab PREGLED je pravljen za do 40 proizvoda.
+- Ulazi se povlače s brave svakih 5 minuta (nisu trenutni). Daljinsko otključavanje i dnevnik ulazaka zavise od modela brave; testirani su na simuliranom Tuya serveru, ne na tvojoj bravi.
+- Aplikacija još **ne** pravi niti briše čipove/šifre u bravi. To radiš u Smart Life. Automatsko blokiranje čipa kad istekne članarina može se dodati kad znamo tačan model brave.

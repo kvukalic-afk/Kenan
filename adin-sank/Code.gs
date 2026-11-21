@@ -7,7 +7,7 @@
 
 /* ═══════ POSTAVKE — mijenjaj samo ovdje ═══════ */
 var CONFIG = {
-  ADMIN_PIN: '2580',                 // PIN za vlasnički pregled u aplikaciji
+  ADMIN_PIN: '2580',                 // početni PIN za vlasnika (poslije se mijenja u aplikaciji: Vlasnik → Postavke)
   RADNICI: ['Kenan', 'Edvin'],       // velika dugmad na prvom ekranu (+ "Drugi")
   TZ: 'Europe/Sarajevo',
   PREVOZ: 0.03,                      // 3% na nabavnu cijenu robe (prevoz)
@@ -20,7 +20,7 @@ var CONFIG = {
 /* ═══════ STRUKTURA TABELA ═══════ */
 var TAB = {
   PROIZVODI: 'PROIZVODI', SMJENE: 'SMJENE', DOGADJAJI: 'DOGADJAJI',
-  INVENTURA: 'INVENTURA', CLANOVI: 'CLANOVI', PREGLED: 'PREGLED'
+  INVENTURA: 'INVENTURA', CLANOVI: 'CLANOVI', PREGLED: 'PREGLED', ULAZI: 'ULAZI'
 };
 
 var KOLONE = {
@@ -36,7 +36,8 @@ var KOLONE = {
     'dopunjeno', 'evidentirano_prodano', 'ocekivano_zavrsno', 'stvarno_zavrsno',
     'prodano_po_inventuri', 'razlika_kom', 'razlika_KM'],
   CLANOVI: ['member_id', 'ime', 'telefon', 'vrsta', 'pocetak', 'istek', 'zadnje_produzenje',
-    'napomena', 'aktivan']
+    'napomena', 'aktivan', 'brava_id'],
+  ULAZI: ['izvor_id', 'datum', 'vrijeme', 'nacin', 'korisnik_brave', 'ime', 'member_id', 'clanarina', 'napomena']
 };
 
 // Kolone koje moraju ostati čisti tekst (da ih Sheets ne pretvori u datum/vrijeme/broj)
@@ -45,7 +46,8 @@ var TEKST_KOLONE = {
   SMJENE: ['shift_id', 'datum', 'vrijeme_pocetka', 'vrijeme_kraja', 'created_at', 'updated_at'],
   DOGADJAJI: ['event_id', 'shift_id', 'datum', 'timestamp', 'product_id'],
   INVENTURA: ['shift_id', 'datum', 'product_id'],
-  CLANOVI: ['member_id', 'telefon', 'pocetak', 'istek', 'zadnje_produzenje']
+  CLANOVI: ['member_id', 'telefon', 'pocetak', 'istek', 'zadnje_produzenje', 'brava_id'],
+  ULAZI: ['izvor_id', 'datum', 'vrijeme', 'korisnik_brave', 'member_id']
 };
 
 var SEED_PROIZVODI = [
@@ -68,7 +70,7 @@ var SEED_PROIZVODI = [
   ['clan50', 'Članarine', 'Mjesečna 24/7', 50.00, 20.00, false, true, 160, 0, 1]
 ];
 
-var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT'];
+var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -130,8 +132,23 @@ function zakljucano_(fn) {
   }
 }
 
+function svojstva_() { return PropertiesService.getScriptProperties(); }
+
+function aktivniPin_() {
+  var p = svojstva_().getProperty('ADMIN_PIN');
+  return p ? String(p) : String(CONFIG.ADMIN_PIN);
+}
+
+/** Provjera PIN-a; nakon 5 pogrešnih pokušaja zaključava se na 10 minuta. */
 function provjeriPin_(pin) {
-  if (String(pin || '') !== String(CONFIG.ADMIN_PIN)) throw greska_('PIN', 'Pogrešan PIN.');
+  var kes = CacheService.getScriptCache();
+  var greske = Number(kes.get('pin_greske') || 0);
+  if (greske >= 5) throw greska_('PIN_BLOK', 'Previše pogrešnih pokušaja. Pokušaj ponovo za 10 minuta.');
+  if (String(pin || '') !== aktivniPin_()) {
+    kes.put('pin_greske', String(greske + 1), 600);
+    throw greska_('PIN', 'Pogrešan PIN.');
+  }
+  if (greske) kes.remove('pin_greske');
 }
 
 function nowDate_() { return new Date(); }
@@ -694,7 +711,7 @@ function clanJavno_(r) {
   return {
     member_id: s_(r.member_id), ime: s_(r.ime), telefon: s_(r.telefon), vrsta: s_(r.vrsta),
     pocetak: datum_(r.pocetak), istek: datum_(r.istek), napomena: s_(r.napomena),
-    aktivan: s_(r.aktivan) === '' ? true : bool_(r.aktivan)
+    aktivan: s_(r.aktivan) === '' ? true : bool_(r.aktivan), brava_id: s_(r.brava_id)
   };
 }
 
@@ -756,7 +773,11 @@ function izvjestaj_(red, proizvodi, pocetna, dogadjaji, brojanje) {
     kasa_razlog: s_(red.kasa_razlog),
     broj_razlika: ob.broj_razlika, vrijednost_razlike: ob.vrijednost_razlike,
     bez_brojanja: !brojanje,
-    stavke: ob.stavke, usluge: ob.usluge, upozorenja: ob.upozorenja
+    pocetak_ts: s_(red.created_at),
+    stavke: ob.stavke, usluge: ob.usluge, upozorenja: ob.upozorenja,
+    napomene: (dogadjaji || []).filter(function (e) { return e.tip === 'NAPOMENA'; }).map(function (e) {
+      return { vrijeme: vrijeme_(e.timestamp), tekst: e.napomena };
+    })
   };
 }
 
@@ -879,6 +900,17 @@ function obradiDogadjaje_(shiftId, events) {
 
     var tip = s_(e.tip);
     if (TIPOVI.indexOf(tip) < 0) { odbij(id, 'NEPOZNAT_TIP', 'Nepoznata vrsta promjene.'); return; }
+    if (tip === 'NAPOMENA') {
+      var tekst = s_(e.napomena).slice(0, 500);
+      if (!tekst) { odbij(id, 'PRAZNA_NAPOMENA', 'Napomena je prazna.'); return; }
+      postoji[id] = true;
+      noviRedovi.push({
+        event_id: id, shift_id: sid, datum: t.datum, timestamp: t.ts, radnik: s_(sm.radnik),
+        tip_dogadjaja: 'NAPOMENA', product_id: '', proizvod: '', kolicina: 0, cijena: 0, ukupno: 0, napomena: tekst
+      });
+      izlaz.primljeno.push(id);
+      return;
+    }
     var p = sviProizvodi[s_(e.product_id)];
     if (!p) { odbij(id, 'NEMA_PROIZVODA', 'Proizvod ne postoji.'); return; }
     var q = Number(e.kolicina);
@@ -1121,6 +1153,7 @@ function saveMember(pin, clan) {
       var ime = s_(clan.ime).slice(0, 80);
       if (!ime) throw greska_('IME', 'Upiši ime člana.');
       var izmjene = { ime: ime, telefon: s_(clan.telefon).slice(0, 40), napomena: s_(clan.napomena).slice(0, 200) };
+      if (clan.brava_id !== undefined) izmjene.brava_id = s_(clan.brava_id).slice(0, 80);
       if (clan.aktivan !== undefined) izmjene.aktivan = !!clan.aktivan;
       if (clan.istek !== undefined && clan.istek !== '') {
         var ist = datum_(clan.istek);
@@ -1280,7 +1313,74 @@ function getAdminData(pin) {
         top: top, po_radniku: radnici
       },
       zalihe: zalihe,
-      clanovi: clanoviPregled_(tabela_(TAB.CLANOVI).redovi.map(clanJavno_), t.datum)
+      clanovi: clanoviPregled_(tabela_(TAB.CLANOVI).redovi.map(clanJavno_), t.datum),
+      svi_clanovi: tabela_(TAB.CLANOVI).redovi.map(clanJavno_).filter(function (c) { return c.member_id; }),
+      proizvodi: proizvodi.map(function (p) {
+        return {
+          product_id: p.product_id, kategorija: p.kategorija, naziv: p.naziv, cijena: p.cijena, nabavna: p.nabavna,
+          prati_zalihu: p.prati_zalihu, aktivan: p.aktivan, minimum: p.minimum, redoslijed: p.redoslijed,
+          clanarina_mjeseci: p.clanarina_mjeseci
+        };
+      })
     };
+  });
+}
+
+/** Vlasnik mijenja PIN (4–8 cifara). */
+function changePin(pin, noviPin) {
+  return api_(function () {
+    provjeriPin_(pin);
+    var n = s_(noviPin);
+    if (!/^\d{4,8}$/.test(n)) throw greska_('NOVI_PIN', 'Novi PIN mora imati 4 do 8 cifara.');
+    svojstva_().setProperty('ADMIN_PIN', n);
+    return {};
+  });
+}
+
+function slug_(t) {
+  return normaliziraj_(t).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30) || 'proizvod';
+}
+
+/**
+ * Vlasnik dodaje novi proizvod ili mijenja postojeći (cijena, nabavna, minimum, aktivan...).
+ * Proizvodi se nikad ne brišu — samo deaktiviraju, da historija ostane tačna.
+ */
+function saveProduct(pin, p) {
+  return api_(function () {
+    provjeriPin_(pin);
+    p = p || {};
+    return zakljucano_(function () {
+      var t = tabela_(TAB.PROIZVODI);
+      var id = s_(p.product_id);
+      var red = null;
+      t.redovi.forEach(function (r) { if (id && s_(r.product_id) === id) red = r; });
+      var naziv = s_(p.naziv).slice(0, 60);
+      if (!naziv) throw greska_('NAZIV', 'Upiši naziv proizvoda.');
+      var cijena = num_(p.cijena);
+      if (!(cijena > 0) || cijena > 10000) throw greska_('CIJENA', 'Cijena mora biti veća od nule.');
+      var nabavna = num_(p.nabavna);
+      if (nabavna < 0) throw greska_('NABAVNA', 'Nabavna cijena ne može biti negativna.');
+      var izmjene = {
+        naziv: naziv, kategorija: s_(p.kategorija).slice(0, 30) || 'Ostalo', cijena: r2_(cijena), nabavna_cijena: nabavna,
+        prati_zalihu: !!p.prati_zalihu, aktivan: p.aktivan === undefined ? true : !!p.aktivan,
+        minimum: Math.max(0, Math.round(num_(p.minimum))),
+        clanarina_mjeseci: Math.max(0, Math.round(num_(p.clanarina_mjeseci)))
+      };
+      if (izmjene.clanarina_mjeseci > 0) izmjene.prati_zalihu = false;
+      if (red) {
+        if (s_(p.redoslijed) !== '') izmjene.redoslijed = num_(p.redoslijed);
+        azurirajRed_(t, red, izmjene);
+        return { product_id: id, novi: false };
+      }
+      var postojeci = {}, maxRed = 0;
+      t.redovi.forEach(function (r) { postojeci[s_(r.product_id)] = true; maxRed = Math.max(maxRed, num_(r.redoslijed)); });
+      var novi = id || slug_(naziv), k = novi, i = 2;
+      while (postojeci[k]) k = novi + '_' + (i++);
+      izmjene.product_id = k;
+      izmjene.redoslijed = s_(p.redoslijed) !== '' ? num_(p.redoslijed) : maxRed + 10;
+      dodajRedove_(t, [izmjene]);
+      if (t.sh.getLastRow() > 1) { try { checkboxeProizvoda_(t.sh); } catch (e) { /* */ } }
+      return { product_id: k, novi: true };
+    });
   });
 }
