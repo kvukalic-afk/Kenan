@@ -6,24 +6,30 @@ import { Ikona } from '../components/Ikona';
 import { Modal, Polje, Potvrda, Prazno, Prekidac, SifraPolje } from '../components/Polja';
 import { RedStavke, StatusOznaka, Zaglavlje, type StavkaVremena } from '../components/Okvir';
 import { useToast } from '../components/Toast';
+import { AnalizaModal } from '../components/AnalizaModal';
+import { sastaviIzvore } from '../lib/analiza';
+import { prikaz } from '../lib/datum';
 import { idi } from '../lib/router';
 import { jeIspravnaSifra } from '../lib/sifra';
 import { zadnjiRazgovorPoUceniku } from '../lib/zakazano';
-import { punoIme, STATUSI_UCENIKA, type StatusUcenika, type Ucenik } from '../types';
+import { punoIme, STATUSI_UCENIKA, type BrzaBiljeska, type StatusUcenika, type Ucenik } from '../types';
 
 export function Karton({ sifra }: { sifra: string }) {
   const toast = useToast();
   const [uredi, setUredi] = useState(false);
+  const [aiPregled, setAiPregled] = useState(false);
   const podaci = useLiveQuery(async () => {
-    const [ucenik, razgovori, saradnja, radionice, razredi] = await Promise.all([
+    const [ucenik, razgovori, saradnja, radionice, razredi, biljeske, analize] = await Promise.all([
       db.ucenici.where('sifra').equals(sifra).first(),
       db.razgovori.where('sifra').equals(sifra).toArray(),
       db.saradnja.where('sifra').equals(sifra).toArray(),
       db.radionice.where('ucenicizaPracenje').equals(sifra).toArray(),
       db.razredi.toArray(),
+      db.brzeBiljeske.where('sifra').equals(sifra).toArray(),
+      db.analize.where('sifra').equals(sifra).toArray(),
     ]);
     const razrednik = razredi.find((r) => r.razred === ucenik?.razred)?.razrednik ?? '';
-    return { ucenik, razgovori, saradnja, radionice, razrednik };
+    return { ucenik, razgovori, saradnja, radionice, razrednik, biljeske, analize };
   }, [sifra]);
 
   if (!podaci) return <Zaglavlje naslov={sifra} nazadNa="/ucenici" />;
@@ -37,7 +43,8 @@ export function Karton({ sifra }: { sifra: string }) {
     );
   }
 
-  const linija: StavkaVremena[] = [
+  const linija: (StavkaVremena | { vrsta: 'biljeska'; z: BrzaBiljeska })[] = [
+    ...podaci.biljeske.map((z) => ({ vrsta: 'biljeska' as const, z })),
     ...podaci.razgovori.map((z) => ({ vrsta: 'razgovor' as const, z })),
     ...podaci.saradnja.map((z) => ({ vrsta: 'saradnja' as const, z })),
     ...podaci.radionice.map((z) => ({ vrsta: 'radionica' as const, z })),
@@ -67,7 +74,25 @@ export function Karton({ sifra }: { sifra: string }) {
             <button type="button" className="dugme" onClick={() => setUredi(true)}><Ikona ime="uredi" /> Uredi</button>
             <a className="dugme" href={`#/print/karton/${encodeURIComponent(sifra)}`}><Ikona ime="print" /> Preuzmi karton za print</a>
           </div>
+          <div className="red-dugmadi" style={{ marginTop: 8 }}>
+            <button type="button" className="chip ai-chip" disabled={!podaci.razgovori.length && !podaci.biljeske.length && !podaci.saradnja.length} onClick={() => setAiPregled(true)}>🧠 AI pregled svih zapisa</button>
+            <a className="chip" href={`#/obrazac/misljenje?sifra=${encodeURIComponent(sifra)}`}>📄 Mišljenje</a>
+            <a className="chip" href={`#/obrazac/saglasnost?sifra=${encodeURIComponent(sifra)}`}>📄 Saglasnost</a>
+            <a className="chip" href={`#/obrazac/poziv?sifra=${encodeURIComponent(sifra)}`}>📄 Poziv roditelju</a>
+            <a className="chip" href={`#/obrazac/plan-podrske?sifra=${encodeURIComponent(sifra)}`}>📄 Plan podrške</a>
+          </div>
         </section>
+
+        {podaci.analize.length > 0 && (
+          <>
+            <div className="naslov-sekcije"><h2>Analize</h2></div>
+            <ul className="lista">
+              {podaci.analize.map((a) => (
+                <li key={a.id}><a className="stavka" href={`#/analiza/${a.id}`}><span className="vrsta analiza" aria-hidden /><span className="glavno"><span className="red1">{a.naslov}</span><span className="red2">{a.brojIzvora} zapisa</span></span><span className="desno broj">{prikaz(a.datum)}</span></a></li>
+              ))}
+            </ul>
+          </>
+        )}
 
         <div className="naslov-sekcije">
           <h2>Vremenska linija</h2>
@@ -77,11 +102,28 @@ export function Karton({ sifra }: { sifra: string }) {
           <Prazno>Još nema zapisa za ovog učenika. Dodaj prvi razgovor dugmetom „+ Razgovor“.</Prazno>
         ) : (
           <ul className="vremenska-linija">
-            {linija.map((s) => <li key={s.z.id}><RedStavke s={s} prikaziSifru={false} /></li>)}
+            {linija.map((s) => (
+              <li key={s.z.id}>
+                {s.vrsta === 'biljeska' ? (
+                  <a className="stavka" href="#/biljeske">
+                    <span className="vrsta biljeska" aria-hidden />
+                    <span className="glavno">
+                      <span className="red1"><span className="oznaka biljeska">Bilješka</span>{s.z.kategorija ?? ''}</span>
+                      <span className="red2">{s.z.sroceno || s.z.tekst}</span>
+                    </span>
+                    <span className="desno broj">{prikaz(s.z.datum)}</span>
+                  </a>
+                ) : <RedStavke s={s} prikaziSifru={false} />}
+              </li>
+            ))}
           </ul>
         )}
       </main>
       {uredi && <UrediUcenika ucenik={ucenik} onZatvori={() => setUredi(false)} />}
+      {aiPregled && (() => {
+        const { tekst, broj } = sastaviIzvore({ biljeske: podaci.biljeske, razgovori: podaci.razgovori, saradnja: podaci.saradnja });
+        return <AnalizaModal naslov={`AI pregled – ${sifra}`} opseg={`svi zapisi o učeniku ${sifra}`} sifra={sifra} izvorniTekst={tekst} brojIzvora={broj} onZatvori={() => setAiPregled(false)} />;
+      })()}
     </>
   );
 }

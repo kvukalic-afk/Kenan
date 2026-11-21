@@ -62,7 +62,7 @@ const ZAGLAVLJA: Record<string, string[]> = {
   razrednik: ['razrednik', 'razrednica', 'razrednik/ca'],
 };
 
-/** "Amel Mujić" → { ime: "Amel", prezime: "Mujić" } (prvo ime, ostalo prezime) */
+/** "Petar Petrović" → { ime: "Petar", prezime: "Petrović" } (prvo ime, ostalo prezime) */
 export function podijeliIme(puno: string): { ime: string; prezime: string } {
   const d = (puno || '').trim().split(/\s+/).filter(Boolean);
   if (d.length === 0) return { ime: '', prezime: '' };

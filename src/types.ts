@@ -99,6 +99,42 @@ export interface BrzaBiljeska extends Zapis {
   tekst: string; // originalno zapisano
   sroceno: string; // tekst koji je sročio AI (i psiholog prihvatio/uredio)
   obradjena: boolean;
+  kategorija?: string; // npr. "Hodnik / u prolazu", "Informativni razgovor"
+  osobe?: string[]; // o kome/sa kim: "razrednik 7-1", "nastavnik matematike", "majka"…
+}
+
+/** AI analiza / zaključak iz prikupljenih bilješki i zapisa (sačuvana za kasnije). */
+export interface Analiza extends Zapis {
+  datum: string;
+  naslov: string;
+  opseg: string; // opis šta je analizirano (period, učenik, kategorija…)
+  sifra: string; // ako se odnosi na jednog učenika
+  tekst: string;
+  brojIzvora: number;
+}
+
+/** Stavka kontrolne liste za inspekciju (ručna potvrda). id = "2026:dnevnik:2026-10" i sl. */
+export interface KontrolnaStavka extends Zapis {
+  gotovo: boolean;
+  napomena: string;
+}
+
+/** Popunjen obrazac (saglasnost, poziv, mišljenje, službena bilješka…) – čuva se u arhivi. */
+export interface PopunjenObrazac extends Zapis {
+  vrsta: string;
+  datum: string;
+  sifra: string;
+  polja: Record<string, string>;
+}
+
+/** Dokument koji je psiholog dodao (PDF pravilnika, kolektivni ugovor, rješenje…). */
+export interface MojDokument extends Zapis {
+  naziv: string;
+  kategorija: string;
+  tip: string; // MIME
+  velicina: number;
+  podaci: Blob;
+  zaAI: boolean; // smije li AI asistent čitati ovaj dokument
 }
 
 export interface Postavke {
@@ -130,7 +166,7 @@ export interface StavkaSifrarnika extends Zapis {
   sakriveno: boolean;
 }
 
-export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan' | 'brzeBiljeske';
+export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan' | 'brzeBiljeske' | 'analize' | 'kontrola' | 'obrasci' | 'dokumenti';
 
 export interface Obrisano {
   id: string;

@@ -10,9 +10,10 @@ import { izracunajStatistiku, sazetak, type Period, type Statistika } from '../l
 import { zadnjiRazgovorPoUceniku } from '../lib/zakazano';
 import { evidencijaPoPodrucjima, IZVOR_NORME, PODRUCJA, satiTekst, stavkeDnevnika, uMjesecu, vrijemeRealizacije, zaokruzi, type RedEvidencije } from '../lib/podrucja';
 import { radnihSedmica } from '../screens/PlanRada';
+import { definicija, popuniUvod } from '../lib/obrasci';
 import { brojPerioda, nazivDana, naslovIzvjestaja, opisPerioda, sazetakPerioda, stavkePerioda, vrstaPerioda } from '../lib/periodIzvjestaj';
 import { procitajTekst } from '../screens/IzvjestajPeriod';
-import { punoIme, type Aktivnost, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
+import { punoIme, type Aktivnost, type Analiza, type PopunjenObrazac, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
 import './print.css';
 
 function Dokument({ naslov, podnaslov, nazivFajla, postavke, children }: {
@@ -573,5 +574,101 @@ function TabelaEvidencije({ redovi, napomena }: { redovi: RedEvidencije[]; napom
       </table>
       <p style={{ fontSize: '9pt' }}>{napomena} Evidentirano je samo ono što je uneseno u app (razgovori, radionice, saradnja, ostale aktivnosti); priprema za rad i dokumentacija se evidentiraju kao „Ostala aktivnost“. Izvor norme: {IZVOR_NORME}</p>
     </>
+  );
+}
+
+// ---------- 8. Popunjen obrazac ----------
+
+export function PrintObrazac({ id }: { id: string }) {
+  const postavke = usePostavke();
+  const { poSifri, razrednik } = useImenik();
+  const o = useLiveQuery(() => db.obrasci.get(id), [id], null as PopunjenObrazac | null | undefined);
+  if (o === null) return <Ucitavanje />;
+  if (!o) return <p style={{ padding: 24 }}>Obrazac ne postoji.</p>;
+  const def = definicija(o.vrsta);
+  if (!def) return <p style={{ padding: 24 }}>Nepoznata vrsta obrasca.</p>;
+  const imena = postavke.imenaUDokumentima !== false;
+  const u = o.sifra ? poSifri.get(o.sifra) : undefined;
+  const ucenikTekst = u ? `${imena && punoIme(u) ? punoIme(u) : u.sifra}` : o.polja.ucenik || '';
+  const vr: Record<string, string> = {
+    ...Object.fromEntries(def.polja.map((f) => [f.kljuc, f.tip === 'datum' ? prikaz(o.polja[f.kljuc] ?? '') : (o.polja[f.kljuc] ?? '')])),
+    ucenik: ucenikTekst, razred: u?.razred ?? '',
+  };
+  const kratka = def.polja.filter((f) => f.tip !== 'dugi' && !(def.uvod && def.uvod.includes(`{${f.kljuc}}`) && f.kljuc !== 'datum'));
+  const duga = def.polja.filter((f) => f.tip === 'dugi' && !(def.uvod && def.uvod.includes(`{${f.kljuc}}`)));
+  return (
+    <Dokument naslov={def.naslov} nazivFajla={`${def.naziv.replace(/\s+/g, '_')}_${o.datum}`} postavke={postavke}>
+      {kratka.length > 0 && (
+        <table className="podaci-tab">
+          <tbody>
+            {kratka.map((f) => (
+              <Red key={f.kljuc} o={f.labela.replace(/\s*\(.*\)$/, '')} v={f.tip === 'ucenik' ? (vr.ucenik ? `${vr.ucenik}${u?.razred ? `, razred ${u.razred}` : ''}` : '') : vr[f.kljuc]} />
+            ))}
+            {u?.razred && razrednik.get(u.razred) && <Red o="Razrednik" v={razrednik.get(u.razred)} />}
+          </tbody>
+        </table>
+      )}
+      {def.uvod && <p className="tekst-obrasca">{popuniUvod(def.uvod, vr)}</p>}
+      {duga.map((f) => <Blok key={f.kljuc} naslov={f.labela} tekst={vr[f.kljuc]} />)}
+      {def.zavrsetak && <p className="tekst-obrasca">{def.zavrsetak}</p>}
+      <div className="potpisi">
+        {def.potpisi.map((p) => (
+          <div key={p} className="potpis-polje">
+            <div className="linija-potpisa" />
+            <div>{p}{p === 'Psiholog' && postavke.imePsihologa ? `: ${postavke.imePsihologa}` : ''}</div>
+          </div>
+        ))}
+        {def.mp && <div className="potpis-polje mp">M.P.</div>}
+      </div>
+    </Dokument>
+  );
+}
+
+// ---------- 9. Analiza ----------
+
+export function PrintAnaliza({ id }: { id: string }) {
+  const postavke = usePostavke();
+  const a = useLiveQuery(() => db.analize.get(id), [id], null as Analiza | null | undefined);
+  if (a === null) return <Ucitavanje />;
+  if (!a) return <p style={{ padding: 24 }}>Analiza ne postoji.</p>;
+  return (
+    <Dokument naslov="ANALIZA PRIKUPLJENIH INFORMACIJA" podnaslov={a.naslov} nazivFajla={`Analiza_${a.datum}`} postavke={postavke}>
+      <table className="podaci-tab">
+        <tbody>
+          <Red o="Datum analize" v={prikaz(a.datum)} />
+          <Red o="Obuhvaćeno" v={a.opseg} />
+          <Red o="Broj zapisa" v={a.brojIzvora} />
+          {a.sifra && <Red o="Učenik (šifra)" v={a.sifra} />}
+        </tbody>
+      </table>
+      <div className="blok"><div className="sadrzaj-bloka" style={{ minHeight: 0 }}>{a.tekst}</div></div>
+      <p style={{ fontSize: '9pt' }}>Analiza je izrađena uz pomoć umjetne inteligencije na osnovu evidencije psihologa i služi kao radni materijal; zaključke je pregledao i potvrdio psiholog.</p>
+    </Dokument>
+  );
+}
+
+// ---------- 10. Evidencija stručnog usavršavanja ----------
+
+export function PrintUsavrsavanje({ godina }: { godina: number }) {
+  const postavke = usePostavke();
+  const lista = useLiveQuery(() => db.aktivnosti.filter((a) => /usavršavanj/i.test(a.vrsta) && a.datum >= `${godina}-09-01` && a.datum <= `${godina + 1}-08-31`).toArray(), [godina]);
+  if (!lista) return <Ucitavanje />;
+  const sort = [...lista].sort((a, b) => a.datum.localeCompare(b.datum));
+  const sati = sort.reduce((s, a) => s + (a.trajanjeMin ?? 0), 0) / 60;
+  return (
+    <Dokument naslov="EVIDENCIJA STRUČNOG USAVRŠAVANJA" podnaslov={`Školska ${nazivSkolskeGodine(godina)}. godina`} nazivFajla={`Usavrsavanje_${godina}-${godina + 1}`} postavke={postavke}>
+      {sort.length === 0 ? <p>Nema evidentiranog stručnog usavršavanja (Ostala aktivnost → Stručno usavršavanje).</p> : (
+        <table className="lista-tab">
+          <thead><tr><th style={{ width: '6%' }}>R. br.</th><th style={{ width: '14%' }}>Datum</th><th>Tema / naziv</th><th style={{ width: '22%' }}>Organizator / napomena</th><th style={{ width: '10%' }} className="n">Sati</th></tr></thead>
+          <tbody>
+            {sort.map((a, i) => (
+              <tr key={a.id}><td className="n">{i + 1}.</td><td>{prikaz(a.datum)}</td><td className="tekst-celija">{a.tema || a.predmet || '—'}</td><td className="tekst-celija">{[a.napomena, a.zapazanja].filter(Boolean).join(' · ')}</td><td className="n">{a.trajanjeMin ? zaokruzi(a.trajanjeMin / 60) : ''}</td></tr>
+            ))}
+            <tr className="zbir"><td colSpan={4}>Ukupno</td><td className="n">{zaokruzi(sati)}</td></tr>
+          </tbody>
+        </table>
+      )}
+      <p style={{ fontSize: '9pt' }}>Uz evidenciju se prilažu potvrde/certifikati o učešću.</p>
+    </Dokument>
   );
 }

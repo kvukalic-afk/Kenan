@@ -7,6 +7,8 @@ import { nazivDana } from '../lib/periodIzvjestaj';
 import { izracunajZakazano, tekstOznake, zadnjiRazgovorPoUceniku } from '../lib/zakazano';
 import { usePostavke } from '../lib/podaci';
 import { punoIme } from '../types';
+import { useKontrola } from '../lib/useKontrola';
+import { sljedeceObaveze, spremnost } from '../lib/dokumentacija';
 
 function pozdrav(): string {
   const h = new Date().getHours();
@@ -15,6 +17,7 @@ function pozdrav(): string {
 
 export function Pocetna() {
   const postavke = usePostavke();
+  const kon = useKontrola();
   const podaci = useLiveQuery(async () => {
     const [razgovori, radionice, saradnja, ucenici, aktivnosti, brzeBiljeske] = await Promise.all([
       db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray(), db.ucenici.toArray(), db.aktivnosti.toArray(),
@@ -75,6 +78,31 @@ export function Pocetna() {
           <a href="#/novi/saradnja"><Ikona ime="saradnja" />Saradnja</a>
           <a href="#/novi/aktivnost"><Ikona ime="aktivnost" />Aktivnost</a>
         </div>
+
+        {kon && (() => {
+          const pct = spremnost(kon.stanje);
+          const sljedece = sljedeceObaveze(kon.stanje, 2);
+          return (
+            <a className="podsjetnik-kartica ulaz" href="#/dokumentacija">
+              <div className="prsten mali" style={{ ['--pct' as string]: `${pct}` }}><span>{pct}%</span></div>
+              <span className="rastegni">
+                <strong>Dokumentacija za inspekciju</strong>
+                {sljedece.length ? sljedece.map((o) => (
+                  <span key={o.id} className={`podsjetnik-red ${o.kasni ? 'kasni' : o.danaDoRoka <= 7 ? 'uskoro' : ''}`}>
+                    {o.kasni ? '⚠ ' : '• '}{o.def.naziv} – {o.kasni ? 'kasni' : `rok ${prikaz(o.rok)}`}
+                  </span>
+                )) : <span className="podsjetnik-red">Sve je uredno ✓</span>}
+              </span>
+              <Ikona ime="desno" />
+            </a>
+          );
+        })()}
+
+        <a className="asistent-traka ulaz" href="#/asistent">
+          <span className="asistent-ikona">🤖</span>
+          <span className="rastegni"><strong>AI asistent</strong><span className="blijedo"> · pitaj o dokumentaciji, propisima, planu</span></span>
+          <Ikona ime="desno" />
+        </a>
 
         {podsjetnik && (
           <a className="obavjestenje upozorenje" href="#/postavke?kopija=1" style={{ textDecoration: 'none', color: 'inherit' }}>

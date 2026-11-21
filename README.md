@@ -4,6 +4,7 @@ Aplikacija za školskog psihologa (JU Osnovna škola Stijena). U nju se unose bi
 
 - Radi na mobitelu i računaru i instalira se kao app s ikonicom (PWA).
 - **Radi offline.** Podaci (i imena učenika) ostaju samo na uređaju (IndexedDB). Nema servera, računa ni praćenja.
+- AI (ChatGPT ili Claude) je **opcionalan**: sroči bilješku, analizira prikupljene informacije, piše nacrt mišljenja i odgovara na pitanja o dokumentaciji. Prije slanja imena učenika i razrednika zamjenjuju se šiframa i ulogama.
 - Učenici imaju ime i prezime, šifru (npr. `U014`) i razred. Razrednik se upisuje jednom po razredu.
 
 ---
@@ -177,20 +178,61 @@ Područja rada i sedmična norma sati su po **Pedagoškim standardima i normativ
 
 Zvanični obrazac dnevnika rada za USK nije javno dostupan na internetu. Ako škola ili Pedagoški zavod imaju svoj obrazac, print se može prilagoditi po njemu.
 
-### Brze bilješke i AI koji sroči tekst
+### Bilješke s hodnika, informativni razgovori i AI analiza
 
-- **Brza bilješka** (veliko dugme na Početnoj ili **+ → Brza bilješka**) služi za ono što se desi „u hodu“: na hodniku, na odmoru, bez dogovorenog razgovora. Zapišeš ili izdiktiraš kako ti dođe i po želji izabereš učenika. Bilješka čeka u listi „Za obradu“.
-- **✨ Sroči stručno:** AI pretvara sirov tekst u uredan, stručan tekst, kakav piše iskusan školski psiholog. Grube ili kolokvijalne izraze zamjenjuje stručnim, ništa ne izmišlja i ne dodaje dijagnoze. Dugme postoji uz brze bilješke i uz tekstualna polja u formama (bilješke, zaključak, preporuke, zapažanja, dogovor). Prijedlog uvijek pregledaš, možeš ga urediti i tek onda prihvatiš.
-- **→ U razgovor:** brza bilješka se jednim klikom pretvara u formu novog razgovora, s već upisanim učenikom i tekstom.
-- **Privatnost:** prije slanja AI-ju imena i prezimena učenika (i u padežima) zamjenjuju se šiframa. Imena roditelja, nastavnika i drugih osoba app ne prepoznaje, pa ih u bilješke za AI ne piši.
-- **Dva načina rada:**
-  1. **Bez ključa:** „Kopiraj za AI“, zalijepiš u ChatGPT ili Claude, pa odgovor zalijepiš nazad.
-  2. **Sa ključem (jedan klik):** u Postavke → *Umjetna inteligencija* upiši Anthropic API ključ (console.anthropic.com → API Keys; plaća se po upotrebi, par feninga po bilješci). Ključ se čuva samo na tom uređaju i ne ide u rezervnu kopiju. AI radi samo uz internet. Bilješke se i offline normalno čuvaju, a sroče se kasnije.
+- **Brza bilješka** (veliko dugme na Početnoj ili **+ → Brza bilješka**) služi za ono što se desi „u hodu“: hodnik, odmor, telefon, informativni razgovor o učeniku, nastavniku ili razredu. Zapiši ili izdiktiraj kako ti dođe.
+- Uz bilješku po želji izabereš **vrstu** (Hodnik / u prolazu, Informativni razgovor, Opservacija, Telefon / poruka, Sastanak, Ostalo), **učenika** i **o kome / sa kim** je riječ. Za osobe koristi uloge („razrednik 7-1“, „nastavnik matematike“, „majka“), ne imena. Kad izabereš učenika, app prvo predloži njegovog razrednika.
+- Lista bilješki ima **pretragu** (tekst, uloga, ime učenika) i filtere po periodu, vrsti i „samo neobrađene“. Bilješke su grupisane po danima.
+- Uz svaku bilješku: **✨ Sroči stručno**, **→ Razgovor** (prenese tekst u formu razgovora), **📄 Službena bilješka** (popuni obrazac), **✓ Obrađeno**, uredi i obriši.
+- **✨ Sroči stručno:** AI pretvara sirov tekst u uredan stručni tekst, kakav piše iskusan školski psiholog. Ništa ne izmišlja i ne dodaje dijagnoze. Prijedlog uvijek pregledaš i urediš prije nego ga prihvatiš. Isto dugme postoji uz tekstualna polja u formama.
+- **🧠 AI analiza:** dugme „AI analiza (N)“ šalje sve bilješke koje trenutno vidiš (npr. filter „Školska godina“ + jedan učenik, ili sve „Informativni razgovor“) na analizu. AI vraća pregled, ključna zapažanja i obrasce koji se ponavljaju, moguće zaključke, preporuke i otvorena pitanja. **Prije slanja vidiš tačan tekst koji ide AI-ju** (već bez imena) i možeš ga urediti ili dodati svoje pitanje. Analiza se čuva u tabu **Analize**, može se urediti i odštampati.
+- U **kartonu učenika** dugme **„🧠 AI pregled svih zapisa“** radi isto nad svim razgovorima, bilješkama i saradnjom za tog učenika. Tu su i prečice za obrasce (Mišljenje, Saglasnost, Poziv roditelju, Plan podrške).
+
+### Dokumentacija za inspekciju (Izvještaji → Dokumentacija)
+
+Na Početnoj je kartica **„Dokumentacija za inspekciju“** s procentom spremnosti i sljedeća dva roka. Klik otvara dio s četiri taba:
+
+1. **Spremnost:** kontrolna lista onoga što psiholog treba imati: godišnji program rada, mjesečni planovi, dnevnik rada, evidencija razgovora, saglasnosti roditelja, evidencija nasilja, zapisnici stručnog tima, stručno usavršavanje, polugodišnji i godišnji izvještaj, čuvanje povjerljive dokumentacije, lični dosije, rezervna kopija. Svaka stavka ima rok. Što app može provjeriti sam (npr. da li postoji plan rada ili unos za mjesec), označi sam, a ostalo štikliraš ti. Mjesečne stavke se obnavljaju svaki mjesec, a polugodišnji i godišnji izvještaj se pojave tek pred rok.
+2. **Obrasci:** službena bilješka, saglasnost roditelja, poziv roditelju, mišljenje psihologa (uz **AI nacrt** iz evidencije učenika), dopis/uputnica ustanovi, zapisnik stručnog tima, evidencija postupanja kod nasilja, plan individualne podrške i zapisnik o ispitivanju spremnosti djeteta za polazak u školu. Popuniš u appu, sačuvaš (arhiva ostaje u appu) i štampaš na A4 s oznakom POVJERLJIVO, poljima za potpis i M.P.
+3. **Moji dokumenti:** ovdje ubaci zvanične PDF-ove (pravilnike, obrasce Ministarstva, Pedagoškog zavoda, Sindikata, kolektivni ugovor, rješenja) do 25 MB po fajlu. Čuvaju se u appu i ulaze u rezervnu kopiju. Ako označiš **„AI smije čitati“**, AI asistent ih čita kad odgovara.
+4. **Propisi:** 11 područja rada i 40-satna sedmica iz Pedagoških standarda USK (čl. 13), s linkovima na izvor.
+
+> **Važno:** na internetu je javno dostupan samo dokument *Pedagoški standardi i normativi za osnovni odgoj i obrazovanje USK* (pzusk.ba). Zvanične obrasce Ministarstva obrazovanja USK, Vlade USK i Sindikata nisam našao javno objavljene. Zato su obrasci u appu napravljeni po uobičajenoj praksi školskih psihologa. Ako škola ili Pedagoški zavod imaju svoje obrasce, ubaci ih u **Moji dokumenti**, pa se obrasci u appu mogu uskladiti s njima.
+
+### AI asistent
+
+**+ → AI asistent**, traka na Početnoj ili Izvještaji → AI asistent. To je razgovor s AI-jem koji:
+
+- zna Pedagoške standarde USK (11 područja, 40-satna sedmica), tvoju kontrolnu listu i šta app sve može;
+- **pri svakom pitanju dobije svjež pregled stanja:** spremnost, šta kasni, šta je sljedeće, koliko je unosa ovog mjeseca. Tako te sam podsjeća na rokove i obaveze;
+- čita tvoje dokumente označene „AI smije čitati“ (PDF i tekst);
+- ima brza pitanja: *Šta mi fali za inspekciju?*, *Plan za ovu sedmicu*, *Koje obrasce trebam imati?*, *Kako postupiti kod nasilja?*…
+
+Asistent ne vidi tvoje bilješke o učenicima, samo zbirne brojeve i stanje dokumentacije.
+
+### Podešavanje AI-ja: ChatGPT ili Claude
+
+Postavke → **Umjetna inteligencija**:
+
+- **Pružalac:** ChatGPT (OpenAI) ili Claude (Anthropic).
+- **ChatGPT model:** **Sol** (najbolji kvalitet), **Terra** (brži, jeftiniji) ili **Luna** (najjeftiniji). Ako tvoj nalog nema pristup izabranom modelu, app sam pokuša sljedeći dostupni.
+- **Ključ:** za ChatGPT napravi API ključ na **platform.openai.com → API keys**, za Claude na **console.anthropic.com → API Keys**. Dugme **Isprobaj** provjerava da li ključ radi.
+  - **Pretplata ChatGPT Plus ne uključuje API.** API se plaća posebno, po potrošnji (doplati kredit na platform.openai.com → Billing). Sročavanje jedne bilješke obično košta manje od feninga, a veća analiza nekoliko feninga (zavisi od modela).
+  - Ključevi se čuvaju **samo na tom uređaju**. Ne ulaze u rezervnu kopiju, pa na drugom uređaju ključ upišeš ponovo.
+- **Diktiranje:** 🎙 **ChatGPT** (snimi glas, pa OpenAI pretvori govor u tekst, odlično za bosanski) ili **preglednik** (besplatno, Chrome). Za ChatGPT diktiranje treba OpenAI ključ. Dok snimaš, vidiš talas glasa i vrijeme. Ponovni klik na mikrofon završava snimanje i ubacuje tekst.
+- **Bez ključa** sve AI funkcije imaju ručni način: „Kopiraj za AI“, zalijepiš u ChatGPT ili Claude, pa odgovor zalijepiš nazad.
+
+**Privatnost kod AI-ja:**
+
+- Prije svakog slanja imena i prezimena učenika (i u padežima) zamjenjuju se šiframa, a imena razrednika ulogom („razrednik 7-1“). Popis se uvijek čita svjež iz baze.
+- Imena **drugih** osoba (roditelja, nastavnika koji nisu razrednici) app ne prepoznaje. Zato ih piši ulogom.
+- Snimak glasa ide OpenAI-ju na pretvaranje u tekst. Ako u diktatu izgovoriš ime, ono stiže u tekst, a pri slanju AI-ju (sroči, analiza) zamijeni se šifrom kao i inače.
+- AI tekst je uvijek **nacrt**. Pročitaj ga i ispravi prije čuvanja ili potpisivanja.
 
 ## 7. Ostalo što je dobro znati
 
 - **PIN** (Postavke): 4–6 cifara. Traži se pri otvaranju i nakon 5 minuta neaktivnosti. Čuva se samo kao hash. **Zaboravljen PIN se ne može vratiti.** Tada ostaje samo „Obriši sve podatke“ i vraćanje iz rezervne kopije. PIN zaključava ekran appa, a za punu zaštitu drži i telefon i računar zaključanim.
-- **Diktiranje:** dugme mikrofona pored tekstualnih polja (Chrome na Androidu i računaru, jezik hr-HR). Diktiranje u pregledniku obično traži internet. Gdje ne radi, koristi mikrofon na tastaturi telefona.
+- **Diktiranje:** dugme mikrofona pored tekstualnih polja. Sa OpenAI ključem i izborom „ChatGPT“ snima se glas i pretvara u tekst preko OpenAI-ja (bosanski). Inače se koristi diktiranje preglednika (Chrome, jezik hr-HR). Oba traže internet. Gdje ne radi, koristi mikrofon na tastaturi telefona.
 - **Nacrt:** dok kucaš, unos se čuva svake 2 sekunde. Ako se app zatvori usred unosa, pri sljedećem otvaranju pita „Nastavi nedovršeni unos?“.
 - **Print:** svaki dokument se otvara kao A4 pregled s dugmetom **Štampaj / Sačuvaj kao PDF**. Zaglavlje i podnožje (POVJERLJIVO, datum, potpis) ponavljaju se na svakoj stranici. Broj stranice („Stranica 2 / 3“) ispisuju Chrome i Edge, a Safari na iPhoneu dodaje svoj. Ako u printu vidiš adresu stranice, u prozoru za štampu isključi *Zaglavlja i podnožja*.
 - **Excel:** Statistika → **Izvezi sve u Excel** pravi `Evidencija_psiholog_GGGG-MM-DD.xlsx` s listovima Učenici, Razgovori, Radionice, Saradnja i Statistika.
@@ -201,18 +243,21 @@ Zvanični obrazac dnevnika rada za USK nije javno dostupan na internetu. Ako šk
 
 ## 8. Tehnički pregled
 
-React 18 + TypeScript + Vite, Dexie.js (IndexedDB), `vite-plugin-pwa` (service worker i manifest), SheetJS `xlsx` 0.20.3 uključen lokalno (`vendor/`). Nema eksternih fontova, CDN-ova ni analitike.
+React 18 + TypeScript + Vite, Dexie.js (IndexedDB), `vite-plugin-pwa` (service worker i manifest), SheetJS `xlsx` 0.20.3 uključen lokalno (`vendor/`), `@anthropic-ai/sdk` i `openai` (pozivaju se direktno iz preglednika, samo kad korisnik upiše svoj ključ). Nema eksternih fontova, CDN-ova ni analitike. Animacije se isključuju ako je u sistemu uključeno „smanji pokrete“.
 
 ```
 src/
   App.tsx              rute, zaključavanje, pitanje za nacrt
   db/                  Dexie šema, snimanje/brisanje, šifrarnik, uvoz/izvoz kopije
-  lib/                 datumi, šifre, statistika, Zakazano, kripto, kopija, Excel, uvoz popisa, diktiranje
+  lib/                 datumi, šifre, statistika, Zakazano, kripto, kopija, Excel, uvoz popisa, diktiranje,
+                       ai.ts / openai.ts (Claude, ChatGPT, anonimizacija), snimac.ts (snimanje glasa),
+                       dokumentacija.ts (kontrolna lista, rokovi), obrasci.ts, analiza.ts, podrucja.ts
   components/          polja forme (chipovi, datum, šifra, tagovi, diktiranje), navigacija, grafikoni
-  screens/             Početna, Učenici, Karton, Radionice, Statistika, Postavke, forme, detalji, zaključavanje
+  screens/             Početna, Učenici, Karton, Radionice, Izvještaji, Postavke, forme, detalji, zaključavanje,
+                       Bilješke + Analize, Dokumentacija, Obrazac, AI asistent, Plan rada
   print/               dokumenti za print + print.css
 tests/                 Vitest testovi
 public/                ikonice (SVG + PNG 180/192/512, maskable)
 ```
 
-Testovi pokrivaju statistiku po mjesecima i polugodištima, „Zakazano“, šifrovanje kopije i PIN-a, spajanje kopije bez duplikata, validaciju šifre, uvoz popisa i Excel izvoz.
+Testovi pokrivaju statistiku po mjesecima i polugodištima, „Zakazano“, šifrovanje kopije i PIN-a, spajanje kopije bez duplikata, validaciju šifre, uvoz popisa, Excel izvoz, izvještaje po periodu, anonimizaciju prije slanja AI-ju (učenici u padežima, razrednici) i kontrolnu listu za inspekciju.

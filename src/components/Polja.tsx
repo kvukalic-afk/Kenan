@@ -1,7 +1,8 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Ikona } from './Ikona';
 import { SrociDugme } from './AI';
-import type { VrstaTeksta } from '../lib/ai';
+import { diktiranjeChatGPT, transkribuj, type VrstaTeksta } from '../lib/ai';
+import { pocniSnimanje, snimanjePodrzano, type Snimac } from '../lib/snimac';
 import { dodajDane, danasIso, parsirajPrikaz, prikaz } from '../lib/datum';
 import { diktiranjePodrzano, dodajNaKraj, slusaj, type Slusanje } from '../lib/govor';
 import { liciNaIme, ocistiSifru, PORUKA_IME, uporediSifre } from '../lib/sifra';
@@ -87,17 +88,57 @@ export function TekstPolje({ labela, vrijednost, onChange, kratko, placeholder, 
   ai?: VrstaTeksta; aiKontekst?: string; autoFokus?: boolean;
 }) {
   const id = useId();
-  const podrzano = diktiranjePodrzano();
-  const [slusa, setSlusa] = useState(false);
+  const chatgpt = diktiranjeChatGPT() && snimanjePodrzano();
+  const podrzano = chatgpt || diktiranjePodrzano();
+  const [stanje, setStanje] = useState<'miruje' | 'slusa' | 'obrada'>('miruje');
   const [greskaMik, setGreskaMik] = useState('');
+  const [sekundi, setSekundi] = useState(0);
+  const [nivo, setNivo] = useState(0);
   const slusanje = useRef<Slusanje | null>(null);
+  const snimac = useRef<Snimac | null>(null);
   const trenutno = useRef(vrijednost);
   trenutno.current = vrijednost;
 
-  useEffect(() => () => slusanje.current?.zaustavi(), []);
+  useEffect(() => () => { slusanje.current?.zaustavi(); snimac.current?.odustani(); }, []);
+  useEffect(() => {
+    if (stanje !== 'slusa' || !chatgpt) return;
+    const pocetak = Date.now();
+    const t = window.setInterval(() => {
+      setSekundi(Math.floor((Date.now() - pocetak) / 1000));
+      setNivo(snimac.current?.nivo() ?? 0);
+    }, 120);
+    return () => window.clearInterval(t);
+  }, [stanje, chatgpt]);
 
-  const prebaci = () => {
-    if (slusa) {
+  const prebaciChatGPT = async () => {
+    if (stanje === 'obrada') return;
+    if (stanje === 'slusa' && snimac.current) {
+      const s = snimac.current;
+      snimac.current = null;
+      setStanje('obrada');
+      try {
+        const audio = await s.zaustavi();
+        const tekst = await transkribuj(audio);
+        if (tekst) onChange(dodajNaKraj(trenutno.current, tekst));
+      } catch (e) {
+        setGreskaMik((e as Error).message);
+      } finally {
+        setStanje('miruje');
+      }
+      return;
+    }
+    setGreskaMik('');
+    try {
+      snimac.current = await pocniSnimanje();
+      setSekundi(0);
+      setStanje('slusa');
+    } catch {
+      setGreskaMik('Mikrofon nije dozvoljen. Dozvoli ga u postavkama preglednika ili koristi mikrofon na tastaturi.');
+    }
+  };
+
+  const prebaciPreglednik = () => {
+    if (stanje === 'slusa') {
       slusanje.current?.zaustavi();
       return;
     }
@@ -105,7 +146,7 @@ export function TekstPolje({ labela, vrijednost, onChange, kratko, placeholder, 
     const s = slusaj(
       (t) => onChange(dodajNaKraj(trenutno.current, t)),
       (g) => {
-        setSlusa(false);
+        setStanje('miruje');
         slusanje.current = null;
         if (g === 'not-allowed' || g === 'service-not-allowed') setGreskaMik('Mikrofon nije dozvoljen. Dozvoli ga u postavkama preglednika ili koristi mikrofon na tastaturi.');
         else if (g === 'network') setGreskaMik('Diktiranje u pregledniku traži internet. Offline koristi mikrofon na tastaturi telefona.');
@@ -114,23 +155,36 @@ export function TekstPolje({ labela, vrijednost, onChange, kratko, placeholder, 
     );
     if (s) {
       slusanje.current = s;
-      setSlusa(true);
+      setStanje('slusa');
     } else setGreskaMik('Diktiranje nije dostupno. Koristi mikrofon na tastaturi telefona.');
   };
 
+  const pomoc = !podrzano ? 'Koristi mikrofon na tastaturi telefona'
+    : stanje === 'obrada' ? 'ChatGPT pretvara govor u tekst…'
+    : stanje === 'slusa' ? (chatgpt ? `Snimam ${Math.floor(sekundi / 60)}:${String(sekundi % 60).padStart(2, '0')} – dodirni ■ za kraj.` : 'Slušam… dodirni ponovo za kraj.')
+    : undefined;
+
   return (
-    <Polje labela={labela} id={id} obavezno={obavezno} greska={greska || greskaMik || undefined}
-      pomoc={!podrzano ? 'Koristi mikrofon na tastaturi telefona' : slusa ? 'Slušam… dodirni ponovo za kraj.' : undefined}>
+    <Polje labela={labela} id={id} obavezno={obavezno} greska={greska || greskaMik || undefined} pomoc={pomoc}>
       <div className={podrzano ? 's-mikrofonom' : ''}>
         <AutoTextarea id={id} value={vrijednost} onChange={(e) => onChange(e.target.value)} className={kratko ? 'kratko' : ''}
           rows={kratko ? 1 : 3} placeholder={placeholder} spellCheck lang="bs" autoFocus={autoFokus} />
         {podrzano && (
-          <button type="button" className={`mikrofon ${slusa ? 'slusa' : ''}`} onClick={prebaci}
-            aria-label={slusa ? `Zaustavi diktiranje (${labela})` : `Diktiraj: ${labela}`} aria-pressed={slusa}>
-            <Ikona ime={slusa ? 'stop' : 'mikrofon'} />
+          <button type="button" className={`mikrofon ${stanje === 'slusa' ? 'slusa' : ''} ${stanje === 'obrada' ? 'obrada' : ''} ${chatgpt ? 'chatgpt' : ''}`}
+            onClick={() => (chatgpt ? void prebaciChatGPT() : prebaciPreglednik())} disabled={stanje === 'obrada'}
+            aria-label={stanje === 'slusa' ? `Zaustavi diktiranje (${labela})` : `Diktiraj: ${labela}`} aria-pressed={stanje === 'slusa'}
+            title={chatgpt ? 'Diktiranje (ChatGPT)' : 'Diktiranje'}>
+            {stanje === 'obrada' ? <span className="vrtuljak" aria-hidden /> : <Ikona ime={stanje === 'slusa' ? 'stop' : 'mikrofon'} />}
           </button>
         )}
       </div>
+      {stanje === 'slusa' && chatgpt && (
+        <div className="talas" aria-hidden>
+          {Array.from({ length: 24 }, (_, i) => (
+            <span key={i} style={{ transform: `scaleY(${0.15 + nivo * (0.4 + 0.6 * Math.abs(Math.sin(i * 1.7 + sekundi)))})` }} />
+          ))}
+        </div>
+      )}
       {ai && vrijednost.trim().length > 15 && (
         <div style={{ marginTop: 6 }}><SrociDugme tekst={vrijednost} vrsta={ai} kontekst={aiKontekst} onPrihvati={onChange} mali /></div>
       )}

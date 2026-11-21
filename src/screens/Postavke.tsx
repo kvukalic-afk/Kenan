@@ -10,7 +10,7 @@ import { NAZIVI_TABELA, TABELE_KOPIJE, type PlanUvoza } from '../lib/backup';
 import { nazivSkolskeGodine, prikazVremena, skolskaGodinaZaDatum } from '../lib/datum';
 import { hashirajPin, jeIspravanPin, PogresnaLozinka, provjeriPin } from '../lib/kripto';
 import { snimakBaze, usePostavke, useSifrarnik } from '../lib/podaci';
-import { AI_MODEL, sacuvajKljuc, sroci, ucitajKljuc } from '../lib/ai';
+import { aiPostavke, CHATGPT_MODELI, sacuvajAIPostavke, sroci, type AIPostavke } from '../lib/ai';
 import { napraviExcel, nazivExcelFajla } from '../lib/excel';
 import { preuzmi } from '../lib/preuzimanje';
 import type { Kategorija } from '../types';
@@ -375,10 +375,12 @@ export function BrisanjeSvega({ onZatvori }: { onZatvori: () => void }) {
 
 function AIPostavke() {
   const toast = useToast();
-  const [kljuc, setKljuc] = useState(ucitajKljuc());
+  const [p, setP] = useState(aiPostavke());
+  const [claude, setClaude] = useState(p.claudeKljuc);
+  const [openai, setOpenai] = useState(p.openaiKljuc);
   const [prikazi, setPrikazi] = useState(false);
   const [test, setTest] = useState('');
-  const sacuvan = ucitajKljuc();
+  const promijeni = (iz: Partial<AIPostavke>) => { sacuvajAIPostavke(iz); setP(aiPostavke()); };
 
   const isprobaj = async () => {
     setTest('Provjeravam…');
@@ -394,26 +396,55 @@ function AIPostavke() {
     <section className="kartica">
       <h2>✨ Umjetna inteligencija (AI)</h2>
       <p className="malo">
-        AI pretvara tvoje kratke, brzo zapisane bilješke u uredan stručan tekst (dugme <strong>„✨ Sroči stručno“</strong> uz bilješke).
-        Bez ključa radi preko ChatGPT-a (kopiraj–zalijepi). Sa ključem radi jednim klikom, direktno u appu.
+        AI sređuje bilješke („✨ Sroči stručno“), analizira prikupljene informacije, piše nacrte mišljenja i odgovara kao asistent za dokumentaciju.
+        Bez ključa radi preko kopiranja u ChatGPT; s ključem radi jednim klikom u appu.
       </p>
-      <p className="malo blijedo">
-        Koristi se Claude (Anthropic, model {AI_MODEL}). Ključ dobiješ na <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a> (plaća se po upotrebi – jedna bilješka košta par feninga).
-        Ključ se čuva samo na ovom uređaju i ne ide u rezervnu kopiju. Prije slanja, imena učenika se zamjenjuju šiframa; tekst bilješke se šalje Anthropicu na obradu.
-      </p>
-      <Polje labela="API ključ" id="ai-kljuc" pomoc={sacuvan ? '✓ Ključ je sačuvan na ovom uređaju.' : 'Počinje sa sk-ant-…'}>
-        <div className="razdvoji">
-          <input id="ai-kljuc" type={prikazi ? 'text' : 'password'} autoComplete="off" spellCheck={false} className="rastegni" style={{ flex: 1 }}
-            value={kljuc} onChange={(e) => setKljuc(e.target.value)} placeholder="sk-ant-…" />
-          <button type="button" className="dugme" onClick={() => setPrikazi(!prikazi)}>{prikazi ? 'Sakrij' : 'Prikaži'}</button>
+
+      <Polje labela="AI servis" id="ai-prov" grupa>
+        <div className="chipovi">
+          <button type="button" className="chip" aria-pressed={p.provajder === 'chatgpt'} onClick={() => promijeni({ provajder: 'chatgpt' })}>ChatGPT (OpenAI)</button>
+          <button type="button" className="chip" aria-pressed={p.provajder === 'claude'} onClick={() => promijeni({ provajder: 'claude' })}>Claude (Anthropic)</button>
         </div>
       </Polje>
+
+      {p.provajder === 'chatgpt' && (
+        <Polje labela="ChatGPT model" id="ai-model" grupa>
+          <div className="chipovi">
+            {CHATGPT_MODELI.map((m) => (
+              <button key={m.id} type="button" className="chip" aria-pressed={p.openaiModel === m.id} onClick={() => promijeni({ openaiModel: m.id })}>
+                {m.naziv} <span className="blijedo malo">· {m.opis}</span>
+              </button>
+            ))}
+          </div>
+        </Polje>
+      )}
+
+      <Polje labela="OpenAI API ključ (za ChatGPT i diktiranje)" id="ai-openai" pomoc={p.openaiKljuc ? '✓ Sačuvan na ovom uređaju.' : 'Dobiješ ga na platform.openai.com → API keys (počinje sa sk-…). Pretplata na ChatGPT Plus ne uključuje API – plaća se posebno, po upotrebi.'}>
+        <input id="ai-openai" type={prikazi ? 'text' : 'password'} autoComplete="off" spellCheck={false} value={openai} onChange={(e) => setOpenai(e.target.value)} placeholder="sk-…" />
+      </Polje>
+      <Polje labela="Claude API ključ (nije obavezno)" id="ai-claude" pomoc={p.claudeKljuc ? '✓ Sačuvan na ovom uređaju.' : 'console.anthropic.com → API Keys (počinje sa sk-ant-…).'}>
+        <input id="ai-claude" type={prikazi ? 'text' : 'password'} autoComplete="off" spellCheck={false} value={claude} onChange={(e) => setClaude(e.target.value)} placeholder="sk-ant-…" />
+      </Polje>
       <div className="red-dugmadi">
-        <button type="button" className="dugme primarno" disabled={kljuc.trim() === sacuvan} onClick={() => { sacuvajKljuc(kljuc); toast(kljuc.trim() ? 'AI ključ sačuvan ✓' : 'AI ključ uklonjen'); setTest(''); }}>Sačuvaj</button>
-        {sacuvan && <button type="button" className="dugme" onClick={() => void isprobaj()}>Isprobaj</button>}
-        {sacuvan && <button type="button" className="dugme opasno" onClick={() => { sacuvajKljuc(''); setKljuc(''); toast('AI ključ uklonjen'); }}>Ukloni</button>}
+        <button type="button" className="dugme" onClick={() => setPrikazi(!prikazi)}>{prikazi ? 'Sakrij ključeve' : 'Prikaži ključeve'}</button>
+        <button type="button" className="dugme primarno" disabled={openai.trim() === p.openaiKljuc && claude.trim() === p.claudeKljuc}
+          onClick={() => { promijeni({ openaiKljuc: openai, claudeKljuc: claude }); toast('Ključevi sačuvani ✓'); setTest(''); }}>Sačuvaj ključeve</button>
+        {(p.openaiKljuc || p.claudeKljuc) && <button type="button" className="dugme" onClick={() => void isprobaj()}>Isprobaj</button>}
       </div>
       {test && <div className="blok-teksta malo" style={{ marginTop: 10 }}>{test}</div>}
+
+      <Polje labela="Diktiranje (mikrofon uz polja)" id="ai-dikt" grupa pomoc={p.diktiranje === 'chatgpt' && !p.openaiKljuc ? 'Za ChatGPT diktiranje upiši OpenAI ključ.' : 'ChatGPT diktiranje (gpt-transcribe) mnogo bolje razumije bosanski, ali treba internet; diktiranje preglednika je besplatno.'}>
+        <div className="chipovi">
+          <button type="button" className="chip" aria-pressed={p.diktiranje === 'chatgpt'} onClick={() => promijeni({ diktiranje: 'chatgpt' })}>🎙 ChatGPT (preporuka)</button>
+          <button type="button" className="chip" aria-pressed={p.diktiranje === 'preglednik'} onClick={() => promijeni({ diktiranje: 'preglednik' })}>Preglednik</button>
+        </div>
+      </Polje>
+
+      <p className="malo blijedo">
+        Privatnost: ključevi su samo na ovom uređaju i ne idu u rezervnu kopiju. Prije slanja AI-ju imena učenika se zamjenjuju šiframa, a imena razrednika ulogom („razrednik 7-1“).
+        Imena drugih osoba (roditelja, nastavnika koji nisu razrednici) app ne prepoznaje – u bilješkama ih piši kao ulogu („majka“, „nastavnik matematike“).
+        Kod diktiranja se snimak glasa šalje OpenAI-ju na pretvaranje u tekst.
+      </p>
     </section>
   );
 }

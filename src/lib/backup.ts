@@ -8,7 +8,7 @@
 //  - Brisanja iz kopije (tombstones) brišu lokalni zapis ako lokalno nije mijenjan nakon brisanja.
 //  - Postavke se preuzimaju ako su novije, ali PIN i datum zadnje kopije ostaju lokalni.
 
-import type { Aktivnost, BrzaBiljeska, Obrisano, PlanStavka, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
+import type { Aktivnost, Analiza, BrzaBiljeska, KontrolnaStavka, MojDokument, Obrisano, PopunjenObrazac, PlanStavka, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
 
 export interface Snimak {
   ucenici: Ucenik[];
@@ -20,12 +20,21 @@ export interface Snimak {
   aktivnosti: Aktivnost[];
   plan: PlanStavka[];
   brzeBiljeske: BrzaBiljeska[];
+  analize?: Analiza[];
+  kontrola?: KontrolnaStavka[];
+  obrasci?: PopunjenObrazac[];
+  /** u bazi s Blob-om; u fajlu kopije s podaciB64 */
+  dokumenti?: (MojDokument | DokumentKopija)[];
   obrisano: Obrisano[];
   postavke: Partial<Postavke> | null;
 }
 
-export type TabelaKopije = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan' | 'brzeBiljeske';
-export const TABELE_KOPIJE: TabelaKopije[] = ['ucenici', 'razgovori', 'radionice', 'saradnja', 'sifrarnik', 'razredi', 'aktivnosti', 'plan', 'brzeBiljeske'];
+export type DokumentKopija = Omit<MojDokument, 'podaci'> & { podaciB64: string };
+
+export type TabelaKopije = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan' | 'brzeBiljeske'
+  | 'analize' | 'kontrola' | 'obrasci' | 'dokumenti';
+export const TABELE_KOPIJE: TabelaKopije[] = ['ucenici', 'razgovori', 'radionice', 'saradnja', 'sifrarnik', 'razredi', 'aktivnosti', 'plan', 'brzeBiljeske',
+  'analize', 'kontrola', 'obrasci', 'dokumenti'];
 
 export const NAZIVI_TABELA: Record<TabelaKopije, string> = {
   ucenici: 'Učenici',
@@ -37,6 +46,10 @@ export const NAZIVI_TABELA: Record<TabelaKopije, string> = {
   aktivnosti: 'Ostale aktivnosti',
   plan: 'Plan rada',
   brzeBiljeske: 'Brze bilješke',
+  analize: 'Analize',
+  kontrola: 'Kontrolna lista',
+  obrasci: 'Obrasci',
+  dokumenti: 'Moji dokumenti',
 };
 
 type AnyZapis = { id: string; updatedAt: string; createdAt: string };
@@ -50,7 +63,7 @@ export interface PlanUvoza {
   broj: { dodati: number; azurirati: number; obrisati: number };
 }
 
-const prazno = <T,>(): Record<TabelaKopije, T[]> => ({ ucenici: [], razgovori: [], radionice: [], saradnja: [], sifrarnik: [], razredi: [], aktivnosti: [], plan: [], brzeBiljeske: [] });
+const prazno = <T,>(): Record<TabelaKopije, T[]> => ({ ucenici: [], razgovori: [], radionice: [], saradnja: [], sifrarnik: [], razredi: [], aktivnosti: [], plan: [], brzeBiljeske: [], analize: [], kontrola: [], obrasci: [], dokumenti: [] });
 
 const novije = (a: string, b: string) => (a || '') > (b || '');
 

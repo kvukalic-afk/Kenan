@@ -21,7 +21,11 @@ import { IzvjestajPeriod } from './screens/IzvjestajPeriod';
 import { UnosIzTeksta } from './screens/UnosIzTeksta';
 import { PlanRada } from './screens/PlanRada';
 import { BrzeBiljeske } from './screens/BrzeBiljeske';
-import { PrintAktivnost, PrintDnevnik, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
+import { AnalizaDetalj } from './screens/AnalizaDetalj';
+import { Obrazac } from './screens/Obrazac';
+import { Dokumentacija } from './screens/Dokumentacija';
+import { Asistent } from './screens/Asistent';
+import { PrintAktivnost, PrintAnaliza, PrintDnevnik, PrintObrazac, PrintUsavrsavanje, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
 import type { Period } from './lib/statistika';
 
 const NEAKTIVNOST_MS = 5 * 60 * 1000;
@@ -112,7 +116,11 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
   else if (d0 === 'ucenici') { ekran = <Karton key={d1} sifra={d1} />; fab = true; }
   else if (d0 === 'radionice') { ekran = <Radionice key={ruta.upit.get('prikaz') ?? ''} pocetniPrikaz={ruta.upit.get('prikaz') === 'aktivnosti' ? 'aktivnosti' : 'radionice'} />; fab = true; }
   else if (d0 === 'statistika') { ekran = <Statistika />; fab = true; }
-  else if (d0 === 'biljeske') ekran = <BrzeBiljeske />;
+  else if (d0 === 'biljeske') ekran = <BrzeBiljeske pocetniTab={ruta.upit.get('tab') ?? undefined} />;
+  else if (d0 === 'analiza' && d1) ekran = <AnalizaDetalj key={d1} id={d1} />;
+  else if (d0 === 'obrazac' && d1) { navigacija = false; ekran = <Obrazac key={ruta.putanja + ruta.upit.toString()} vrsta={d1} id={ruta.upit.get('id') ?? undefined} sifra={ruta.upit.get('sifra') ?? undefined} biljeskaId={ruta.upit.get('biljeska') ?? undefined} />; }
+  else if (d0 === 'dokumentacija') ekran = <Dokumentacija pocetniTab={ruta.upit.get('tab') ?? undefined} />;
+  else if (d0 === 'asistent') { navigacija = false; ekran = <Asistent pocetnoPitanje={ruta.upit.get('pitanje') ?? undefined} />; }
   else if (d0 === 'plan') ekran = <PlanRada godina={ruta.upit.get('godina') ? Number(ruta.upit.get('godina')) : undefined} mjesec={ruta.upit.get('mjesec') ?? undefined} />;
   else if (d0 === 'unos-tekst') { ekran = <UnosIzTeksta />; navigacija = false; }
   else if (d0 === 'izvjestaj') ekran = <IzvjestajPeriod od={ruta.upit.get('od') ?? undefined} do={ruta.upit.get('do') ?? undefined} />;
@@ -134,6 +142,9 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
       : d1 === 'saradnja' ? <PrintSaradnja id={d2} />
       : d1 === 'aktivnost' ? <PrintAktivnost id={d2} />
       : d1 === 'karton' ? <PrintKarton sifra={d2} />
+      : d1 === 'obrazac' ? <PrintObrazac id={d2} />
+      : d1 === 'analiza' ? <PrintAnaliza id={d2} />
+      : d1 === 'usavrsavanje' ? <PrintUsavrsavanje godina={Number(d2)} />
       : d1 === 'plan' ? <PrintPlan godina={Number(d2)} mjesec={d3} />
       : d1 === 'dnevnik' ? <PrintDnevnik mjesec={d2} />
       : d1 === 'period' ? <PrintPeriod od={d2} do={d3} biljeske={ruta.upit.get('biljeske') === '1'} />

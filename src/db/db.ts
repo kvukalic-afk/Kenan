@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Aktivnost, BrzaBiljeska, Nacrt, PlanStavka, Obrisano, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
+import type { Aktivnost, Analiza, BrzaBiljeska, KontrolnaStavka, MojDokument, PopunjenObrazac, Nacrt, PlanStavka, Obrisano, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
 
 export class EvidencijaDB extends Dexie {
   ucenici!: Table<Ucenik, string>;
@@ -14,6 +14,10 @@ export class EvidencijaDB extends Dexie {
   aktivnosti!: Table<Aktivnost, string>;
   plan!: Table<PlanStavka, string>;
   brzeBiljeske!: Table<BrzaBiljeska, string>;
+  analize!: Table<Analiza, string>;
+  kontrola!: Table<KontrolnaStavka, string>;
+  obrasci!: Table<PopunjenObrazac, string>;
+  dokumenti!: Table<MojDokument, string>;
 
   constructor(ime = 'evidencija-psihologa') {
     super(ime);
@@ -42,6 +46,13 @@ export class EvidencijaDB extends Dexie {
     this.version(4).stores({ plan: 'id, skolskaGodina, podrucje' });
     // v5: brze bilješke
     this.version(5).stores({ brzeBiljeske: 'id, datum, sifra, createdAt' });
+    // v6: analize, kontrolna lista za inspekciju, popunjeni obrasci, moji dokumenti
+    this.version(6).stores({
+      analize: 'id, datum, sifra, createdAt',
+      kontrola: 'id',
+      obrasci: 'id, vrsta, datum, sifra, createdAt',
+      dokumenti: 'id, kategorija, createdAt',
+    });
   }
 }
 

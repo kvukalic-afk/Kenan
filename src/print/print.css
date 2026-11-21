@@ -68,3 +68,9 @@ table.dokument > thead > tr > td, table.dokument > tfoot > tr > td, table.dokume
   .print-stranica .povjerljivo, .print-stranica .podaci-tab th, .print-stranica thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .blok .sadrzaj-bloka { min-height: 0; }
 }
+
+.tekst-obrasca { white-space: pre-wrap; margin: 10pt 0; text-align: justify; }
+.potpisi { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18pt 24pt; margin-top: 28pt; break-inside: avoid; }
+.potpis-polje { min-width: 55mm; text-align: center; font-size: 10pt; }
+.potpis-polje .linija-potpisa { border-bottom: 0.8pt solid #111; height: 22pt; margin-bottom: 3pt; }
+.potpis-polje.mp { min-width: 20mm; align-self: flex-end; font-weight: bold; }
