@@ -1,0 +1,15 @@
+{
+  "name": "adin-sank",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Fitness Club Adin — evidencija šanka (Google Apps Script + React)",
+  "scripts": {
+    "build": "node build.cjs",
+    "test": "node build.cjs && node --test tests/test-*.cjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.2",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}

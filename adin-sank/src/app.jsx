@@ -1,0 +1,1336 @@
+/* FITNESS CLUB ADIN — Evidencija šanka (frontend)
+ * Izvor: src/app.jsx  →  build.cjs  →  Index.html (ne uređuj Index.html ručno)
+ */
+
+/* @logika-start — čista logika bez Reacta (testira se u Nodeu) */
+var Logika = (function () {
+  function uid(prefiks) {
+    try {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) return prefiks + crypto.randomUUID();
+    } catch (e) { /* */ }
+    var t = Date.now().toString(36), r = '';
+    for (var i = 0; i < 4; i++) r += Math.random().toString(36).slice(2, 8);
+    return prefiks + t + '-' + r;
+  }
+
+  function km(n) {
+    var x = Math.round((Number(n) || 0) * 100) / 100;
+    var neg = x < 0; x = Math.abs(x);
+    var cijeli = Math.floor(x + 1e-9), dec = Math.round((x - cijeli) * 100);
+    if (dec === 100) { cijeli += 1; dec = 0; }
+    var s = String(cijeli).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return (neg ? '−' : '') + s + ',' + (dec < 10 ? '0' : '') + dec;
+  }
+
+  function dT(d) {
+    var m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? m[3] + '.' + m[2] + '.' + m[1] + '.' : String(d || '');
+  }
+
+  function trajanje(min) {
+    if (min === null || min === undefined || isNaN(min)) return '';
+    min = Math.max(0, Math.round(min));
+    return Math.floor(min / 60) + ' h ' + (min % 60 < 10 ? '0' : '') + (min % 60) + ' min';
+  }
+
+  function danasSarajevo(d) {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sarajevo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d || new Date());
+    } catch (e) {
+      var x = d || new Date();
+      return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2);
+    }
+  }
+
+  /** Stanje aktivne smjene iz događaja: prodano, dopunjeno, očekivano, promet. */
+  function stanjeSmjene(smjena, proizvodi) {
+    var cijene = {}, po = {};
+    (proizvodi || []).forEach(function (p) { cijene[p.product_id] = p.cijena; });
+    var promet = 0, kom = 0;
+    ((smjena && smjena.dogadjaji) || []).forEach(function (e) {
+      var pid = e.product_id, q = Number(e.kolicina) || 0;
+      if (!po[pid]) po[pid] = { prodano: 0, dopunjeno: 0 };
+      if (e.tip === 'SALE' || e.tip === 'UNDO_SALE') {
+        if (e.tip === 'UNDO_SALE') q = -Math.abs(q);
+        po[pid].prodano += q;
+        kom += q;
+        var uk = (e.ukupno !== undefined && e.ukupno !== null && e.ukupno !== '') ? Number(e.ukupno) : q * (cijene[pid] || 0);
+        if (e.tip === 'UNDO_SALE') uk = -Math.abs(uk);
+        promet += uk;
+      } else if (e.tip === 'RESTOCK' || e.tip === 'ADJUSTMENT') {
+        po[pid].dopunjeno += q;
+      }
+    });
+    var pocetna = (smjena && smjena.pocetna) || {};
+    var ocekivano = {};
+    Object.keys(pocetna).forEach(function (pid) {
+      var x = po[pid] || { prodano: 0, dopunjeno: 0 };
+      ocekivano[pid] = (Number(pocetna[pid]) || 0) + x.dopunjeno - x.prodano;
+    });
+    return {
+      prodano: function (pid) { return po[pid] ? po[pid].prodano : 0; },
+      dopunjeno: function (pid) { return po[pid] ? po[pid].dopunjeno : 0; },
+      ocekivano: ocekivano,
+      promet: Math.round(promet * 100) / 100,
+      kom: kom
+    };
+  }
+
+  /** Poređenje završnog brojanja i kase (radniku se očekivano ne pokazuje dok ne unese). */
+  function provjeraZavrsnog(smjena, proizvodi, brojanje, kasa) {
+    var st = stanjeSmjene(smjena, proizvodi);
+    var razlike = [];
+    Object.keys(st.ocekivano).forEach(function (pid) {
+      var v = brojanje[pid];
+      if (v === undefined || v === '') return;
+      if (Number(v) !== st.ocekivano[pid]) razlike.push(pid);
+    });
+    var kasaBroj = Number(String(kasa === undefined || kasa === null ? '' : kasa).replace(/\s/g, '').replace(',', '.'));
+    var imaKasu = String(kasa === undefined || kasa === null ? '' : kasa).trim() !== '' && isFinite(kasaBroj) && kasaBroj >= 0;
+    var kasaRazlika = imaKasu ? Math.round((kasaBroj - st.promet) * 100) / 100 : null;
+    return {
+      razlikeRobe: razlike.length,
+      kasaOcekivano: st.promet,
+      kasaRazlika: kasaRazlika,
+      trebaRazlog: razlike.length > 0 || (kasaRazlika !== null && kasaRazlika !== 0)
+    };
+  }
+
+  function nedostaje(roba, vrijednosti) {
+    return roba.filter(function (p) { var v = vrijednosti[p.product_id]; return v === undefined || v === null || v === ''; });
+  }
+
+  /* ── red čekanja ── */
+  function dodajURed(red, e) {
+    if (red.some(function (x) { return x.event_id === e.event_id; })) return red;
+    return red.concat([e]);
+  }
+  function ukloniIzReda(red, ids) {
+    var s = {};
+    ids.forEach(function (id) { s[id] = true; });
+    return red.filter(function (e) { return !s[e.event_id]; });
+  }
+  function sljedeciBatch(red, max) {
+    if (!red.length) return null;
+    var sid = red[0].shift_id;
+    return { shift_id: sid, events: red.filter(function (e) { return e.shift_id === sid; }).slice(0, max || 100) };
+  }
+  /** Pauza prije ponovnog pokušaja: 2 s, 4 s, 8 s, 16 s, 30 s ... */
+  function pauza(pokusaj) { return Math.min(30000, 2000 * Math.pow(2, Math.max(0, pokusaj - 1))); }
+  /** Događaji sa servera + lokalni koji još nisu stigli na server. */
+  function spojiDogadjaje(serverski, lokalni) {
+    var ima = {};
+    (serverski || []).forEach(function (e) { ima[e.event_id] = true; });
+    return (serverski || []).concat((lokalni || []).filter(function (e) { return !ima[e.event_id]; }));
+  }
+  /** Zaštita od duplog tapa: isti proizvod unutar `ms` se ignoriše. */
+  function dozvoliTap(zadnji, pid, sada, ms) {
+    if (zadnji[pid] && sada - zadnji[pid] < (ms || 150)) return false;
+    zadnji[pid] = sada;
+    return true;
+  }
+
+  /* ── članarine ── */
+  function dodajMjesece(d, n) {
+    var m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    var y = +m[1], mj = +m[2] - 1 + n, dan = +m[3];
+    y += Math.floor(mj / 12);
+    mj = ((mj % 12) + 12) % 12;
+    var maxDan = new Date(Date.UTC(y, mj + 1, 0)).getUTCDate();
+    return y + '-' + ('0' + (mj + 1)).slice(-2) + '-' + ('0' + Math.min(dan, maxDan)).slice(-2);
+  }
+  function produzenje(istek, danas, mjeseci) {
+    var aktivna = !!istek && istek >= danas;
+    return { aktivna: aktivna, istek: dodajMjesece(aktivna ? istek : danas, mjeseci || 1) };
+  }
+  function normaliziraj(t) {
+    return String(t || '').toLowerCase().replace(/[čć]/g, 'c').replace(/đ/g, 'dj').replace(/š/g, 's').replace(/ž/g, 'z').trim();
+  }
+  function traziClanove(clanovi, upit) {
+    var q = normaliziraj(upit), cifre = q.replace(/\D/g, '');
+    var l = (clanovi || []).filter(function (c) {
+      if (!q) return true;
+      return normaliziraj(c.ime).indexOf(q) >= 0 || (cifre.length >= 3 && String(c.telefon || '').replace(/\D/g, '').indexOf(cifre) >= 0);
+    });
+    l.sort(function (a, b) { return String(a.ime).localeCompare(String(b.ime)); });
+    return l;
+  }
+
+  function grupisi(lista) {
+    var red = [];
+    lista.forEach(function (p) {
+      var g = null;
+      for (var i = 0; i < red.length; i++) if (red[i].ime === p.kategorija) g = red[i];
+      if (!g) { g = { ime: p.kategorija, stavke: [] }; red.push(g); }
+      g.stavke.push(p);
+    });
+    return red;
+  }
+
+  /** Tekst izvještaja za Viber/WhatsApp. */
+  function tekstIzvjestaja(izv) {
+    var L = [];
+    L.push('FITNESS CLUB ADIN — smjena');
+    L.push(izv.radnik + ', ' + dT(izv.datum) + ' ' + izv.pocetak + '–' + izv.kraj + (izv.trajanje_min !== null && izv.trajanje_min !== undefined ? ' (' + trajanje(izv.trajanje_min) + ')' : ''));
+    L.push('Prodano: ' + izv.prodano_kom + ' kom · Promet: ' + km(izv.promet) + ' KM');
+    if (izv.kasa_stvarno !== null && izv.kasa_stvarno !== undefined) {
+      L.push('Kasa: ' + km(izv.kasa_stvarno) + ' KM' + (izv.kasa_razlika ? ' (razlika ' + (izv.kasa_razlika > 0 ? '+' : '') + km(izv.kasa_razlika) + ' KM)' : ' ✓'));
+    }
+    var problemi = (izv.stavke || []).filter(function (s) { return s.razlika_kom; });
+    var ok = (izv.stavke || []).length - problemi.length;
+    if (izv.bez_brojanja) L.push('Inventura: nije prebrojano');
+    else L.push('Inventura: ✓ ' + ok + ' se poklapa' + (problemi.length ? ', ⚠ ' + problemi.length + ' s razlikom (' + km(izv.vrijednost_razlike) + ' KM)' : ''));
+    problemi.forEach(function (s) {
+      L.push('• ' + s.naziv + ': ' + (s.razlika_kom > 0 ? '+' : '') + s.razlika_kom + ' kom (' + km(s.razlika_km) + ' KM) — očekivano ' + s.ocekivano + ', prebrojano ' + s.stvarno);
+    });
+    if (izv.kasa_razlog) L.push('Razlog: ' + izv.kasa_razlog);
+    (izv.usluge || []).forEach(function (u) { L.push(u.naziv + ': ' + u.kom + ' × = ' + km(u.km) + ' KM'); });
+    return L.join('\n');
+  }
+
+  return {
+    uid: uid, km: km, dT: dT, trajanje: trajanje, danasSarajevo: danasSarajevo,
+    stanjeSmjene: stanjeSmjene, provjeraZavrsnog: provjeraZavrsnog, nedostaje: nedostaje,
+    dodajURed: dodajURed, ukloniIzReda: ukloniIzReda, sljedeciBatch: sljedeciBatch, pauza: pauza,
+    spojiDogadjaje: spojiDogadjaje, dozvoliTap: dozvoliTap,
+    dodajMjesece: dodajMjesece, produzenje: produzenje, normaliziraj: normaliziraj, traziClanove: traziClanove,
+    grupisi: grupisi, tekstIzvjestaja: tekstIzvjestaja
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = Logika;
+/* @logika-end */
+
+const { useState, useEffect, useRef, useCallback } = React;
+const { km, dT } = Logika;
+
+/* ═══════ VEZA SA SERVEROM ═══════ */
+const MREZNA = 'Nema veze sa serverom. Provjeri internet.';
+function api(fn, ...args) {
+  return new Promise((res, rej) => {
+    const g = window.google;
+    if (!g || !g.script || !g.script.run) {
+      rej({ code: 'NEMA_GOOGLE', message: 'Aplikacija se mora otvoriti preko Google linka.', mreza: true });
+      return;
+    }
+    let gotovo = false;
+    const t = setTimeout(() => { if (!gotovo) { gotovo = true; rej({ code: 'TIMEOUT', message: MREZNA, mreza: true }); } }, 30000);
+    g.script.run
+      .withSuccessHandler(r => {
+        if (gotovo) return; gotovo = true; clearTimeout(t);
+        if (r && r.ok === false) rej({ code: r.code || 'GRESKA', message: r.message || 'Greška. Pokušaj ponovo.', mreza: false });
+        else res(r || {});
+      })
+      .withFailureHandler(() => {
+        if (gotovo) return; gotovo = true; clearTimeout(t);
+        rej({ code: 'MREZA', message: MREZNA, mreza: true });
+      })[fn](...args);
+  });
+}
+
+/* ═══════ LOKALNA MEMORIJA (samo cache + red čekanja) ═══════ */
+const LS = { RED: 'adin_red_v2', CACHE: 'adin_cache_v2', START: 'adin_start_v2', NACRT: 'adin_nacrt_v2' };
+const ls = {
+  get(k, pod) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : pod; } catch (e) { return pod; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* */ } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { /* */ } }
+};
+
+/** useState koji se čuva u localStorage (nacrti brojanja preživljavaju refresh). */
+function useNacrt(kljuc, pocetno) {
+  const [v, setV] = useState(() => ls.get(LS.NACRT + ':' + kljuc, pocetno));
+  const postavi = useCallback(f => {
+    setV(staro => { const novo = typeof f === 'function' ? f(staro) : f; ls.set(LS.NACRT + ':' + kljuc, novo); return novo; });
+  }, [kljuc]);
+  return [v, postavi];
+}
+function obrisiNacrte() {
+  try { Object.keys(localStorage).forEach(k => { if (k.indexOf(LS.NACRT) === 0) localStorage.removeItem(k); }); } catch (e) { /* */ }
+}
+
+function vibriraj(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* */ } }
+
+/* ═══════ APLIKACIJA ═══════ */
+function App() {
+  const [faza, setFaza] = useState('ucitavanje');
+  const [podaci, setPodaci] = useState({ proizvodi: [], prijedlog: {}, radnici: ['Kenan', 'Edvin'], razlozi: [], clanovi: [] });
+  const [smjena, setSmjenaS] = useState(null);
+  const [radnik, setRadnik] = useState('');
+  const [red, setRed] = useState(() => ls.get(LS.RED, []));
+  const [sinh, setSinh] = useState('ok');
+  const [greska, setGreska] = useState('');
+  const [toast, setToast] = useState(null);
+  const [izvjestaj, setIzvjestaj] = useState(null);
+  const [radi, setRadi] = useState(false);
+
+  const redRef = useRef(red);
+  const smjenaRef = useRef(smjena);
+  const saljeRef = useRef(false);
+  const pokusajRef = useRef(0);
+  const timerRef = useRef(null);
+  const toastTimer = useRef(null);
+
+  const setSmjena = useCallback(f => {
+    setSmjenaS(s => { const n = typeof f === 'function' ? f(s) : f; smjenaRef.current = n; return n; });
+  }, []);
+  const spremiRed = useCallback(r => { redRef.current = r; setRed(r); ls.set(LS.RED, r); }, []);
+
+  const pokaziToast = useCallback((tekst, vrsta) => {
+    clearTimeout(toastTimer.current);
+    setToast({ tekst, vrsta: vrsta || 'info' });
+    toastTimer.current = setTimeout(() => setToast(null), vrsta === 'err' ? 6000 : 3500);
+  }, []);
+
+  /* ── učitavanje ── */
+  const ucitaj = useCallback(async () => {
+    try {
+      const r = await api('getBootstrap');
+      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, radnici: r.radnici || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [] };
+      setPodaci(p);
+      ls.set(LS.CACHE, p);
+      if (r.aktivna) {
+        const lokalni = redRef.current.filter(e => e.shift_id === r.aktivna.shift_id);
+        setSmjena({ ...r.aktivna, dogadjaji: Logika.spojiDogadjaje(r.aktivna.dogadjaji, lokalni) });
+        setFaza('smjena');
+      } else {
+        setSmjena(null);
+        setFaza(f => (f === 'ucitavanje' || f === 'smjena' || f === 'greska') ? 'radnik' : f);
+      }
+      return true;
+    } catch (e) {
+      const c = ls.get(LS.CACHE, null);
+      if (c && c.proizvodi && c.proizvodi.length) {
+        setPodaci(c);
+        setFaza(f => (f === 'ucitavanje' ? 'radnik' : f));
+        pokaziToast('Nema interneta — prikazujem zadnje sačuvane podatke.', 'err');
+      } else {
+        setGreska(e.mreza ? 'Nema veze sa serverom. Provjeri internet pa pokušaj ponovo.' : e.message);
+        setFaza('greska');
+      }
+      return false;
+    }
+  }, [setSmjena, pokaziToast]);
+
+  useEffect(() => { ucitaj(); }, [ucitaj]);
+
+  /* ── slanje reda čekanja ── */
+  const obradiOdbijene = useCallback((odbijeni) => {
+    if (!odbijeni.length) return;
+    const ids = {};
+    odbijeni.forEach(o => { ids[o.event_id] = true; });
+    setSmjena(s => s ? { ...s, dogadjaji: s.dogadjaji.filter(e => !ids[e.event_id]) } : s);
+    const zatvorena = odbijeni.some(o => o.code === 'SMJENA_ZATVORENA' || o.code === 'NEMA_SMJENE');
+    if (zatvorena) {
+      pokaziToast('Ova smjena je zatvorena na drugom uređaju. ' + odbijeni.length + ' promjena nije upisano.', 'err');
+      ucitaj();
+    } else {
+      pokaziToast('Jedna promjena nije prihvaćena: ' + odbijeni[0].message, 'err');
+    }
+  }, [setSmjena, pokaziToast, ucitaj]);
+
+  const posalji = useCallback(async () => {
+    if (saljeRef.current) return;
+    const batch = Logika.sljedeciBatch(redRef.current, 100);
+    if (!batch) { setSinh('ok'); return; }
+    saljeRef.current = true;
+    setSinh('salje');
+    let dalje = 0;
+    try {
+      const ocisceni = batch.events.map(e => {
+        const o = { event_id: e.event_id, shift_id: e.shift_id, tip: e.tip, product_id: e.product_id, kolicina: e.kolicina, napomena: e.napomena || '', klijent_ms: e.klijent_ms };
+        if (e.clan) o.clan = e.clan;
+        return o;
+      });
+      const rez = await api('pushEvents', batch.shift_id, ocisceni);
+      const gotovi = [].concat(rez.primljeno || [], rez.duplikati || [], (rez.odbijeni || []).map(o => o.event_id));
+      spremiRed(Logika.ukloniIzReda(redRef.current, gotovi));
+      obradiOdbijene(rez.odbijeni || []);
+      if (rez.clanovi && rez.clanovi.length) {
+        setPodaci(p => {
+          const m = {}; p.clanovi.forEach(c => { m[c.member_id] = c; });
+          rez.clanovi.forEach(c => { m[c.member_id] = c; });
+          const n = { ...p, clanovi: Object.keys(m).map(k => m[k]) };
+          ls.set(LS.CACHE, n);
+          return n;
+        });
+      }
+      pokusajRef.current = 0;
+      setSinh(redRef.current.length ? 'salje' : 'ok');
+      if (redRef.current.length) dalje = 50;
+    } catch (e) {
+      if (!e.mreza && e.code !== 'ZAUZETO') {
+        // server je odbio cijeli zahtjev (ne bi se smjelo desiti) — ne gubimo podatke, pokušavamo kasnije
+      }
+      pokusajRef.current += 1;
+      setSinh('greska');
+      dalje = Logika.pauza(pokusajRef.current);
+    } finally {
+      saljeRef.current = false;
+    }
+    if (dalje) zakazi(dalje);
+  }, [spremiRed, obradiOdbijene]); // eslint-disable-line
+
+  const zakazi = useCallback((ms) => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => { posalji(); }, ms);
+  }, [posalji]);
+
+  useEffect(() => {
+    const naMrezu = () => { pokusajRef.current = 0; zakazi(0); };
+    const vidljivo = () => { if (document.visibilityState === 'visible' && redRef.current.length) zakazi(0); };
+    window.addEventListener('online', naMrezu);
+    document.addEventListener('visibilitychange', vidljivo);
+    const stalno = setInterval(() => { if (redRef.current.length && !saljeRef.current && pokusajRef.current === 0) zakazi(0); }, 15000);
+    if (redRef.current.length) zakazi(500);
+    return () => { window.removeEventListener('online', naMrezu); document.removeEventListener('visibilitychange', vidljivo); clearInterval(stalno); };
+  }, [zakazi]);
+
+  /** Pošalji sve što čeka; vraća true ako je red prazan. */
+  const isprazniRed = useCallback(async () => {
+    for (let i = 0; i < 8 && redRef.current.length; i++) {
+      while (saljeRef.current) await new Promise(r => setTimeout(r, 100));
+      clearTimeout(timerRef.current);
+      const prije = redRef.current.length;
+      await posalji();
+      if (redRef.current.length >= prije) break; // nije uspjelo
+    }
+    return redRef.current.length === 0;
+  }, [posalji]);
+
+  /* ── akcije ── */
+  const zapocni = async (pocetna) => {
+    const st = ls.get(LS.START, null);
+    const shift_id = (st && st.radnik === radnik) ? st.shift_id : Logika.uid('S');
+    ls.set(LS.START, { shift_id, radnik });
+    setRadi(true); setGreska('');
+    try {
+      const r = await api('startShift', { shift_id, radnik, pocetna });
+      ls.del(LS.START);
+      obrisiNacrte();
+      const lokalni = redRef.current.filter(e => e.shift_id === r.smjena.shift_id);
+      setSmjena({ ...r.smjena, dogadjaji: Logika.spojiDogadjaje(r.smjena.dogadjaji, lokalni) });
+      setFaza('smjena');
+      if (r.postojeca && r.smjena.shift_id !== shift_id) {
+        pokaziToast('Smjena je već bila otvorena (' + r.smjena.radnik + ', od ' + r.smjena.vrijeme_pocetka + '). Nastavljaš nju.');
+      }
+    } catch (e) {
+      setGreska(e.mreza ? 'Nema veze sa serverom. Ništa nije izgubljeno — provjeri internet pa klikni ponovo.' : e.message);
+    } finally { setRadi(false); }
+  };
+
+  const dodaj = useCallback((tip, product_id, kolicina, napomena, clan) => {
+    const s = smjenaRef.current;
+    if (!s) return null;
+    const e = {
+      event_id: Logika.uid('E'), shift_id: s.shift_id, tip, product_id,
+      kolicina: tip === 'UNDO_SALE' ? -Math.abs(kolicina) : kolicina,
+      napomena: napomena || '', klijent_ms: Date.now()
+    };
+    if (clan) e.clan = clan;
+    // prvo lokalno (red + ekran), pa slanje u pozadini
+    spremiRed(Logika.dodajURed(redRef.current, e));
+    setSmjena(x => x ? { ...x, dogadjaji: x.dogadjaji.concat([e]) } : x);
+    zakazi(400);
+    return e;
+  }, [spremiRed, setSmjena, zakazi]);
+
+  const zavrsi = async (brojanje, kasa, razlog) => {
+    setRadi(true); setGreska('');
+    try {
+      const prazno = await isprazniRed();
+      if (!prazno) {
+        setGreska('Još ' + redRef.current.length + ' promjena nije poslano na server. Provjeri internet pa klikni ponovo. Ništa nije izgubljeno.');
+        return;
+      }
+      const s = smjenaRef.current;
+      const r = await api('closeShift', s.shift_id, brojanje, kasa, razlog || '');
+      obrisiNacrte();
+      setIzvjestaj(r.izvjestaj);
+      setSmjena(null);
+      setFaza('izvjestaj');
+      window.scrollTo(0, 0);
+      api('getBootstrap').then(b => setPodaci(p => ({ ...p, prijedlog: b.prijedlog || {}, proizvodi: b.proizvodi || p.proizvodi }))).catch(() => {});
+    } catch (e) {
+      setGreska(e.mreza ? 'Nema veze sa serverom. Ništa nije izgubljeno — provjeri internet pa klikni ponovo.' : e.message);
+    } finally { setRadi(false); }
+  };
+
+  /* ── render ── */
+  const zaglavlje = (
+    <div className="head">
+      <div>
+        <div className="logo">FITNESS CLUB ADIN</div>
+        <div className="logoSub">{faza === 'admin' ? 'VLASNIČKI PREGLED' : 'EVIDENCIJA ŠANKA'}</div>
+      </div>
+      <Sync stanje={sinh} broj={red.length} />
+    </div>
+  );
+  const toastEl = toast && <div className="toast" style={{ borderColor: toast.vrsta === 'err' ? 'var(--red)' : toast.vrsta === 'ok' ? 'var(--green)' : 'var(--line)' }}
+    onClick={() => setToast(null)}>{toast.tekst}</div>;
+
+  if (faza === 'ucitavanje') return <>{zaglavlje}<div className="wrap"><div className="info">Učitavam…</div></div></>;
+  if (faza === 'greska') return <>{zaglavlje}<div className="wrap"><div className="err">{greska}</div>
+    <button className="btn" onClick={() => location.reload()}>Pokušaj ponovo</button></div></>;
+
+  return (
+    <>
+      {zaglavlje}
+      {toastEl}
+      {faza === 'radnik' && <Radnik radnici={podaci.radnici} izabran={radnik}
+        onDalje={ime => { setRadnik(ime); setGreska(''); setFaza('pocetna'); window.scrollTo(0, 0); }}
+        onAdmin={() => setFaza('admin')} />}
+
+      {faza === 'pocetna' && <Pocetna proizvodi={podaci.proizvodi} prijedlog={podaci.prijedlog} radnik={radnik}
+        greska={greska} radi={radi} nazad={() => { setGreska(''); setFaza('radnik'); }} onStart={zapocni} />}
+
+      {faza === 'smjena' && smjena && <Smjena smjena={smjena} proizvodi={podaci.proizvodi} clanovi={podaci.clanovi}
+        dodaj={dodaj} pokaziToast={pokaziToast} setClanovi={c => setPodaci(p => ({ ...p, clanovi: c }))}
+        onZavrsi={() => { setGreska(''); setFaza('zavrsna'); window.scrollTo(0, 0); }} />}
+
+      {faza === 'zavrsna' && smjena && <Zavrsna smjena={smjena} proizvodi={podaci.proizvodi} razlozi={podaci.razlozi}
+        greska={greska} radi={radi} cekaju={red.length}
+        nazad={() => { setGreska(''); setFaza('smjena'); }} onGotovo={zavrsi} />}
+
+      {faza === 'izvjestaj' && izvjestaj && <Izvjestaj izv={izvjestaj} pokaziToast={pokaziToast}
+        onNovo={() => { setIzvjestaj(null); setRadnik(''); setFaza('radnik'); window.scrollTo(0, 0); }} />}
+
+      {faza === 'admin' && <Admin nazad={() => { ucitaj(); setFaza(smjenaRef.current ? 'smjena' : 'radnik'); }} pokaziToast={pokaziToast} />}
+    </>
+  );
+}
+
+/* ═══════ SYNC INDIKATOR ═══════ */
+function Sync({ stanje, broj }) {
+  if (broj === 0 && stanje !== 'greska') {
+    return <div className="sync" data-testid="sync"><span className="dot" style={{ background: 'var(--green)' }} />✓ Sve spremljeno</div>;
+  }
+  const boja = stanje === 'greska' ? 'var(--red)' : 'var(--gold)';
+  const tekst = broj === 1 ? '1 čeka' : broj + ' čekaju';
+  return (
+    <div className="sync" data-testid="sync">
+      <span className="dot" style={{ background: boja }} />
+      <span>⟳ {tekst} sinhronizaciju{stanje === 'greska' ? <><br /><span style={{ color: 'var(--red)' }}>nema veze, pokušavam ponovo</span></> : null}</span>
+    </div>
+  );
+}
+
+/* ═══════ 1. KO JE NA SMJENI ═══════ */
+function Radnik({ radnici, izabran, onDalje, onAdmin }) {
+  const lista = radnici && radnici.length ? radnici : ['Kenan', 'Edvin'];
+  const [izbor, setIzbor] = useState(izabran && lista.indexOf(izabran) < 0 ? 'Drugi' : (izabran || null));
+  const [drugi, setDrugi] = useState(izabran && lista.indexOf(izabran) < 0 ? izabran : '');
+  const ime = izbor === 'Drugi' ? drugi.trim() : izbor;
+
+  return (
+    <div className="wrap">
+      <div className="h1" style={{ marginTop: 6 }}>Ko je na smjeni?</div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {lista.concat(['Drugi']).map(r => (
+          <button key={r} className={'pick' + (izbor === r ? ' on' : '')} onClick={() => setIzbor(r)}>{r}</button>
+        ))}
+      </div>
+      {izbor === 'Drugi' && (
+        <input className="inp" value={drugi} autoFocus maxLength={60}
+          onChange={e => setDrugi(e.target.value)} placeholder="Upiši ime" />
+      )}
+      <button className="btn" disabled={!ime} onClick={() => onDalje(ime)}>Dalje — prebroji robu</button>
+      <div style={{ textAlign: 'center', marginTop: 30 }}>
+        <button className="linkbtn" onClick={onAdmin}>Vlasnik ›</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════ BROJAČ (−  18  +) ═══════ */
+function Brojac({ pid, naziv, pod, v, set }) {
+  const n = v === '' || v === undefined ? null : Number(v);
+  const prazno = v === '' || v === undefined;
+  return (
+    <div className={'row' + (prazno ? ' prazno' : '')}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 15.5, fontWeight: 500 }}>{naziv}</div>
+        {pod !== undefined && pod !== null && <div className="sit">prošli put: {pod}</div>}
+      </div>
+      <div className="cnt">
+        <button className="cbtn" aria-label={'manje ' + naziv} onClick={() => set(String(Math.max(0, (n || 0) - 1)))}>−</button>
+        <input className={'cin' + (prazno ? ' prazno' : '')} data-pid={pid} inputMode="numeric" pattern="[0-9]*"
+          value={v === undefined ? '' : v} placeholder="—" maxLength={4}
+          onFocus={e => e.target.select()}
+          onChange={e => set(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, ''))} />
+        <button className="cbtn" aria-label={'više ' + naziv} onClick={() => set(String((n || 0) + 1))}>+</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════ 2. POČETNA INVENTURA ═══════ */
+function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart }) {
+  const roba = proizvodi.filter(p => p.prati_zalihu);
+  const [v, setV] = useNacrt('pocetno', {});
+  const fali = Logika.nedostaje(roba, v);
+  const post = (id, nov) => setV(s => ({ ...s, [id]: nov }));
+
+  return (
+    <div className="wrap" style={{ paddingBottom: 32 }}>
+      <div className="h1">Prebroji početno stanje</div>
+      <div className="info">
+        <b style={{ color: 'var(--text)' }}>{radnik}</b> · Prebroji svaki proizvod u frižideru i na polici. Upiši i <b style={{ color: 'var(--text)' }}>0</b> ako nečega nema.
+        „Prošli put" je samo podsjetnik — broji stvarno stanje.
+      </div>
+      {Logika.grupisi(roba).map(g => (
+        <div key={g.ime}>
+          <div className="grp">{g.ime.toUpperCase()}</div>
+          <div className="card0">
+            {g.stavke.map(p => (
+              <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} pod={prijedlog[p.product_id]}
+                v={v[p.product_id]} set={n => post(p.product_id, n)} />
+            ))}
+          </div>
+        </div>
+      ))}
+      {greska && <div className="err">{greska}</div>}
+      <button className="btn" disabled={fali.length > 0 || radi} onClick={() => {
+        const o = {}; roba.forEach(p => { o[p.product_id] = Number(v[p.product_id]); }); onStart(o);
+      }}>
+        {radi ? 'Počinjem…' : fali.length > 0 ? 'Još ' + fali.length + ' za prebrojati' : 'ZAPOČNI SMJENU'}
+      </button>
+      <button className="btn2" onClick={nazad}>Nazad</button>
+    </div>
+  );
+}
+
+/* ═══════ 3. AKTIVNA SMJENA ═══════ */
+function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, onZavrsi }) {
+  const [zadnji, setZadnji] = useState(null);  // {p, n}
+  const [sheet, setSheet] = useState(null);    // dopuna | ispravka | clan | zavrsi
+  const [hit, setHit] = useState(null);
+  const [sada, setSada] = useState(Date.now());
+  const tapovi = useRef({});
+  const hitTimer = useRef(null);
+
+  useEffect(() => { const t = setInterval(() => setSada(Date.now()), 30000); return () => clearInterval(t); }, []);
+  useEffect(() => {
+    if (!zadnji) return;
+    const t = setTimeout(() => setZadnji(null), 7000);
+    return () => clearTimeout(t);
+  }, [zadnji]);
+
+  const st = Logika.stanjeSmjene(smjena, proizvodi);
+  const obicni = proizvodi.filter(p => !p.clanarina_mjeseci);
+  const clanarine = proizvodi.filter(p => p.clanarina_mjeseci > 0);
+  const brojClanarina = clanarine.reduce((a, p) => a + st.prodano(p.product_id), 0);
+
+  const prodaj = (p) => {
+    if (!Logika.dozvoliTap(tapovi.current, p.product_id, Date.now(), 150)) return;
+    dodaj('SALE', p.product_id, 1);
+    setZadnji(z => (z && z.p.product_id === p.product_id) ? { p, n: z.n + 1, k: Date.now() } : { p, n: 1, k: Date.now() });
+    setHit(p.product_id);
+    clearTimeout(hitTimer.current);
+    hitTimer.current = setTimeout(() => setHit(null), 140);
+    vibriraj(12);
+  };
+
+  const ponisti = () => {
+    if (!zadnji) return;
+    dodaj('UNDO_SALE', zadnji.p.product_id, 1, 'Poništeno na šanku');
+    vibriraj([8, 40, 8]);
+    setZadnji(z => (z && z.n > 1) ? { ...z, n: z.n - 1, k: Date.now() } : null);
+  };
+
+  const trajanjeTekst = (() => {
+    const m = String(smjena.pocetak_ts || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    let min;
+    if (m) {
+      const sad = new Date(sada);
+      const sar = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Sarajevo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(sad);
+      const d = {}; sar.forEach(x => { d[x.type] = x.value; });
+      min = (Date.UTC(+d.year, +d.month - 1, +d.day, +d.hour, +d.minute) - Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5])) / 60000;
+    } else {
+      const [h, mi] = String(smjena.vrijeme_pocetka || '0:0').split(':').map(Number);
+      const d = new Date(sada);
+      min = (d.getHours() * 60 + d.getMinutes()) - (h * 60 + mi);
+      if (min < 0) min += 1440;
+    }
+    min = Math.max(0, Math.round(min));
+    return Math.floor(min / 60) + 'h ' + String(min % 60).padStart(2, '0') + 'm';
+  })();
+
+  const grupe = Logika.grupisi(obicni);
+  if (clanarine.length) grupe.push({ ime: clanarine[0].kategorija, stavke: [], clan: true });
+
+  return (
+    <>
+      <div className="wrap" style={{ paddingBottom: 170 }}>
+        <div className="card" style={{ padding: '12px 15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div className="lab" style={{ marginBottom: 4 }}>SMJENA U TOKU</div>
+              <div style={{ fontSize: 17, fontWeight: 600 }} data-testid="radnik">{smjena.radnik}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div className="sit">od {smjena.vrijeme_pocetka}</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--gold)' }}>{trajanjeTekst}</div>
+            </div>
+          </div>
+        </div>
+
+        {grupe.map(g => (
+          <div key={g.ime}>
+            <div className="grp">{g.ime.toUpperCase()}</div>
+            <div className="grid">
+              {g.stavke.map(p => {
+                const kom = st.prodano(p.product_id);
+                const ost = p.prati_zalihu && st.ocekivano.hasOwnProperty(p.product_id) ? st.ocekivano[p.product_id] : null;
+                const nisko = ost !== null && ost <= Math.max(2, p.minimum || 0);
+                return (
+                  <button key={p.product_id} data-tile={p.product_id}
+                    className={'tile' + (hit === p.product_id ? ' hit' : '')} onClick={() => prodaj(p)}>
+                    {kom > 0 && <span className="badge">{kom}</span>}
+                    <span className="nm">{p.naziv}</span>
+                    <span className="bot">
+                      <span className="pr">{km(p.cijena)} KM</span>
+                      {ost !== null && <span className={'st' + (nisko ? ' low' : '')}>ima {ost}</span>}
+                    </span>
+                  </button>
+                );
+              })}
+              {g.clan && (
+                <button className="tile clan" data-tile="clanarina" onClick={() => setSheet('clan')}>
+                  {brojClanarina > 0 && <span className="badge">{brojClanarina}</span>}
+                  <span className="nm">Članarina</span>
+                  <span className="bot"><span className="pr">{clanarine.map(p => km(p.cijena).replace(',00', '')).join(' / ')} KM</span></span>
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <button className="btn2" style={{ flex: 2 }} onClick={() => setSheet('dopuna')}>+ DOPUNA ZALIHE</button>
+          <button className="btn2" style={{ flex: 1 }} onClick={() => setSheet('ispravka')}>Ispravka</button>
+        </div>
+      </div>
+
+      {zadnji && (
+        <div className="undo" data-testid="undo">
+          <span>✓ {zadnji.p.naziv} +1{zadnji.n > 1 ? ' (×' + zadnji.n + ')' : ''}</span>
+          <button onClick={ponisti}>PONIŠTI</button>
+        </div>
+      )}
+
+      <div className="dock">
+        <div>
+          <div style={{ fontSize: 9.5, letterSpacing: 1.6, color: 'var(--dim)' }}>{st.kom} KOM · U KASI TREBA BITI</div>
+          <div className="n" data-testid="promet">{km(st.promet)}<span className="u">KM</span></div>
+        </div>
+        <button onClick={() => setSheet('zavrsi')}>ZAVRŠI SMJENU</button>
+      </div>
+
+      {sheet === 'dopuna' && <Dopuna proizvodi={proizvodi.filter(p => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id))}
+        zatvori={() => setSheet(null)}
+        potvrdi={(p, kol) => { dodaj('RESTOCK', p.product_id, kol); setSheet(null); pokaziToast('✓ Dopuna: ' + p.naziv + ' +' + kol, 'ok'); }} />}
+
+      {sheet === 'ispravka' && <Ispravka proizvodi={obicni} st={st} zatvori={() => setSheet(null)}
+        ponisti={p => { dodaj('UNDO_SALE', p.product_id, 1, 'Ispravka'); vibriraj(10); }} />}
+
+      {sheet === 'clan' && <Clanarina clanarine={clanarine} clanovi={clanovi} zatvori={() => setSheet(null)}
+        potvrdi={(p, clan, noviIstek) => {
+          dodaj('SALE', p.product_id, 1, '', { member_id: clan.member_id, ime: clan.ime, telefon: clan.telefon || '' });
+          const azuriran = { ...clan, vrsta: p.product_id, istek: noviIstek };
+          setClanovi(clanovi.filter(c => c.member_id !== clan.member_id).concat([azuriran]));
+          setSheet(null);
+          pokaziToast('✓ Članarina: ' + clan.ime + ', važi do ' + dT(noviIstek), 'ok');
+          vibriraj(15);
+        }} />}
+
+      {sheet === 'zavrsi' && (
+        <Sheet naslov="Završiti smjenu?" zatvori={() => setSheet(null)}>
+          <div className="info">Ideš na završno brojanje robe i kase. Prodaja se poslije toga više ne kuca.</div>
+          <button className="btn" onClick={() => { setSheet(null); onZavrsi(); }}>Da, idem brojati</button>
+          <button className="btn2" style={{ marginTop: 10 }} onClick={() => setSheet(null)}>Ne, nastavljam prodaju</button>
+        </Sheet>
+      )}
+    </>
+  );
+}
+
+function Dopuna({ proizvodi, zatvori, potvrdi }) {
+  const [p, setP] = useState(null);
+  const [kol, setKol] = useState('');
+  const n = Number(kol) || 0;
+  return (
+    <Sheet naslov={p ? 'Dopuna — ' + p.naziv : 'Šta si dopunio?'} zatvori={zatvori}>
+      {!p ? (
+        <div className="card0">
+          {proizvodi.map(x => (
+            <button key={x.product_id} className="listbtn" data-dopuna={x.product_id} onClick={() => { setP(x); setKol(''); }}>
+              <span>{x.naziv}</span><span className="sit">›</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="sit" style={{ textAlign: 'center' }}>Koliko komada si stavio?</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, margin: '10px 0 14px' }}>
+            <button className="cbtn" style={{ width: 60, height: 60, borderRadius: '50%' }} onClick={() => setKol(String(Math.max(1, n - 1)))}>−</button>
+            <input className="cin" data-testid="dopuna-kol" inputMode="numeric" pattern="[0-9]*" value={kol} placeholder="0"
+              style={{ width: 110, height: 64, fontSize: 34, color: 'var(--gold)' }} autoFocus
+              onChange={e => setKol(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 4))} />
+            <button className="cbtn" style={{ width: 60, height: 60, borderRadius: '50%' }} onClick={() => setKol(String(n + 1))}>+</button>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[6, 12, 24].map(x => (
+              <button key={x} className={'chip' + (n === x ? ' on' : '')} style={{ flex: 1 }} onClick={() => setKol(String(x))}>{x}</button>
+            ))}
+          </div>
+          <button className="btn" style={{ marginTop: 14 }} disabled={n < 1} onClick={() => potvrdi(p, n)}>
+            {n < 1 ? 'Upiši količinu' : 'Dodaj ' + n + ' kom'}
+          </button>
+          <button className="btn2" style={{ marginTop: 10 }} onClick={() => setP(null)}>Nazad na listu</button>
+        </>
+      )}
+    </Sheet>
+  );
+}
+
+function Ispravka({ proizvodi, st, zatvori, ponisti }) {
+  const prodani = proizvodi.filter(p => st.prodano(p.product_id) > 0);
+  return (
+    <Sheet naslov="Ispravka prodaje" zatvori={zatvori}>
+      <div className="info" style={{ marginBottom: 12 }}>Ako si pogrešno kucao, skini višak ovdje (−1 po kliku). Ništa se ne briše — ispravka se bilježi.</div>
+      {!prodani.length && <div className="info">Još ništa nije prodano.</div>}
+      {prodani.length > 0 && (
+        <div className="card0">
+          {prodani.map(p => (
+            <div className="row" key={p.product_id}>
+              <div><div style={{ fontSize: 15.5 }}>{p.naziv}</div><div className="sit">prodano {st.prodano(p.product_id)}</div></div>
+              <button className="chip" style={{ minWidth: 72, color: 'var(--red)', borderColor: 'rgba(229,84,75,.5)' }} onClick={() => ponisti(p)}>−1</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <button className="btn2" style={{ marginTop: 12 }} onClick={zatvori}>Gotovo</button>
+    </Sheet>
+  );
+}
+
+/* ═══════ ČLANARINA (3 koraka: član → vrsta → naplati) ═══════ */
+function Clanarina({ clanarine, clanovi, zatvori, potvrdi }) {
+  const [korak, setKorak] = useState('clan');  // clan | novi | vrsta
+  const [upit, setUpit] = useState('');
+  const [clan, setClan] = useState(null);
+  const [ime, setIme] = useState('');
+  const [tel, setTel] = useState('');
+  const [vrsta, setVrsta] = useState(null);
+  const danas = Logika.danasSarajevo();
+  const lista = Logika.traziClanove(clanovi, upit).slice(0, 40);
+
+  const naslov = korak === 'clan' ? 'Članarina — ko plaća?' : korak === 'novi' ? 'Novi član' : 'Članarina — ' + (clan && clan.ime);
+
+  return (
+    <Sheet naslov={naslov} zatvori={zatvori}>
+      {korak === 'clan' && (
+        <>
+          <input className="inp" placeholder="Traži po imenu…" value={upit} onChange={e => setUpit(e.target.value)} />
+          <button className="btn" style={{ marginTop: 10 }} onClick={() => { setIme(upit.trim()); setKorak('novi'); }}>+ Novi član</button>
+          <div className="card0" style={{ marginTop: 12 }}>
+            {!lista.length && <div className="info" style={{ border: 'none' }}>{upit ? 'Nema takvog člana. Klikni „Novi član".' : 'Još nema upisanih članova.'}</div>}
+            {lista.map(c => {
+              const dana = c.istek ? Math.round((Date.parse(c.istek) - Date.parse(danas)) / 86400000) : null;
+              return (
+                <button key={c.member_id} className="listbtn" onClick={() => { setClan(c); setVrsta(null); setKorak('vrsta'); }}>
+                  <span>{c.ime}<div className="sit">{c.telefon}</div></span>
+                  <span className="sit" style={{ color: dana === null ? 'var(--dim)' : dana < 0 ? 'var(--red)' : dana <= 5 ? 'var(--gold)' : 'var(--green)', textAlign: 'right' }}>
+                    {dana === null ? '' : dana < 0 ? 'istekla ' + dT(c.istek) : 'do ' + dT(c.istek)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+      {korak === 'novi' && (
+        <>
+          <div className="lab">IME I PREZIME</div>
+          <input className="inp" value={ime} autoFocus maxLength={80} onChange={e => setIme(e.target.value)} placeholder="npr. Amel Hodžić" />
+          <div className="lab" style={{ marginTop: 14 }}>TELEFON</div>
+          <input className="inp" value={tel} inputMode="tel" maxLength={40} onChange={e => setTel(e.target.value)} placeholder="06x xxx xxx" />
+          <button className="btn" style={{ marginTop: 14 }} disabled={ime.trim().length < 2}
+            onClick={() => { setClan({ member_id: Logika.uid('M'), ime: ime.trim(), telefon: tel.trim(), istek: '', novi: true }); setKorak('vrsta'); }}>Dalje</button>
+          <button className="btn2" style={{ marginTop: 10 }} onClick={() => setKorak('clan')}>Nazad</button>
+        </>
+      )}
+      {korak === 'vrsta' && clan && (
+        <>
+          {clan.istek && <div className="sit" style={{ marginBottom: 10 }}>Trenutno važi do {dT(clan.istek)}{clan.istek < danas ? ' (istekla)' : ''}</div>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {clanarine.map(p => {
+              const pr = Logika.produzenje(clan.istek, danas, p.clanarina_mjeseci);
+              return (
+                <button key={p.product_id} className={'pick' + (vrsta && vrsta.product_id === p.product_id ? ' on' : '')}
+                  style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  onClick={() => setVrsta(p)}>
+                  <span>{p.naziv}<div className="sit">važiće do {dT(pr.istek)}</div></span>
+                  <span style={{ color: 'var(--gold)' }}>{km(p.cijena)} KM</span>
+                </button>
+              );
+            })}
+          </div>
+          <button className="btn" style={{ marginTop: 14 }} disabled={!vrsta}
+            onClick={() => potvrdi(vrsta, clan, Logika.produzenje(clan.istek, danas, vrsta.clanarina_mjeseci).istek)}>
+            {vrsta ? 'NAPLAĆENO ' + km(vrsta.cijena) + ' KM' : 'Izaberi vrstu'}
+          </button>
+          <button className="btn2" style={{ marginTop: 10 }} onClick={() => setKorak(clan.novi ? 'novi' : 'clan')}>Nazad</button>
+        </>
+      )}
+    </Sheet>
+  );
+}
+
+/* ═══════ 4. ZAVRŠNA INVENTURA + KASA ═══════ */
+function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGotovo }) {
+  const poId = {};
+  proizvodi.forEach(p => { poId[p.product_id] = p; });
+  const roba = Object.keys(smjena.pocetna).map(pid => poId[pid] || { product_id: pid, naziv: pid, kategorija: 'Ostalo', cijena: 0 });
+  const [v, setV] = useNacrt('zavrsno:' + smjena.shift_id, {});
+  const [korak, setKorak] = useState('brojanje');
+  const [kasa, setKasa] = useNacrt('kasa:' + smjena.shift_id, '');
+  const [provjereno, setProvjereno] = useState(false);
+  const [razlog, setRazlog] = useState('');
+  const fali = Logika.nedostaje(roba, v);
+  const pr = Logika.provjeraZavrsnog(smjena, proizvodi, v, kasa);
+  const kasaOk = pr.kasaRazlika !== null;
+  const lista = (razlozi && razlozi.length) ? razlozi : ['Greška u kucanju', 'Gratis / poklon', 'Lom ili isteklo', 'Ne znam'];
+
+  if (korak === 'brojanje') {
+    return (
+      <div className="wrap" style={{ paddingBottom: 32 }}>
+        <div className="h1">Prebroji završno stanje</div>
+        <div className="info">Prebroji ponovo <b style={{ color: 'var(--text)' }}>sve</b>, i upiši 0 gdje nema ništa. Poslije toga upisuješ gotovinu iz kase.</div>
+        {Logika.grupisi(roba).map(g => (
+          <div key={g.ime}>
+            <div className="grp">{g.ime.toUpperCase()}</div>
+            <div className="card0">
+              {g.stavke.map(p => (
+                <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} v={v[p.product_id]}
+                  set={n => setV(s => ({ ...s, [p.product_id]: n }))} />
+              ))}
+            </div>
+          </div>
+        ))}
+        <button className="btn" disabled={fali.length > 0} onClick={() => { setKorak('kasa'); setProvjereno(false); window.scrollTo(0, 0); }}>
+          {fali.length > 0 ? 'Još ' + fali.length + ' za prebrojati' : 'DALJE — KASA'}
+        </button>
+        <button className="btn2" onClick={nazad}>Nazad na prodaju</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="wrap" style={{ paddingBottom: 32 }}>
+      <div className="h1">Gotovina u kasi</div>
+      <div className="info">Prebroji sav novac u kasi i upiši iznos.</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <input className="inp" data-testid="kasa" inputMode="decimal" value={kasa} placeholder="0,00"
+          style={{ fontSize: 30, fontWeight: 700, textAlign: 'center', minHeight: 70 }}
+          onChange={e => { setKasa(e.target.value.replace(/[^\d.,]/g, '').slice(0, 9)); setProvjereno(false); setRazlog(''); }} />
+        <span style={{ fontSize: 18, color: 'var(--dim)' }}>KM</span>
+      </div>
+      {!provjereno && (
+        <button className="btn" disabled={!kasaOk} onClick={() => setProvjereno(true)}>PROVJERI</button>
+      )}
+      {provjereno && kasaOk && (
+        <>
+          <div className="card">
+            <div className="ln"><span>Treba biti u kasi</span><b>{km(pr.kasaOcekivano)} KM</b></div>
+            <div className="ln"><span>Upisao si</span><b>{km(Number(String(kasa).replace(',', '.')))} KM</b></div>
+            <div className="ln" style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 9 }}>
+              <span>Kasa</span>
+              <b style={{ color: pr.kasaRazlika === 0 ? 'var(--green)' : 'var(--red)' }}>
+                {pr.kasaRazlika === 0 ? '✓ poklapa se' : (pr.kasaRazlika > 0 ? 'višak +' : 'manjak ') + km(pr.kasaRazlika) + ' KM'}
+              </b>
+            </div>
+            <div className="ln"><span>Roba</span>
+              <b style={{ color: pr.razlikeRobe ? 'var(--red)' : 'var(--green)' }}>
+                {pr.razlikeRobe ? '⚠ ' + pr.razlikeRobe + (pr.razlikeRobe === 1 ? ' proizvod se ne poklapa' : ' proizvoda se ne poklapa') : '✓ sve se poklapa'}
+              </b>
+            </div>
+          </div>
+          {pr.trebaRazlog && (
+            <>
+              <div className="warn">Nešto se ne poklapa. Ako nisi siguran, vrati se i prebroji robu ponovo. Ako je sve tačno, izaberi razlog:</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {lista.map(r => <button key={r} className={'chip' + (razlog === r ? ' on' : '')} onClick={() => setRazlog(r)}>{r}</button>)}
+              </div>
+            </>
+          )}
+          {cekaju > 0 && <div className="warn">⟳ {cekaju} promjena još čeka slanje. Biće poslane prije zatvaranja.</div>}
+          {greska && <div className="err">{greska}</div>}
+          <button className="btn" disabled={radi || (pr.trebaRazlog && !razlog)}
+            onClick={() => {
+              const b = {}; roba.forEach(p => { b[p.product_id] = Number(v[p.product_id]); });
+              onGotovo(b, String(kasa).replace(',', '.'), pr.trebaRazlog ? razlog : '');
+            }}>
+            {radi ? 'Zatvaram smjenu…' : 'ZAVRŠI SMJENU'}
+          </button>
+        </>
+      )}
+      <button className="btn2" onClick={() => { setKorak('brojanje'); setProvjereno(false); }}>Nazad na brojanje robe</button>
+    </div>
+  );
+}
+
+/* ═══════ 5. IZVJEŠTAJ SMJENE ═══════ */
+function DetaljRazlike({ s }) {
+  return (
+    <div className="card" style={{ borderColor: 'var(--red)' }}>
+      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{s.naziv}</div>
+      <div className="ln"><span>Početno</span><b>{s.pocetno}</b></div>
+      <div className="ln"><span>Dopunjeno</span><b>{s.dopunjeno}</b></div>
+      <div className="ln"><span>Prodano (klikovi)</span><b>{s.prodano_klik}</b></div>
+      <div className="ln"><span>Očekivano završno</span><b>{s.ocekivano}</b></div>
+      <div className="ln"><span>Stvarno završno</span><b>{s.stvarno}</b></div>
+      <div className="ln"><span>Prodano po inventuri</span><b>{s.prodano_inventura}</b></div>
+      <div className="ln" style={{ borderTop: '1px solid var(--line)', marginTop: 6, paddingTop: 9 }}>
+        <span style={{ color: 'var(--red)' }}>Razlika</span>
+        <b style={{ color: 'var(--red)' }} data-testid={'razlika-' + s.product_id}>{s.razlika_kom > 0 ? '+' : ''}{s.razlika_kom} kom · {km(s.razlika_km)} KM</b>
+      </div>
+      <div className="sit" style={{ marginTop: 8, lineHeight: 1.5 }}>
+        {s.razlika_kom < 0
+          ? 'Fali ' + Math.abs(s.razlika_kom) + ' kom. Vjerovatno prodaja koja nije kucana.'
+          : 'Ima ' + s.razlika_kom + ' kom više. Provjeri je li dopuna evidentirana ili je prodaja kucana greškom.'}
+      </div>
+    </div>
+  );
+}
+
+function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
+  const problemi = (izv.stavke || []).filter(s => s.razlika_kom);
+  const ok = (izv.stavke || []).length - problemi.length;
+  const tekst = Logika.tekstIzvjestaja(izv);
+  const [pokaziTekst, setPokaziTekst] = useState(false);
+
+  const kopiraj = async () => {
+    let uspjeh = false;
+    try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(tekst); uspjeh = true; } } catch (e) { /* */ }
+    if (!uspjeh) {
+      try {
+        const ta = document.createElement('textarea'); ta.value = tekst; ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+        uspjeh = document.execCommand('copy'); document.body.removeChild(ta);
+      } catch (e) { /* */ }
+    }
+    if (uspjeh) pokaziToast('✓ Izvještaj kopiran. Zalijepi ga u Viber ili WhatsApp.', 'ok');
+    else setPokaziTekst(true);
+  };
+
+  return (
+    <div className="wrap" style={{ paddingBottom: 32 }}>
+      <div className="card" style={{ borderColor: izv.status === 'OPEN' ? 'var(--gold)' : 'var(--green)' }}>
+        <div className="lab" style={{ color: izv.status === 'OPEN' ? 'var(--gold)' : 'var(--green)' }}>{izv.status === 'OPEN' ? 'SMJENA U TOKU' : 'SMJENA ZAVRŠENA'}</div>
+        <div style={{ fontSize: 21, fontWeight: 600 }}>{izv.radnik}</div>
+        <div className="sit">{dT(izv.datum)} · {izv.pocetak}{izv.kraj ? ' — ' + izv.kraj : ''}{izv.trajanje_min !== null ? ' · ' + Logika.trajanje(izv.trajanje_min) : ''}</div>
+      </div>
+
+      <div className="two">
+        <div className="box">
+          <div className="lab">PRODANO</div>
+          <div className="big">{izv.prodano_kom}<span style={{ fontSize: 12, color: 'var(--dim)', marginLeft: 4 }}>kom</span></div>
+        </div>
+        <div className="box">
+          <div className="lab">PROMET</div>
+          <div className="big" style={{ color: 'var(--gold)' }} data-testid="izv-promet">{km(izv.promet)}<span style={{ fontSize: 12, color: 'var(--dim)', marginLeft: 4 }}>KM</span></div>
+        </div>
+      </div>
+
+      {izv.kasa_stvarno !== null && izv.kasa_stvarno !== undefined && (
+        <div className="card" style={{ borderColor: izv.kasa_razlika ? 'var(--red)' : 'var(--line)' }}>
+          <div className="lab">KASA</div>
+          <div className="ln"><span>Treba biti</span><b>{km(izv.kasa_ocekivano)} KM</b></div>
+          <div className="ln"><span>U kasi</span><b>{km(izv.kasa_stvarno)} KM</b></div>
+          <div className="ln"><span>Razlika</span><b data-testid="kasa-razlika" style={{ color: izv.kasa_razlika ? 'var(--red)' : 'var(--green)' }}>{izv.kasa_razlika ? km(izv.kasa_razlika) + ' KM' : '✓ 0,00 KM'}</b></div>
+        </div>
+      )}
+
+      <div className="card">
+        <div className="lab">INVENTURA</div>
+        {izv.bez_brojanja ? <div style={{ fontSize: 14, color: 'var(--gold)' }}>Nije prebrojano (zatvorio vlasnik).</div> : <>
+          <div style={{ fontSize: 15, color: 'var(--green)' }} data-testid="poklapa">✓ {ok} {ok === 1 ? 'proizvod se poklapa' : 'proizvoda se poklapa'}</div>
+          {problemi.length > 0 && (
+            <div style={{ fontSize: 15, color: 'var(--red)', marginTop: 5 }} data-testid="razlike">
+              ⚠ {problemi.length} {problemi.length === 1 ? 'proizvod ima razliku' : 'proizvoda imaju razliku'} · {km(izv.vrijednost_razlike)} KM
+            </div>
+          )}
+        </>}
+        {izv.kasa_razlog && <div className="sit" style={{ marginTop: 8 }}>Razlog: {izv.kasa_razlog}</div>}
+      </div>
+
+      {(izv.upozorenja || []).map((u, i) => <div className="warn" key={i}>⚠ {u}</div>)}
+      {problemi.map(s => <DetaljRazlike key={s.product_id} s={s} />)}
+
+      {izv.usluge && izv.usluge.length > 0 && (
+        <div className="card">
+          <div className="lab">USLUGE I ČLANARINE</div>
+          {izv.usluge.map(u => <div className="ln" key={u.product_id}><span>{u.naziv}</span><b>{u.kom} kom · {km(u.km)} KM</b></div>)}
+        </div>
+      )}
+
+      <button className="btn2" onClick={kopiraj}>Kopiraj izvještaj (Viber / WhatsApp)</button>
+      {pokaziTekst && <textarea className="inp" readOnly value={tekst} style={{ minHeight: 180, fontSize: 13 }} onFocus={e => e.target.select()} />}
+      {!uAdminu && <button className="btn" onClick={onNovo}>Gotovo</button>}
+    </div>
+  );
+}
+
+/* ═══════ 6. VLASNIK ═══════ */
+function Admin({ nazad, pokaziToast }) {
+  const [pin, setPin] = useState(() => { try { return sessionStorage.getItem('adin_pin') || ''; } catch (e) { return ''; } });
+  const [unos, setUnos] = useState('');
+  const [ulogovan, setUlogovan] = useState(false);
+  const [greska, setGreska] = useState('');
+  const [tab, setTab] = useState('danas');
+  const [d, setD] = useState(null);
+  const [radi, setRadi] = useState(false);
+
+  const ucitaj = useCallback(async (p) => {
+    setRadi(true); setGreska('');
+    try {
+      const r = await api('getAdminData', p);
+      setD(r); setUlogovan(true); setPin(p);
+      try { sessionStorage.setItem('adin_pin', p); } catch (e) { /* */ }
+    } catch (e) {
+      if (e.code === 'PIN') { setUlogovan(false); try { sessionStorage.removeItem('adin_pin'); } catch (x) { /* */ } }
+      setGreska(e.message);
+    } finally { setRadi(false); }
+  }, []);
+
+  useEffect(() => { if (pin) ucitaj(pin); }, []); // eslint-disable-line
+
+  if (!ulogovan) {
+    return (
+      <div className="wrap">
+        <div className="h1">Vlasnik</div>
+        <div className="lab">PIN</div>
+        <input className="inp" type="password" inputMode="numeric" pattern="[0-9]*" autoFocus value={unos}
+          style={{ fontSize: 26, letterSpacing: 8, textAlign: 'center' }}
+          onChange={e => setUnos(e.target.value.replace(/\D/g, '').slice(0, 8))}
+          onKeyDown={e => { if (e.key === 'Enter' && unos) ucitaj(unos); }} />
+        {greska && <div className="err">{greska}</div>}
+        <button className="btn" disabled={!unos || radi} onClick={() => ucitaj(unos)}>{radi ? 'Provjeravam…' : 'Uđi'}</button>
+        <button className="btn2" onClick={nazad}>Nazad</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="wrap">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="h1">Pregled</div>
+        <button className="chip" onClick={() => ucitaj(pin)} disabled={radi}>{radi ? '…' : '↻ Osvježi'}</button>
+      </div>
+      <div className="tabs">
+        {[['danas', 'Danas'], ['zalihe', 'Zalihe'], ['clanovi', 'Članovi'], ['smjene', 'Smjene'], ['mjesec', 'Mjesec']].map(([k, n]) =>
+          <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>)}
+      </div>
+      {greska && <div className="err">{greska}</div>}
+      {d && tab === 'danas' && <AdminDanas d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
+      {d && tab === 'zalihe' && <AdminZalihe d={d} />}
+      {d && tab === 'clanovi' && <AdminClanovi d={d} />}
+      {d && tab === 'smjene' && <AdminSmjene pin={pin} pokaziToast={pokaziToast} />}
+      {d && tab === 'mjesec' && <AdminMjesec d={d} />}
+      <button className="btn2" style={{ marginTop: 10 }} onClick={() => { try { sessionStorage.removeItem('adin_pin'); } catch (e) { /* */ } nazad(); }}>Izađi iz pregleda</button>
+    </div>
+  );
+}
+
+function Broj({ lab, v, boja, sit }) {
+  return (
+    <div className="box">
+      <div className="lab">{lab}</div>
+      <div className="big" style={{ fontSize: 24, color: boja || 'var(--text)' }}>{v}</div>
+      {sit && <div className="sit">{sit}</div>}
+    </div>
+  );
+}
+
+function AdminDanas({ d, pin, osvjezi, pokaziToast }) {
+  const [zatvaranje, setZatvaranje] = useState(false);
+  const [nap, setNap] = useState('');
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState('');
+  const o = d.otvorena;
+  const zatvori = async () => {
+    setRadi(true); setGr('');
+    try { await api('adminCloseShift', pin, o.shift_id, nap); setZatvaranje(false); pokaziToast('✓ Smjena zatvorena.', 'ok'); osvjezi(); }
+    catch (e) { setGr(e.message); } finally { setRadi(false); }
+  };
+  return (
+    <>
+      {o ? (
+        <div className={o.stara ? 'err' : 'card'} style={o.stara ? {} : { borderColor: 'var(--gold)' }}>
+          <div className="lab" style={{ color: o.stara ? 'var(--red)' : 'var(--gold)' }}>{o.stara ? '⚠ SMJENA OTVORENA PREDUGO' : 'SMJENA U TOKU'}</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>{o.radnik} · od {o.od} ({dT(o.datum)})</div>
+          <div className="sit">{o.sati} h · {o.kom} kom · {km(o.promet)} KM</div>
+          {o.stara && <div style={{ marginTop: 8, color: 'var(--text)', fontSize: 13 }}>Vjerovatno je zaboravljeno zatvaranje. Najbolje je da radnik sam završi smjenu s brojanjem. Ako to nije moguće, zatvori je ovdje.</div>}
+          {!zatvaranje && <button className="btn2" style={{ marginTop: 10 }} onClick={() => setZatvaranje(true)}>Zatvori bez brojanja…</button>}
+          {zatvaranje && <>
+            <input className="inp" style={{ marginTop: 10 }} placeholder="Napomena (obavezno)" value={nap} onChange={e => setNap(e.target.value)} />
+            {gr && <div className="err" style={{ marginTop: 8 }}>{gr}</div>}
+            <button className="btn red" disabled={!nap.trim() || radi} onClick={zatvori}>{radi ? 'Zatvaram…' : 'Zatvori smjenu'}</button>
+          </>}
+        </div>
+      ) : <div className="info">Trenutno nema otvorene smjene.</div>}
+      <div className="two">
+        <Broj lab="PROMET DANAS" v={km(d.danas.promet)} boja="var(--gold)" sit={d.danas.kom + ' kom'} />
+        <Broj lab="PROFIT DANAS" v={km(d.danas.profit)} boja="var(--green)" />
+      </div>
+      <div className="two">
+        <Broj lab="PROFIT OVE SEDMICE" v={km(d.sedmica.profit)} sit={'promet ' + km(d.sedmica.promet) + ' KM'} />
+        <Broj lab="ZADNJIH 7 DANA" v={km(d.d7.promet)} sit="promet KM" />
+      </div>
+      <div className="card" style={{ borderColor: 'var(--gold)' }}>
+        <div className="lab">PLATA RADNIKA ({Math.round(d.plata.udio * 100)}% SEDMIČNOG PROFITA)</div>
+        <div className="ln"><span>Za prošlu sedmicu ({dT(d.periodi.proslaOd)}–{dT(d.periodi.proslaDo)}) — isplata u ponedjeljak</span><b style={{ color: 'var(--gold)', fontSize: 18 }}>{km(d.plata.prosla)} KM</b></div>
+        <div className="ln"><span>Ova sedmica do sada</span><b>{km(d.plata.ova_do_sada)} KM</b></div>
+        <div className="sit">Profit prošle sedmice: {km(d.prosla.profit)} KM (promet {km(d.prosla.promet)} KM)</div>
+      </div>
+      {(d.clanovi.istice.length > 0 || d.clanovi.istekli.length > 0) && (
+        <div className="warn">Članarine: {d.clanovi.istice.length} ističe u narednih 5 dana, {d.clanovi.istekli.length} isteklo. Vidi tab „Članovi".</div>
+      )}
+      {d.zalihe.some(z => z.nisko) && <div className="warn">Nisko na zalihi: {d.zalihe.filter(z => z.nisko).map(z => z.naziv + ' (' + z.kolicina + ')').join(', ')}</div>}
+    </>
+  );
+}
+
+function AdminZalihe({ d }) {
+  return (
+    <>
+      <div className="info">{d.otvorena ? 'Očekivano stanje sada (početno + dopuna − prodaja u ovoj smjeni).' : 'Stanje sa zadnjeg brojanja.'} Crveno = na minimumu ili ispod (minimum se mijenja u tabeli PROIZVODI).</div>
+      <div className="card0">
+        {d.zalihe.map(z => (
+          <div className="row" key={z.product_id} style={{ minHeight: 52 }}>
+            <span style={{ fontSize: 15 }}>{z.naziv}<div className="sit">minimum {z.minimum}</div></span>
+            <b style={{ fontSize: 20, color: z.nisko ? 'var(--red)' : 'var(--text)' }}>{z.kolicina === null ? '—' : z.kolicina}</b>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function Telefon({ broj }) {
+  if (!broj) return null;
+  return <a href={'tel:' + String(broj).replace(/[^\d+]/g, '')} className="chip" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>📞 {broj}</a>;
+}
+
+function AdminClanovi({ d }) {
+  const c = d.clanovi;
+  const red = (x, boja, tekst) => (
+    <div className="row" key={x.member_id} style={{ minHeight: 60 }}>
+      <span style={{ fontSize: 15 }}>{x.ime}<div className="sit" style={{ color: boja }}>{tekst}</div></span>
+      <Telefon broj={x.telefon} />
+    </div>
+  );
+  return (
+    <>
+      <div className="info">Aktivnih članarina: <b style={{ color: 'var(--text)' }}>{c.aktivnih}</b>. Članove i telefone možeš mijenjati u tabeli CLANOVI.</div>
+      <div className="grp">ISTIČE U NAREDNIH 5 DANA</div>
+      <div className="card0">
+        {!c.istice.length && <div className="info" style={{ border: 'none' }}>Niko.</div>}
+        {c.istice.map(x => red(x, 'var(--gold)', (x.dana === 0 ? 'ističe danas' : 'ističe za ' + x.dana + (x.dana === 1 ? ' dan' : ' dana')) + ' · ' + dT(x.istek)))}
+      </div>
+      <div className="grp">ISTEKLO (ZADNJIH 60 DANA)</div>
+      <div className="card0">
+        {!c.istekli.length && <div className="info" style={{ border: 'none' }}>Niko.</div>}
+        {c.istekli.map(x => red(x, 'var(--red)', 'isteklo ' + dT(x.istek)))}
+      </div>
+    </>
+  );
+}
+
+function AdminSmjene({ pin, pokaziToast }) {
+  const [lista, setLista] = useState(null);
+  const [otvoren, setOtvoren] = useState(null);
+  const [detalj, setDetalj] = useState(null);
+  const [gr, setGr] = useState('');
+  useEffect(() => { api('getHistory', pin, 40).then(r => setLista(r.smjene)).catch(e => { setGr(e.message); setLista([]); }); }, [pin]);
+  const otvori = async (id) => {
+    if (otvoren === id) { setOtvoren(null); return; }
+    setOtvoren(id); setDetalj(null);
+    try { const r = await api('getShiftDetails', pin, id); setDetalj(r.izvjestaj); } catch (e) { setGr(e.message); }
+  };
+  return (
+    <>
+      {gr && <div className="err">{gr}</div>}
+      {!lista && <div className="info">Učitavam…</div>}
+      {lista && !lista.length && <div className="info">Još nema smjena.</div>}
+      {lista && lista.map(s => (
+        <div className="card0" key={s.shift_id} style={s.broj_razlika || s.kasa_razlika ? { borderColor: 'rgba(229,84,75,.6)' } : {}}>
+          <button onClick={() => otvori(s.shift_id)} className="listbtn" style={{ borderBottom: 'none' }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>{dT(s.datum)} · {s.radnik}</div>
+              <div className="sit">{s.pocetak}–{s.kraj || '…'} · {s.prodano} kom{s.status === 'OPEN' ? ' · U TOKU' : ''}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ color: 'var(--gold)', fontWeight: 700 }}>{km(s.promet)} KM</div>
+              <div className="sit" style={{ color: s.broj_razlika || s.kasa_razlika ? 'var(--red)' : 'var(--green)' }}>
+                {s.status === 'OPEN' ? '' : s.broj_razlika || s.kasa_razlika
+                  ? [s.broj_razlika ? s.broj_razlika + ' razl. ' + km(s.vrijednost_razlike) : '', s.kasa_razlika ? 'kasa ' + km(s.kasa_razlika) : ''].filter(Boolean).join(' · ')
+                  : 'sve se poklapa'}
+              </div>
+            </div>
+          </button>
+          {otvoren === s.shift_id && (
+            <div style={{ borderTop: '1px solid var(--line)' }}>
+              {!detalj ? <div className="info" style={{ border: 'none' }}>Učitavam…</div> : <Izvjestaj izv={detalj} uAdminu pokaziToast={pokaziToast} />}
+            </div>
+          )}
+        </div>
+      ))}
+    </>
+  );
+}
+
+function AdminMjesec({ d }) {
+  const m = d.mjesec;
+  return (
+    <>
+      <div className="sit">Od {dT(d.periodi.mjesecOd)} do danas · {m.smjena} zatvorenih smjena</div>
+      <div className="two">
+        <Broj lab="PROMET" v={km(m.promet)} boja="var(--gold)" sit={m.kom + ' kom'} />
+        <Broj lab="PROFIT" v={km(m.profit)} boja="var(--green)" />
+      </div>
+      <div className="two">
+        <Broj lab="MANJAK ROBE" v={km(m.manjak_km)} boja={m.manjak_km < 0 ? 'var(--red)' : 'var(--text)'} sit={m.visak_km ? 'višak ' + km(m.visak_km) + ' KM' : ''} />
+        <Broj lab="RAZLIKE KASE" v={km(m.kasa_razlike)} boja={m.kasa_razlike ? 'var(--red)' : 'var(--text)'} />
+      </div>
+      <div className="card">
+        <div className="lab">TOP PROIZVODI (PO PROMETU)</div>
+        {!m.top.length && <div className="sit">Još nema prodaje.</div>}
+        {m.top.map((t, i) => <div className="ln" key={t.product_id}><span>{i + 1}. {t.naziv}</span><b>{t.kom} kom · {km(t.promet)} KM <span style={{ color: 'var(--green)', fontWeight: 400 }}>({km(t.profit)})</span></b></div>)}
+      </div>
+      <div className="card">
+        <div className="lab">PO RADNIKU</div>
+        {!m.po_radniku.length && <div className="sit">Još nema prodaje.</div>}
+        {m.po_radniku.map(r => <div className="ln" key={r.radnik}><span>{r.radnik}</span><b>{r.kom} kom · {km(r.promet)} KM</b></div>)}
+      </div>
+      <div className="sit">Detaljna tabela po proizvodima je u Google Sheetu, tab PREGLED.</div>
+    </>
+  );
+}
+
+/* ═══════ SITNO ═══════ */
+function Sheet({ naslov, zatvori, children }) {
+  return (
+    <div className="ovl" onClick={zatvori}>
+      <div className="sheet" onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <span style={{ fontSize: 17, fontWeight: 600 }}>{naslov}</span>
+          <button onClick={zatvori} aria-label="Zatvori" style={{ width: 44, height: 44, background: 'none', border: 'none', color: 'var(--dim)', fontSize: 20 }}>✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
