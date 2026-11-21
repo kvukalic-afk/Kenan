@@ -21,8 +21,8 @@ export function DonjaNavigacija({ aktivno }: { aktivno: string }) {
   const tabovi = [
     { put: '/', ime: 'pocetna', naziv: 'Početna', kljuc: '' },
     { put: '/ucenici', ime: 'ucenici', naziv: 'Učenici', kljuc: 'ucenici' },
-    { put: '/radionice', ime: 'radionica', naziv: 'Radionice', kljuc: 'radionice' },
-    { put: '/statistika', ime: 'statistika', naziv: 'Statistika', kljuc: 'statistika' },
+    { put: '/radionice', ime: 'radionica', naziv: 'Rad', kljuc: 'radionice' },
+    { put: '/statistika', ime: 'statistika', naziv: 'Izvještaji', kljuc: 'statistika' },
   ];
   return (
     <nav className="donja-nav" aria-label="Glavna navigacija">
@@ -46,10 +46,11 @@ export function PlutajuceDugme() {
       {otvoreno && <div className="zavjesa" onClick={() => setOtvoreno(false)} />}
       {otvoreno && (
         <div className="fab-meni" role="menu">
-          <button role="menuitem" className="dugme primarno" onClick={() => izaberi('/novi/razgovor')}><Ikona ime="razgovor" /> Razgovor</button>
-          <button role="menuitem" className="dugme primarno" onClick={() => izaberi('/novi/radionica')}><Ikona ime="radionica" /> Radionica</button>
-          <button role="menuitem" className="dugme primarno" onClick={() => izaberi('/novi/saradnja')}><Ikona ime="saradnja" /> Saradnja</button>
-          <button role="menuitem" className="dugme primarno" onClick={() => izaberi('/novi/aktivnost')}><Ikona ime="aktivnost" /> Ostala aktivnost</button>
+          <button role="menuitem" className="dugme istaknuto" onClick={() => izaberi('/biljeske')}><Ikona ime="uredi" /> Brza bilješka</button>
+          <button role="menuitem" className="dugme" onClick={() => izaberi('/novi/razgovor')}><Ikona ime="razgovor" /> Razgovor</button>
+          <button role="menuitem" className="dugme" onClick={() => izaberi('/novi/radionica')}><Ikona ime="radionica" /> Radionica</button>
+          <button role="menuitem" className="dugme" onClick={() => izaberi('/novi/saradnja')}><Ikona ime="saradnja" /> Saradnja</button>
+          <button role="menuitem" className="dugme" onClick={() => izaberi('/novi/aktivnost')}><Ikona ime="aktivnost" /> Ostala aktivnost</button>
           <button role="menuitem" className="dugme" onClick={() => izaberi('/unos-tekst')}><Ikona ime="posalji" /> Unos iz teksta (AI)</button>
         </div>
       )}

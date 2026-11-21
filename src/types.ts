@@ -92,6 +92,15 @@ export interface PlanStavka extends Zapis {
   napomena: string;
 }
 
+/** Brza bilješka zapisana u hodu (hodnik, odmor…), kasnije sročena i/ili pretvorena u razgovor. */
+export interface BrzaBiljeska extends Zapis {
+  datum: string;
+  sifra: string; // opcionalno
+  tekst: string; // originalno zapisano
+  sroceno: string; // tekst koji je sročio AI (i psiholog prihvatio/uredio)
+  obradjena: boolean;
+}
+
 export interface Postavke {
   id: 'postavke';
   nazivSkole: string;
@@ -121,7 +130,7 @@ export interface StavkaSifrarnika extends Zapis {
   sakriveno: boolean;
 }
 
-export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan';
+export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan' | 'brzeBiljeske';
 
 export interface Obrisano {
   id: string;

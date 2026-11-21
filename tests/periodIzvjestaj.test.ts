@@ -39,7 +39,9 @@ describe('izvještaj za period', () => {
   });
   it('anonimizuje imena, ali ne obične riječi', () => {
     expect(anonimizuj('Petar Petrović kaže, ali Ali Alić šuti. Petrović Petar.', ulaz.ucenici)).toBe('U014 kaže, ali U015 šuti. U014.');
-    expect(anonimizuj('Razgovarao sam s Petrom? Petar je došao.', ulaz.ucenici)).toBe('Razgovarao sam s Petrom? [učenik] je došao.');
+    expect(anonimizuj('Razgovarao sam s Petrom? Petar je došao.', ulaz.ucenici)).toBe('Razgovarao sam s [učenik]? [učenik] je došao.');
+    expect(anonimizuj('s Petrom Petrovićem i petrovićem, ali Alića nije bilo', ulaz.ucenici)).toBe('s U014 i [učenik], ali [učenik] nije bilo');
+    expect(anonimizuj('Ponavljali smo petice i petrolej.', ulaz.ucenici)).toBe('Ponavljali smo petice i petrolej.');
   });
   it('tekst za AI nema imena učenika ni nastavnika', () => {
     const t = tekstZaAI(ulaz, '2026-11-16', '2026-11-22', { biljeske: true });

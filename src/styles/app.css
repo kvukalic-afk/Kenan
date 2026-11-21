@@ -164,10 +164,6 @@ a { color: var(--primarna); }
 .red-dugmadi { display: flex; flex-wrap: wrap; gap: 8px; }
 .red-dugmadi > .dugme { flex: 1 1 auto; }
 
-.brzi-unos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
-@media (min-width: 560px) { .brzi-unos { grid-template-columns: repeat(4, 1fr); } }
-.brzi-unos .dugme { flex-direction: column; min-height: 68px; font-size: 0.95rem; padding: 10px 6px; }
-.brzi-unos .dugme svg { width: 26px; height: 26px; }
 
 /* ---------- Kartice i liste ---------- */
 
@@ -392,3 +388,79 @@ details.sekcija > .unutra { padding: 0 16px 16px; }
   .tabela.mjesecna .kratko { display: inline; }
 }
 @media print { .tabela .kratko { display: none !important; } .tabela .dugo { display: inline !important; } }
+
+/* ================= Pojednostavljen izgled (v2) ================= */
+
+:root { --radijus: 14px; --sjena: 0 1px 2px rgba(31, 36, 39, 0.04), 0 4px 14px rgba(31, 36, 39, 0.05); }
+.traka { min-height: 52px; }
+.traka h1 { font-size: 1.05rem; letter-spacing: 0.01em; }
+.kartica { border-color: color-mix(in srgb, var(--rub) 70%, transparent); }
+.lista { border-color: color-mix(in srgb, var(--rub) 70%, transparent); }
+.naslov-sekcije { margin: 22px 0 8px; }
+.naslov-sekcije h2 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tekst-blijed); font-weight: 700; }
+section > .naslov-sekcije:first-child { margin-top: 22px; }
+
+.donja-nav a svg { width: 56px; height: 30px; padding: 3px 16px; border-radius: 999px; box-sizing: border-box; }
+.donja-nav a[aria-current='page'] svg { background: var(--primarna-meka); }
+
+.pozdrav { font-size: 1.15rem; font-weight: 700; margin: 2px 0 14px; }
+.pozdrav .blijedo { font-size: 0.9rem; font-weight: 500; }
+
+.brza-biljeska {
+  display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;
+  background: var(--povrsina); border: 1.5px dashed color-mix(in srgb, var(--primarna) 55%, transparent);
+  border-radius: 16px; padding: 16px; margin-bottom: 12px; min-height: 72px;
+}
+.brza-biljeska:hover { background: var(--primarna-meka); }
+.brza-biljeska > svg { width: 28px; height: 28px; color: var(--primarna); flex: none; }
+.brza-biljeska strong { display: block; font-size: 1.05rem; }
+.brza-biljeska .blijedo { font-size: 0.86rem; }
+.znacka { min-width: 26px; height: 26px; padding: 0 8px; border-radius: 999px; background: var(--narandzasta); color: #fff; font-weight: 700; font-size: 0.85rem; display: grid; place-items: center; }
+
+.brzi-unos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px; }
+.brzi-unos a {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px;
+  border-radius: 14px; background: var(--povrsina); border: 1px solid color-mix(in srgb, var(--rub) 70%, transparent);
+  text-decoration: none; color: var(--tekst); font-size: 0.8rem; font-weight: 600; box-shadow: var(--sjena);
+}
+.brzi-unos a svg { width: 26px; height: 26px; color: var(--primarna); }
+.brzi-unos a:hover { background: var(--primarna-meka); }
+
+.brojke-red { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--povrsina); border: 1px solid color-mix(in srgb, var(--rub) 70%, transparent); border-radius: 14px; overflow: hidden; }
+.brojke-red > * { display: flex; flex-direction: column; align-items: center; padding: 12px 4px; text-decoration: none; color: inherit; }
+.brojke-red > * + * { border-left: 1px solid color-mix(in srgb, var(--rub) 70%, transparent); }
+.brojke-red .v { font-size: 1.5rem; font-weight: 700; color: var(--primarna); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.brojke-red .o { font-size: 0.72rem; color: var(--tekst-blijed); text-align: center; }
+.tiho-prazno { color: var(--tekst-blijed); font-size: 0.92rem; margin: 0; padding: 4px 2px; }
+
+.plocice { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 8px; }
+@media (min-width: 720px) { .plocice { grid-template-columns: repeat(3, 1fr); } }
+.plocice > a, .plocice > button {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px; min-height: 92px;
+  background: var(--povrsina); border: 1px solid color-mix(in srgb, var(--rub) 70%, transparent); border-radius: 14px;
+  box-shadow: var(--sjena); text-decoration: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.plocice svg { width: 24px; height: 24px; color: var(--primarna); margin-bottom: 6px; }
+.plocice strong { font-size: 0.98rem; }
+.plocice span { font-size: 0.8rem; color: var(--tekst-blijed); }
+.plocice > a:hover, .plocice > button:hover { background: var(--primarna-meka); }
+
+.fab-meni .dugme { min-width: 200px; justify-content: flex-start; background: var(--povrsina); }
+.fab-meni .dugme.istaknuto { background: var(--primarna); color: var(--na-primarnoj); border-color: var(--primarna); }
+
+.vise-detalja { border: 1px solid color-mix(in srgb, var(--rub) 80%, transparent); border-radius: 12px; padding: 0 14px; margin-bottom: 18px; background: var(--povrsina); }
+.vise-detalja > summary { cursor: pointer; padding: 12px 0; font-weight: 600; min-height: 44px; }
+.vise-detalja[open] > summary { margin-bottom: 8px; }
+
+.ai-chip { border-color: color-mix(in srgb, #7a5cc2 50%, transparent); color: #6b4fb5; background: color-mix(in srgb, #7a5cc2 7%, var(--povrsina)); font-weight: 600; }
+@media (prefers-color-scheme: dark) { .ai-chip { color: #c6b3f2; } }
+.ai-chip:disabled { opacity: 0.5; }
+.ai-cekanje { font-weight: 600; color: #6b4fb5; animation: ai-puls 1.4s ease-in-out infinite; }
+@keyframes ai-puls { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .ai-cekanje { animation: none; } }
+.ai-oznaka { font-size: 0.75rem; font-weight: 700; color: #6b4fb5; margin-bottom: 4px; }
+@media (prefers-color-scheme: dark) { .ai-oznaka, .ai-cekanje { color: #c6b3f2; } }
+
+.kompozer textarea { min-height: 110px; font-size: 1.02rem; }
+.biljeska .tekst-biljeske { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; line-height: 1.55; }
+.biljeska.obradjena { opacity: 0.7; }

@@ -1,5 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Ikona } from './Ikona';
+import { SrociDugme } from './AI';
+import type { VrstaTeksta } from '../lib/ai';
 import { dodajDane, danasIso, parsirajPrikaz, prikaz } from '../lib/datum';
 import { diktiranjePodrzano, dodajNaKraj, slusaj, type Slusanje } from '../lib/govor';
 import { liciNaIme, ocistiSifru, PORUKA_IME, uporediSifre } from '../lib/sifra';
@@ -79,8 +81,10 @@ export function AutoTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaEle
   return <textarea ref={ref} {...props} />;
 }
 
-export function TekstPolje({ labela, vrijednost, onChange, kratko, placeholder, obavezno, greska }: {
+export function TekstPolje({ labela, vrijednost, onChange, kratko, placeholder, obavezno, greska, ai, aiKontekst, autoFokus }: {
   labela: string; vrijednost: string; onChange: (v: string) => void; kratko?: boolean; placeholder?: string; obavezno?: boolean; greska?: string;
+  /** Prikaži dugme "✨ Sroči stručno" (AI) za ovu vrstu teksta. */
+  ai?: VrstaTeksta; aiKontekst?: string; autoFokus?: boolean;
 }) {
   const id = useId();
   const podrzano = diktiranjePodrzano();
@@ -119,7 +123,7 @@ export function TekstPolje({ labela, vrijednost, onChange, kratko, placeholder, 
       pomoc={!podrzano ? 'Koristi mikrofon na tastaturi telefona' : slusa ? 'Slušam… dodirni ponovo za kraj.' : undefined}>
       <div className={podrzano ? 's-mikrofonom' : ''}>
         <AutoTextarea id={id} value={vrijednost} onChange={(e) => onChange(e.target.value)} className={kratko ? 'kratko' : ''}
-          rows={kratko ? 1 : 3} placeholder={placeholder} spellCheck lang="bs" />
+          rows={kratko ? 1 : 3} placeholder={placeholder} spellCheck lang="bs" autoFocus={autoFokus} />
         {podrzano && (
           <button type="button" className={`mikrofon ${slusa ? 'slusa' : ''}`} onClick={prebaci}
             aria-label={slusa ? `Zaustavi diktiranje (${labela})` : `Diktiraj: ${labela}`} aria-pressed={slusa}>
@@ -127,6 +131,9 @@ export function TekstPolje({ labela, vrijednost, onChange, kratko, placeholder, 
           </button>
         )}
       </div>
+      {ai && vrijednost.trim().length > 15 && (
+        <div style={{ marginTop: 6 }}><SrociDugme tekst={vrijednost} vrsta={ai} kontekst={aiKontekst} onPrihvati={onChange} mali /></div>
+      )}
     </Polje>
   );
 }

@@ -177,6 +177,16 @@ Područja rada i sedmična norma sati su po **Pedagoškim standardima i normativ
 
 Zvanični obrazac dnevnika rada za USK nije javno dostupan na internetu. Ako škola ili Pedagoški zavod imaju svoj obrazac, print se može prilagoditi po njemu.
 
+### Brze bilješke i AI koji sroči tekst
+
+- **Brza bilješka** (veliko dugme na Početnoj ili **+ → Brza bilješka**) služi za ono što se desi „u hodu“: na hodniku, na odmoru, bez dogovorenog razgovora. Zapišeš ili izdiktiraš kako ti dođe i po želji izabereš učenika. Bilješka čeka u listi „Za obradu“.
+- **✨ Sroči stručno:** AI pretvara sirov tekst u uredan, stručan tekst, kakav piše iskusan školski psiholog. Grube ili kolokvijalne izraze zamjenjuje stručnim, ništa ne izmišlja i ne dodaje dijagnoze. Dugme postoji uz brze bilješke i uz tekstualna polja u formama (bilješke, zaključak, preporuke, zapažanja, dogovor). Prijedlog uvijek pregledaš, možeš ga urediti i tek onda prihvatiš.
+- **→ U razgovor:** brza bilješka se jednim klikom pretvara u formu novog razgovora, s već upisanim učenikom i tekstom.
+- **Privatnost:** prije slanja AI-ju imena i prezimena učenika (i u padežima) zamjenjuju se šiframa. Imena roditelja, nastavnika i drugih osoba app ne prepoznaje, pa ih u bilješke za AI ne piši.
+- **Dva načina rada:**
+  1. **Bez ključa:** „Kopiraj za AI“, zalijepiš u ChatGPT ili Claude, pa odgovor zalijepiš nazad.
+  2. **Sa ključem (jedan klik):** u Postavke → *Umjetna inteligencija* upiši Anthropic API ključ (console.anthropic.com → API Keys; plaća se po upotrebi, par feninga po bilješci). Ključ se čuva samo na tom uređaju i ne ide u rezervnu kopiju. AI radi samo uz internet. Bilješke se i offline normalno čuvaju, a sroče se kasnije.
+
 ## 7. Ostalo što je dobro znati
 
 - **PIN** (Postavke): 4–6 cifara. Traži se pri otvaranju i nakon 5 minuta neaktivnosti. Čuva se samo kao hash. **Zaboravljen PIN se ne može vratiti.** Tada ostaje samo „Obriši sve podatke“ i vraćanje iz rezervne kopije. PIN zaključava ekran appa, a za punu zaštitu drži i telefon i računar zaključanim.

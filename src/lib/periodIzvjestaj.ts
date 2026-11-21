@@ -155,24 +155,48 @@ export function sazetakPerioda(b: BrojePerioda, od: string, do_: string): string
 
 // ---------- Tekst za AI ----------
 
-/** Zamjenjuje poznata imena učenika njihovim šiframa (cijelo ime, pa prezime i ime posebno ako su duži od 2 slova). */
+/**
+ * Regex izvor za ime/prezime u svim padežima: osnova + do 3 slova nastavka.
+ * "Amela" → Amel…, "Petar" → Petar…/Petr… (nepostojano a), "Petrović" → Petrović… (Petrovića, Petrovićem).
+ */
+function obrazacImena(rijec: string): string {
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const osnove = new Set<string>([rijec]);
+  const bezSamoglasnika = rijec.replace(/[aeiou]$/i, '');
+  if (bezSamoglasnika.length >= 3) osnove.add(bezSamoglasnika);
+  const nepostojano = /^(.{2,})a([^aeiou])$/i.exec(rijec);
+  if (nepostojano) osnove.add(nepostojano[1] + nepostojano[2]);
+  return `(?:${[...osnove].sort((a, b) => b.length - a.length).map(esc).join('|')})\\p{L}{0,3}`;
+}
+
+/**
+ * Zamjenjuje poznata imena učenika njihovim šiframa prije slanja AI-ju (i u padežima):
+ *  1) ime + prezime (bilo kojim redom, bilo kako napisano) → šifra učenika
+ *  2) samo prezime (bilo kako napisano) → [učenik]
+ *  3) samo ime, napisano velikim početnim slovom → [učenik]  (malim slovom se ne dira, npr. "ali" ≠ Ali)
+ */
 export function anonimizuj(tekst: string, ucenici: Pick<Ucenik, 'sifra' | 'ime' | 'prezime'>[]): string {
   let t = tekst;
-  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // 1) puno ime (bilo kojim redom, bez obzira na velika/mala slova) → šifra
-  const puna: [string, string][] = [];
+  const granica = (src: string) => `(?<!\\p{L})${src}(?!\\p{L})`;
+  // kratka imena (Ali, Ena, Ema…) su i obične riječi, pa se kod njih traži veliko početno slovo
+  const punaImena: [string, string, number, string][] = [];
   for (const x of ucenici) {
     const ime = (x.ime ?? '').trim(), prez = (x.prezime ?? '').trim();
-    if (ime && prez) puna.push([`${ime} ${prez}`, x.sifra], [`${prez} ${ime}`, x.sifra]);
+    if (ime && prez) {
+      const oi = obrazacImena(ime), op = obrazacImena(prez), z = ime.length >= 4 ? 'giu' : 'gu';
+      punaImena.push([`${oi}\\s+${op}`, x.sifra, ime.length + prez.length, z], [`${op}\\s+${oi}`, x.sifra, ime.length + prez.length, z]);
+    }
   }
-  puna.sort((a, b) => b[0].length - a[0].length);
-  for (const [ime, sifra] of puna) t = t.replace(new RegExp(`(?<!\\p{L})${esc(ime)}(?!\\p{L})`, 'giu'), sifra);
-  // 2) samo ime ili samo prezime, napisano velikim početnim slovom → [učenik]
-  const pojedinacna = new Set<string>();
-  for (const x of ucenici) for (const d of [x.ime, x.prezime]) if (d && d.trim().length > 2) pojedinacna.add(d.trim());
-  for (const d of [...pojedinacna].sort((a, b) => b.length - a.length)) {
-    t = t.replace(new RegExp(`(?<!\\p{L})${esc(d)}(?!\\p{L})`, 'gu'), '[učenik]');
+  punaImena.sort((a, b) => b[2] - a[2]);
+  for (const [src, sifra, , z] of punaImena) t = t.replace(new RegExp(granica(src), z), sifra);
+
+  const prezimena = new Set<string>(), imena = new Set<string>();
+  for (const x of ucenici) {
+    if ((x.prezime ?? '').trim().length > 2) prezimena.add(x.prezime.trim());
+    if ((x.ime ?? '').trim().length > 2) imena.add(x.ime.trim());
   }
+  for (const p of [...prezimena].sort((a, b) => b.length - a.length)) t = t.replace(new RegExp(granica(obrazacImena(p)), 'giu'), '[učenik]');
+  for (const i of [...imena].sort((a, b) => b.length - a.length)) t = t.replace(new RegExp(granica(obrazacImena(i)), 'gu'), '[učenik]');
   return t;
 }
 

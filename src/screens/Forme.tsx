@@ -186,7 +186,7 @@ export function FormaRazgovor({ editId, sifra: pocetnaSifra, izNacrta }: { editI
             </Polje>
           </div>
         )}
-        {(noviUcenik || postojeci || p.razred) && (
+        {noviUcenik && (
           <Polje labela={noviUcenik ? 'Razred (nov učenik)' : 'Razred'} id="razred" obavezno={noviUcenik} greska={greske.razred}
             pomoc={noviUcenik ? 'Učenik s ovom šifrom još ne postoji – biće kreiran pri snimanju.' : 'Preuzeto iz kartona učenika; može se promijeniti za ovaj razgovor.'}>
             <input id="razred" type="text" value={p.razred} placeholder="npr. 6-2" onChange={(e) => postavi('razred', e.target.value)}
@@ -194,19 +194,20 @@ export function FormaRazgovor({ editId, sifra: pocetnaSifra, izNacrta }: { editI
           </Polje>
         )}
         <Chipovi id="vrsta" labela="Vrsta kontakta" opcije={opcije(sif, 'vrstaKontakta', p.vrstaKontakta)} vrijednost={p.vrstaKontakta} onChange={(v) => postavi('vrstaKontakta', v)} />
-        <div className="mreza-2">
-          <Izbor labela="Inicirao" opcije={opcije(sif, 'inicirao', p.inicirao)} vrijednost={p.inicirao} onChange={(v) => postavi('inicirao', v)} />
-          <Izbor labela="Razlog" opcije={opcije(sif, 'razlog', p.razlog)} vrijednost={p.razlog} onChange={(v) => postavi('razlog', v)} />
-        </div>
-        <TekstPolje labela="Bilješke" vrijednost={p.biljeske} onChange={(v) => postavi('biljeske', v)} placeholder="Tok razgovora, zapažanja…" />
-        <TekstPolje labela="Zaključak" vrijednost={p.zakljucak} onChange={(v) => postavi('zakljucak', v)} />
-        <TekstPolje labela="Preporuke" vrijednost={p.preporuke} onChange={(v) => postavi('preporuke', v)} />
-        <TekstPolje labela="Sljedeći korak" kratko vrijednost={p.sljedeciKorak} onChange={(v) => postavi('sljedeciKorak', v)} />
-        <DatumPolje labela="Datum sljedećeg kontakta" vrijednost={p.datumSljedecegKontakta} onChange={(v) => postavi('datumSljedecegKontakta', v)}
-          brzi={[{ naziv: '+7 dana', dana: 7 }, { naziv: '+14 dana', dana: 14 }, { naziv: '+30 dana', dana: 30 }]} />
+        <Izbor labela="Razlog" opcije={opcije(sif, 'razlog', p.razlog)} vrijednost={p.razlog} onChange={(v) => postavi('razlog', v)} />
+        <TekstPolje labela="Bilješke" vrijednost={p.biljeske} onChange={(v) => postavi('biljeske', v)} placeholder="Tok razgovora, zapažanja… (možeš i ukratko – AI će srediti)" ai="biljeske" aiKontekst={[p.vrstaKontakta, p.razlog && `razlog: ${p.razlog}`].filter(Boolean).join(', ')} />
         <Chipovi id="status" labela="Status slučaja" opcije={opcije(sif, 'statusSlucaja', p.statusSlucaja)} vrijednost={p.statusSlucaja}
           onChange={(v) => postavi('statusSlucaja', v)} mozeOdznaciti={false} />
-        <TrajanjePolje vrijednost={p.trajanjeMin} onChange={(v) => postavi('trajanjeMin', v)} />
+        <DatumPolje labela="Sljedeći kontakt" vrijednost={p.datumSljedecegKontakta} onChange={(v) => postavi('datumSljedecegKontakta', v)}
+          brzi={[{ naziv: '+7 dana', dana: 7 }, { naziv: '+14 dana', dana: 14 }, { naziv: '+30 dana', dana: 30 }]} />
+        <details className="vise-detalja" open={!!(p.inicirao || p.zakljucak || p.preporuke || p.sljedeciKorak) || undefined}>
+          <summary>Više detalja <span className="blijedo malo">(inicirao, zaključak, preporuke, sljedeći korak, trajanje)</span></summary>
+          <Izbor labela="Inicirao" opcije={opcije(sif, 'inicirao', p.inicirao)} vrijednost={p.inicirao} onChange={(v) => postavi('inicirao', v)} />
+          <TekstPolje labela="Zaključak" vrijednost={p.zakljucak} onChange={(v) => postavi('zakljucak', v)} ai="zakljucak" />
+          <TekstPolje labela="Preporuke" vrijednost={p.preporuke} onChange={(v) => postavi('preporuke', v)} ai="preporuke" />
+          <TekstPolje labela="Sljedeći korak" kratko vrijednost={p.sljedeciKorak} onChange={(v) => postavi('sljedeciKorak', v)} />
+          <TrajanjePolje vrijednost={p.trajanjeMin} onChange={(v) => postavi('trajanjeMin', v)} />
+        </details>
       </OkvirForme>
       {dijalog}
       {sacuvanId && <PoslijeSnimanja vrsta="razgovor" id={sacuvanId} onGotovo={() => idi(`/ucenici/${encodeURIComponent(p.sifra)}`, true)} />}
@@ -281,7 +282,7 @@ export function FormaRadionica({ editId, izNacrta }: { editId?: string; izNacrta
         </div>
         <TekstPolje labela="Cilj" vrijednost={p.cilj} onChange={(v) => postavi('cilj', v)} />
         <TekstPolje labela="Tok aktivnosti" vrijednost={p.tokAktivnosti} onChange={(v) => postavi('tokAktivnosti', v)} />
-        <TekstPolje labela="Zapažanja" vrijednost={p.zapazanja} onChange={(v) => postavi('zapazanja', v)} />
+        <TekstPolje labela="Zapažanja" vrijednost={p.zapazanja} onChange={(v) => postavi('zapazanja', v)} ai="opste" />
         <TagSifre labela="Učenici za praćenje" vrijednost={p.ucenicizaPracenje} onChange={(v) => postavi('ucenicizaPracenje', v)} ucenici={ucenici} />
         <TekstPolje labela="Evaluacija" vrijednost={p.evaluacija} onChange={(v) => postavi('evaluacija', v)} />
         <TekstPolje labela="Napomena" kratko vrijednost={p.napomena} onChange={(v) => postavi('napomena', v)} />
@@ -348,7 +349,7 @@ export function FormaSaradnja({ editId, sifra: pocetnaSifra, izNacrta }: { editI
         </Polje>
         <Chipovi id="nacin" labela="Način" opcije={opcije(sif, 'nacin', p.nacin)} vrijednost={p.nacin} onChange={(v) => postavi('nacin', v)} />
         <TekstPolje labela="Razlog" kratko vrijednost={p.razlog} onChange={(v) => postavi('razlog', v)} />
-        <TekstPolje labela="Dogovor / ishod" vrijednost={p.dogovorIshod} onChange={(v) => postavi('dogovorIshod', v)} />
+        <TekstPolje labela="Dogovor / ishod" vrijednost={p.dogovorIshod} onChange={(v) => postavi('dogovorIshod', v)} ai="opste" />
         <TrajanjePolje vrijednost={p.trajanjeMin} onChange={(v) => postavi('trajanjeMin', v)} />
       </OkvirForme>
       {dijalog}
@@ -446,7 +447,7 @@ export function FormaAktivnost({ editId, izNacrta }: { editId?: string; izNacrta
           </Polje>
         )}
         <TekstPolje labela={jeZamjena ? 'Tema / sadržaj časa' : 'Opis / sadržaj'} kratko vrijednost={p.tema} onChange={(v) => postavi('tema', v)} />
-        <TekstPolje labela="Zapažanja" vrijednost={p.zapazanja} onChange={(v) => postavi('zapazanja', v)} />
+        <TekstPolje labela="Zapažanja" vrijednost={p.zapazanja} onChange={(v) => postavi('zapazanja', v)} ai="opste" />
         <TekstPolje labela="Napomena" kratko vrijednost={p.napomena} onChange={(v) => postavi('napomena', v)} />
         <TrajanjePolje vrijednost={p.trajanjeMin} onChange={(v) => postavi('trajanjeMin', v)} />
         <Polje labela="Područje rada (dnevnik, 40-satna sedmica)" id="a-podrucje"

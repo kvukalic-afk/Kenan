@@ -8,7 +8,7 @@
 //  - Brisanja iz kopije (tombstones) brišu lokalni zapis ako lokalno nije mijenjan nakon brisanja.
 //  - Postavke se preuzimaju ako su novije, ali PIN i datum zadnje kopije ostaju lokalni.
 
-import type { Aktivnost, Obrisano, PlanStavka, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
+import type { Aktivnost, BrzaBiljeska, Obrisano, PlanStavka, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
 
 export interface Snimak {
   ucenici: Ucenik[];
@@ -19,12 +19,13 @@ export interface Snimak {
   razredi: Razred[];
   aktivnosti: Aktivnost[];
   plan: PlanStavka[];
+  brzeBiljeske: BrzaBiljeska[];
   obrisano: Obrisano[];
   postavke: Partial<Postavke> | null;
 }
 
-export type TabelaKopije = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan';
-export const TABELE_KOPIJE: TabelaKopije[] = ['ucenici', 'razgovori', 'radionice', 'saradnja', 'sifrarnik', 'razredi', 'aktivnosti', 'plan'];
+export type TabelaKopije = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan' | 'brzeBiljeske';
+export const TABELE_KOPIJE: TabelaKopije[] = ['ucenici', 'razgovori', 'radionice', 'saradnja', 'sifrarnik', 'razredi', 'aktivnosti', 'plan', 'brzeBiljeske'];
 
 export const NAZIVI_TABELA: Record<TabelaKopije, string> = {
   ucenici: 'Učenici',
@@ -35,6 +36,7 @@ export const NAZIVI_TABELA: Record<TabelaKopije, string> = {
   razredi: 'Razrednici',
   aktivnosti: 'Ostale aktivnosti',
   plan: 'Plan rada',
+  brzeBiljeske: 'Brze bilješke',
 };
 
 type AnyZapis = { id: string; updatedAt: string; createdAt: string };
@@ -48,7 +50,7 @@ export interface PlanUvoza {
   broj: { dodati: number; azurirati: number; obrisati: number };
 }
 
-const prazno = <T,>(): Record<TabelaKopije, T[]> => ({ ucenici: [], razgovori: [], radionice: [], saradnja: [], sifrarnik: [], razredi: [], aktivnosti: [], plan: [] });
+const prazno = <T,>(): Record<TabelaKopije, T[]> => ({ ucenici: [], razgovori: [], radionice: [], saradnja: [], sifrarnik: [], razredi: [], aktivnosti: [], plan: [], brzeBiljeske: [] });
 
 const novije = (a: string, b: string) => (a || '') > (b || '');
 

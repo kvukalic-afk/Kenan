@@ -10,6 +10,7 @@ import { NAZIVI_TABELA, TABELE_KOPIJE, type PlanUvoza } from '../lib/backup';
 import { nazivSkolskeGodine, prikazVremena, skolskaGodinaZaDatum } from '../lib/datum';
 import { hashirajPin, jeIspravanPin, PogresnaLozinka, provjeriPin } from '../lib/kripto';
 import { snimakBaze, usePostavke, useSifrarnik } from '../lib/podaci';
+import { AI_MODEL, sacuvajKljuc, sroci, ucitajKljuc } from '../lib/ai';
 import { napraviExcel, nazivExcelFajla } from '../lib/excel';
 import { preuzmi } from '../lib/preuzimanje';
 import type { Kategorija } from '../types';
@@ -59,6 +60,8 @@ export function Postavke({ otvoriKopiju }: { otvoriKopiju?: boolean }) {
             onChange={(v) => sacuvajOsnovno({ imenaUDokumentima: v })} />
           <p className="malo blijedo">U appu se imena uvijek vide. Isključi ovo ako dokument ili Excel daješ nekome kome ime učenika ne treba – tada stoji samo šifra.</p>
         </section>
+
+        <AIPostavke />
 
         <section className="kartica">
           <h2>PIN za otključavanje</h2>
@@ -367,5 +370,50 @@ export function BrisanjeSvega({ onZatvori }: { onZatvori: () => void }) {
         </div>
       </form>
     </Modal>
+  );
+}
+
+function AIPostavke() {
+  const toast = useToast();
+  const [kljuc, setKljuc] = useState(ucitajKljuc());
+  const [prikazi, setPrikazi] = useState(false);
+  const [test, setTest] = useState('');
+  const sacuvan = ucitajKljuc();
+
+  const isprobaj = async () => {
+    setTest('Provjeravam…');
+    try {
+      const r = await sroci('hodnik, ucenik U001 plakao, kaze da ga zezaju u razredu, rekla sam da dodje sutra', 'biljeska');
+      setTest(r);
+    } catch (e) {
+      setTest('✗ ' + (e as Error).message);
+    }
+  };
+
+  return (
+    <section className="kartica">
+      <h2>✨ Umjetna inteligencija (AI)</h2>
+      <p className="malo">
+        AI pretvara tvoje kratke, brzo zapisane bilješke u uredan stručan tekst (dugme <strong>„✨ Sroči stručno“</strong> uz bilješke).
+        Bez ključa radi preko ChatGPT-a (kopiraj–zalijepi). Sa ključem radi jednim klikom, direktno u appu.
+      </p>
+      <p className="malo blijedo">
+        Koristi se Claude (Anthropic, model {AI_MODEL}). Ključ dobiješ na <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a> (plaća se po upotrebi – jedna bilješka košta par feninga).
+        Ključ se čuva samo na ovom uređaju i ne ide u rezervnu kopiju. Prije slanja, imena učenika se zamjenjuju šiframa; tekst bilješke se šalje Anthropicu na obradu.
+      </p>
+      <Polje labela="API ključ" id="ai-kljuc" pomoc={sacuvan ? '✓ Ključ je sačuvan na ovom uređaju.' : 'Počinje sa sk-ant-…'}>
+        <div className="razdvoji">
+          <input id="ai-kljuc" type={prikazi ? 'text' : 'password'} autoComplete="off" spellCheck={false} className="rastegni" style={{ flex: 1 }}
+            value={kljuc} onChange={(e) => setKljuc(e.target.value)} placeholder="sk-ant-…" />
+          <button type="button" className="dugme" onClick={() => setPrikazi(!prikazi)}>{prikazi ? 'Sakrij' : 'Prikaži'}</button>
+        </div>
+      </Polje>
+      <div className="red-dugmadi">
+        <button type="button" className="dugme primarno" disabled={kljuc.trim() === sacuvan} onClick={() => { sacuvajKljuc(kljuc); toast(kljuc.trim() ? 'AI ključ sačuvan ✓' : 'AI ključ uklonjen'); setTest(''); }}>Sačuvaj</button>
+        {sacuvan && <button type="button" className="dugme" onClick={() => void isprobaj()}>Isprobaj</button>}
+        {sacuvan && <button type="button" className="dugme opasno" onClick={() => { sacuvajKljuc(''); setKljuc(''); toast('AI ključ uklonjen'); }}>Ukloni</button>}
+      </div>
+      {test && <div className="blok-teksta malo" style={{ marginTop: 10 }}>{test}</div>}
+    </section>
   );
 }

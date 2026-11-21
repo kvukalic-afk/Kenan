@@ -33,7 +33,7 @@ export function Statistika() {
     return [...g].sort((a, b) => b - a);
   }, [podaci, postavke.skolskaGodinaPocetak]);
 
-  if (!podaci) return <Zaglavlje naslov="Statistika" />;
+  if (!podaci) return <Zaglavlje naslov="Izvještaji" />;
   const s = izracunajStatistiku(podaci, izabrana, period);
 
   const excel = async () => {
@@ -51,8 +51,18 @@ export function Statistika() {
 
   return (
     <>
-      <Zaglavlje naslov="Statistika" />
+      <Zaglavlje naslov="Izvještaji" />
       <main className="sadrzaj sirok">
+        <div className="plocice">
+          <a href="#/izvjestaj"><Ikona ime="kalendar" /><strong>Dnevni / sedmični</strong><span>izvještaj šta sam radio/la</span></a>
+          <a href={`#/print/dnevnik/${danasIso().slice(0, 7)}`}><Ikona ime="print" /><strong>Dnevnik rada</strong><span>ovaj mjesec, za print</span></a>
+          <a href={`#/plan?godina=${izabrana}`}><Ikona ime="aktivnost" /><strong>Plan rada</strong><span>godišnji i mjesečni</span></a>
+          <a href={`#/print/izvjestaj/${izabrana}/${period !== 'godina' ? period : new Date().getMonth() < 8 ? 'II' : 'I'}`}><Ikona ime="print" /><strong>Polugodišnji</strong><span>izvještaj o radu</span></a>
+          <a href={`#/print/izvjestaj/${izabrana}/godina`}><Ikona ime="print" /><strong>Godišnji</strong><span>izvještaj o radu</span></a>
+          <button type="button" onClick={excel} disabled={izvoz}><Ikona ime="excel" /><strong>{izvoz ? 'Pravim…' : 'Excel'}</strong><span>svi podaci u tabeli</span></button>
+        </div>
+
+        <div className="naslov-sekcije"><h2>Statistika</h2></div>
         <div className="mreza-2" style={{ marginBottom: 12 }}>
           <label>
             <span className="malo blijedo">Školska godina</span>
@@ -70,14 +80,6 @@ export function Statistika() {
           </div>
         </div>
 
-        <div className="red-dugmadi" style={{ marginBottom: 16 }}>
-          <a className="dugme" href={`#/print/izvjestaj/${izabrana}/godina`}><Ikona ime="print" /> Preuzmi godišnji izvještaj (print)</a>
-          <a className="dugme" href={`#/print/izvjestaj/${izabrana}/${period === 'II' ? 'II' : 'I'}`}><Ikona ime="print" /> Preuzmi polugodišnji izvještaj (print)</a>
-          <a className="dugme" href="#/izvjestaj"><Ikona ime="kalendar" /> Dnevni / sedmični izvještaj</a>
-          <a className="dugme" href={`#/plan?godina=${izabrana}`}><Ikona ime="aktivnost" /> Plan rada</a>
-          <a className="dugme" href={`#/print/dnevnik/${danasIso().slice(0, 7)}`}><Ikona ime="print" /> Dnevnik rada (ovaj mjesec)</a>
-          <button type="button" className="dugme" onClick={excel} disabled={izvoz}><Ikona ime="excel" /> {izvoz ? 'Pravim…' : 'Izvezi sve u Excel'}</button>
-        </div>
 
         <div className="brojke">
           <div className="brojka"><div className="v">{s.razlicitihUcenika}</div><div className="o">različitih učenika s kojima je rađeno ({NAZIV_PERIODA[period]})</div></div>

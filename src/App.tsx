@@ -20,6 +20,7 @@ import { Zakljucano } from './screens/Zakljucano';
 import { IzvjestajPeriod } from './screens/IzvjestajPeriod';
 import { UnosIzTeksta } from './screens/UnosIzTeksta';
 import { PlanRada } from './screens/PlanRada';
+import { BrzeBiljeske } from './screens/BrzeBiljeske';
 import { PrintAktivnost, PrintDnevnik, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
 import type { Period } from './lib/statistika';
 
@@ -111,6 +112,7 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
   else if (d0 === 'ucenici') { ekran = <Karton key={d1} sifra={d1} />; fab = true; }
   else if (d0 === 'radionice') { ekran = <Radionice key={ruta.upit.get('prikaz') ?? ''} pocetniPrikaz={ruta.upit.get('prikaz') === 'aktivnosti' ? 'aktivnosti' : 'radionice'} />; fab = true; }
   else if (d0 === 'statistika') { ekran = <Statistika />; fab = true; }
+  else if (d0 === 'biljeske') ekran = <BrzeBiljeske />;
   else if (d0 === 'plan') ekran = <PlanRada godina={ruta.upit.get('godina') ? Number(ruta.upit.get('godina')) : undefined} mjesec={ruta.upit.get('mjesec') ?? undefined} />;
   else if (d0 === 'unos-tekst') { ekran = <UnosIzTeksta />; navigacija = false; }
   else if (d0 === 'izvjestaj') ekran = <IzvjestajPeriod od={ruta.upit.get('od') ?? undefined} do={ruta.upit.get('do') ?? undefined} />;
