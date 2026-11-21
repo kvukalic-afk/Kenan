@@ -157,7 +157,7 @@ export function sazetakPerioda(b: BrojePerioda, od: string, do_: string): string
 
 /**
  * Regex izvor za ime/prezime u svim padežima: osnova + do 3 slova nastavka.
- * "Amela" → Amel…, "Petar" → Petar…/Petr… (nepostojano a), "Petrović" → Petrović… (Petrovića, Petrovićem).
+ * "Marija" → Marij…, "Petar" → Petar…/Petr… (nepostojano a), "Petrović" → Petrović… (Petrovića, Petrovićem).
  */
 function obrazacImena(rijec: string): string {
   const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
