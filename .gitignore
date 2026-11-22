@@ -37,3 +37,6 @@ video/b09/build/
 video/b09/out/*.mp4
 video/b10/build/
 video/b10/out/*.mp4
+video/b11/build/
+video/b11/out/*.mp4
+video/b11/out/*.png
