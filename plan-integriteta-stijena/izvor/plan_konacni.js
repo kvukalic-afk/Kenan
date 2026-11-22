@@ -555,3 +555,7 @@ const doc = new d.Document({
   ],
 });
 d.Packer.toBuffer(doc).then((b) => { fs.writeFileSync(OUT, b); console.log('OK', OUT, b.length, N); });
+
+if (process.env.IZVOZ_RIZIKA) {
+  fs.writeFileSync(process.env.IZVOZ_RIZIKA, JSON.stringify({ oblasti: OBLASTI, rizici: Rx.map((r) => ({ id: r.id, o: r.o, naziv: r.naziv, opis: r.opis, f: r.f, k: r.k, a: r.a, v: r.v, p: r.p, x: r.x, nivo: r.nivo, prioritet: r.prioritet, m: r.m })) }, null, 1));
+}
