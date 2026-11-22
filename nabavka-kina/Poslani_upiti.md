@@ -27,3 +27,16 @@ Drive linkovi (može ih otvoriti svako ko ima link):
 - **Kina, ostali:** Xingwei Shenzhen (xingweiprint@aliyun.com, 50–500 kom), CNNBOX (mia.zhang@cnnbox.com, naljepnice od 200 ukupno)
 - **Srbija, kutije:** SWA TIM (reklamnimaterijal.com), Grafo Marketing Novi Sad (grafodigital@gmail.com), Deto/kutijice.com (office@deto.rs), Elite Print (eliteprintstudio@gmail.com)
 - **Srbija, samo naljepnice:** LabelPrint.rs (prodaja@labelprint.rs), Xtim (office@xtim.co.rs), DM Trade (office@dmtrade.rs)
+
+## 22.11.2026: drugi krug, RFQ-HV-002 (premium kutija, JEDAN dizajn, cijena je prioritet)
+PDF u prilogu: `RFQ_HELVERA_premium_box_v2_EN.pdf`. Poslano na 15 adresa:
+- **Kao odgovor na njihovu poruku:** MJC Pack (sales7@meijiacai.com), Fine Packing / LabelPeptide (vicky@finepacking.com, cc order@labelpeptide.com), Shantou Weiyi (vip111@weiyi-packaging.com, cc david@)
+- **Izmjena upita, Kina:** Meikei, Yucai, Hanlong, Yison, Hengxinmao, Vial Packaging, Hjtc
+- **Izmjena upita, Srbija (na srpskom):** Bari Print, Pressia, Grafolik, PROOF. Traženi izvozna faktura bez srpskog PDV-a i izjava o porijeklu (CEFTA).
+- **BiH:** Pepi-Karttis Mostar. Pitali smo za 100 kom bez alata od 250 KM.
+
+## Do sada primljeno
+- **Pepi-Karttis (Mostar):** 500 kom 2,95 KM, 1.000 kom 2,50 KM, + 250 KM alat, bez PDV-a. Za 100 kom nisu dali cijenu.
+- **Arsenov (Novi Sad):** odbili.
+- **Alibaba (zahtjev za ponudu):** Starshine 0,52 $, Xiamen Yuhong 0,50 $, Fuzhou Xixi Yingu 0,09 $ (standardne kutije, MOQ 100)
+- **MJC Pack i Fine Packing:** MOQ 100 po dizajnu. Zato smo prešli na jedan dizajn.
