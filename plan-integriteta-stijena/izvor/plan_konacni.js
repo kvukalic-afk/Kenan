@@ -26,7 +26,16 @@ const cist = (s) => String(s)
   .replace(/; u izvornoj verziji je predviđeno njegovo donošenje/g, '').replace(/ \(zakonski rok je već protekao\)/g, '')
   .replace(/Nove zakonske obaveze od 2025\/2026/g, 'Nove zakonske obaveze')
   .replace(/dokumentovanje (izbora )?nije dokumentovano/g, 'dokumentovanje $1nije uspostavljeno');
-const Rx = base.R.map((r) => {
+const PATCH = {
+  'Z2.3': (r) => { r.f = [['P', 'Popis imovine se vrši jednom godišnje; zaduženja opreme po zaposlenima nisu potpuna.'], ['O', 'Školski prostor se povremeno ustupa trećim licima (npr. lokalnom sportskom klubu); svako korištenje treba biti zasnovano na pisanoj odluci ili ugovoru.']]; },
+  'Z4.2': (r) => { r.m = [{ ...r.m[0], t: 'Donijeti interni akt o zaštiti ličnih podataka i osigurati ormare s bravom za čuvanje povjerljive dokumentacije stručne službe (pedagog, psiholog, socijalni radnik) i kadrovskih dosijea.', tr: 'Iz budžeta škole, prema ponudi' }]; },
+  'Z6.1': (r) => { r.f = [['P', 'Prostorije s osjetljivom dokumentacijom i blagajnom ne zaključavaju se dosljedno van radnog vremena.'], ['O', 'Evidencija zaduženja ključeva i pečata ne provjerava se periodično.']]; r.k = ['Evidencija zaduženja ključeva i pečata', ...r.k]; r.ao = 'Evidencija zaduženja ključeva i pečata postoji; periodična provjera nije propisana.'; r.m = [{ ...r.m[0], t: 'Godišnje provjeravati evidenciju zaduženja pečata, štambilja i ključeva i njenu usklađenost sa stvarnim stanjem.', akt: ['Godišnja provjera evidencije uz zapisnik', 'Ažuriranje evidencije pri svakoj promjeni zaduženja'], rok: 'Godišnje, septembar', ind: 'Zapisnik o godišnjoj provjeri' }]; },
+  'Z6.2': (r) => { r.opis = 'Mogućnost neovlaštenog pristupa elektronskom dnevniku i drugim elektronskim evidencijama, dijeljenja pristupnih podataka ili gubitka podataka.'; },
+  'Z10.1': (r) => { r.k = ['Sanduče s natpisom „ZA PRIJAVU KORUPCIJE“ na vidnom mjestu', 'Ovlašteno lice za prijem prijava (sekretar škole)']; r.ao = 'Sanduče s propisanim natpisom postoji; pravilnik o internom prijavljivanju, rješenje o ovlaštenom licu i evidencija prijava se uspostavljaju.'; r.m = [r.m[0], { ...r.m[1], t: 'Sanduče komisijski otvarati i voditi evidenciju prijava; informisati zaposlene, učenike i roditelje o načinima prijave korupcije.', akt: ['Utvrditi dinamiku komisijskog otvaranja sandučeta (najmanje mjesečno)', 'Održati informisanje na Nastavničkom vijeću i roditeljskim sastancima'], tr: 'Bez dodatnih troškova', ind: 'Zapisnici o otvaranju sandučeta; evidencija informisanja' }]; },
+  'S3.1': (r) => { r.k = ['Prikupljanje ponuda više agencija', ...r.k]; r.ao = 'Ponude više agencija se prikupljaju; javno poređenje ponuda i raspored pogodnosti nisu dokumentovani.'; },
+};
+const Rx = base.R.map((r0) => {
+  const r = JSON.parse(JSON.stringify(r0)); if (PATCH[r.id]) PATCH[r.id](r);
   const x = { ...r };
   if (V1.includes(x.id)) { x.v = 1; x.izv = 'PR'; }
   x.f = x.f.map(([t, s]) => [t, cist(s)]); x.k = x.k.map(cist); x.ao = cist(x.ao); x.opis = cist(x.opis);
@@ -41,7 +50,7 @@ const CLAN = [
   ['Elvira Vatić', 'nastavnik', 'Član'], ['Dževaira Džehverović', 'socijalni radnik', 'Član'], ['Semira Džakulić', 'sekretar škole', 'Član'], ['Kenan Vukalić', 'psiholog', 'Član'],
 ];
 const ZAD = ['Koordinacija; oblasti S1, S2, S4, S6', 'Oblasti S1, S3, S7', 'Oblasti Z2, Z3, Z9', 'Oblasti Z5, S4, S7', 'Oblasti S2, S5, Z11', 'Oblasti Z1, Z4, Z5, Z6, Z10', 'Oblasti Z7, Z8, S5; analiza rezultata ankete'];
-const brDat = () => [left(`Broj: ${B}`, { after: 0 }), left(`Datum: ${B}`)];
+const brDat = (dt = '23.11.2026. godine') => [left(`Broj: ${B}`, { after: 0 }), left(`Datum: ${dt}`)];
 const potpis = (role, name) => [spacer(6), right(role, { bold: true, after: 360, keepNext: true }), right('_______________________________', { after: 0, keepNext: true }), right(name)];
 const art = (n) => center(`Član ${n}.`, { bold: true, before: 80, after: 60, keepNext: true });
 
@@ -54,7 +63,7 @@ function naslovna() {
     center('NACRT', { bold: true, size: 32, color: C.blue, after: 200 }),
     center('izrađen u skladu sa Zakonom o prevenciji korupcije u Unsko-sanskom kantonu i Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu', { size: 21, color: C.grey, after: 500 }),
     new d.Paragraph({ alignment: AT.CENTER, children: [image('slike/skola.jpg', 460, 227)], spacing: { after: 700 } }),
-    center(`Cazin, ${B} 2026. godine`, { bold: true, size: 22 }),
+    center('Cazin, 23.11.2026. godine', { bold: true, size: 22 }),
   ];
 }
 
@@ -67,7 +76,7 @@ function osnovne() {
     P('**Imena i prezimena koordinatora i članova radne grupe za izradu plana integriteta:**', { keepNext: true }),
     table([600, 3400, 2400, 3238], [['Rb.', 'Ime i prezime', 'Radno mjesto', 'Uloga u radnoj grupi'], ...CLAN.map((c, i) => [`${i + 1}.`, c[0], c[1], c[2]])], { size: 19 }),
     spacer(6),
-    kv([['Datum usvajanja plana integriteta', B], ['Ime i prezime osobe zadužene za nadzor nad praćenjem provođenja plana integriteta', B], ['Broj telefona osobe zadužene za nadzor nad praćenjem provođenja plana integriteta', B]]),
+    kv([['Datum usvajanja plana integriteta', B], ['Ime i prezime osobe zadužene za nadzor nad praćenjem provođenja plana integriteta', 'Dževaira Džehverović, socijalni radnik'], ['Broj telefona osobe zadužene za nadzor nad praćenjem provođenja plana integriteta', '062/192-401']]),
   ];
 }
 
@@ -82,8 +91,8 @@ function uvod() {
     P('Plan integriteta je interni dokument koji sadrži detaljnu procjenu podložnosti radnih mjesta, radnih procesa i poslova nastanku i razvoju korupcije i drugih oblika pristrasnog postupanja, te skup konkretnih mjera kojima se preveniraju i otklanjaju mogućnosti za nastanak i razvoj korupcije i obezbjeđuje povjerenje građana u rad institucije (član 43. stav (1) Zakona). Plan je preventivni mehanizam: identifikacija rizika ne znači da je u školi utvrđena korupcija ili nepravilnost, nego da su prepoznate okolnosti koje bi mogle do njih dovesti.'),
     P('Cilj Plana integriteta JU OŠ „Stijena“ je održavanje i jačanje integriteta, transparentnosti i profesionalne etike, te utvrđivanje, smanjivanje, uklanjanje i sprečavanje mogućnosti za nastanak nepravilnosti u radu, etički i profesionalno neprihvatljivih postupaka i korupcije.'),
     H2('2.2. Tok izrade plana integriteta'),
-    P('Izrada plana pokrenuta je Odlukom o izradi plana integriteta broj 610-93/2025 od 28.01.2025. godine. Radna grupa je izradila program rada (broj 610-95/2025), provela anonimnu anketu zaposlenih i izradila prvu verziju plana prema modelu Agencije za prevenciju korupcije i koordinaciju borbe protiv korupcije BiH. Plan je vraćen na izmjenu i doradu, o čemu je škola obavijestila Ured dopisom broj 610-278/2026 od 31.03.2026. godine.'),
-    P(`Nakon stupanja na snagu Zakona o prevenciji korupcije u Unsko-sanskom kantonu (primjena od 1. 1. 2026. godine) i donošenja Uputstva, direktor je Odlukom o izmjenama i dopunama Odluke o izradi plana integriteta (broj ${B} od ${B}) uskladio postupak s novim propisima i dopunio sastav radne grupe. Radna grupa je plan u cijelosti izradila prema metodologiji i modelima Uputstva, uz korištenje rezultata ranije provedene ankete zaposlenih.`),
+    P('Izrada plana pokrenuta je Odlukom o izradi plana integriteta broj 610-93/2025 od 28.01.2025. godine. Radna grupa je izradila program rada (broj 610-95/2025), provela anonimnu anketu zaposlenih u skladu s programom (rok: 14.02.2025.) i izradila prvu verziju plana prema modelu Agencije za prevenciju korupcije i koordinaciju borbe protiv korupcije BiH. Plan je vraćen na izmjenu i doradu, o čemu je škola obavijestila Ured dopisom broj 610-278/2026 od 31.03.2026. godine.'),
+    P(`Nakon stupanja na snagu Zakona o prevenciji korupcije u Unsko-sanskom kantonu (primjena od 1. 1. 2026. godine) i donošenja Uputstva, direktor je Odlukom o izmjenama i dopunama Odluke o izradi plana integriteta (broj ${B} od 23.11.2026. godine) uskladio postupak s novim propisima i dopunio sastav radne grupe. Radna grupa je plan u cijelosti izradila prema metodologiji i modelima Uputstva, uz korištenje rezultata ranije provedene ankete zaposlenih.`),
   ];
 }
 
@@ -116,8 +125,8 @@ function odluke() {
     P('Za članove radne grupe zadužene za izradu plana integriteta u JU OŠ „Stijena“ imenuju se:', { indent: { left: 400 }, after: 40 }),
     ...CLAN.slice(1).map((c, i) => left(`${i + 1}. ${c[0]}, ${c[1]}, član`, { after: 20, indent: { left: 800 } })),
     P('“', { indent: { left: 400 } }),
-    art(3), P('Član 3. stav 1. i 2. Odluke mijenjaju se i glase: „Radna grupa dužna je da u roku od 15 dana od dana donošenja Odluke o izmjenama i dopunama dostavi direktoru program rada za izradu plana integriteta. Radna grupa dužna je da sačini prijedlog plana integriteta i dostavi ga direktoru u roku od 45 dana od dana donošenja Odluke o izmjenama i dopunama.“'),
-    art(4), P('Radna grupa u izradi plana koristi rezultate anonimne ankete zaposlenih provedene u postupku izrade plana integriteta 2025. godine, bez izmjene izvornih podataka.'),
+    art(3), P('Član 3. stav 1. i 2. Odluke mijenjaju se i glase: „Radna grupa dužna je da direktoru dostavi program rada i prijedlog plana integriteta izrađen u skladu s Uputstvom, najkasnije u roku od 30 dana od dana donošenja Odluke o izmjenama i dopunama.“'),
+    art(4), P('Radna grupa u izradi plana koristi rezultate anonimne ankete zaposlenih provedene u skladu s Programom rada broj 610-95/2025, bez izmjene izvornih podataka.'),
     art(5), P('Ostale odredbe Odluke ostaju nepromijenjene.'),
     art(6), P('Ova odluka stupa na snagu danom donošenja.'),
     center('Obrazloženje', { bold: true, before: 120, after: 60 }),
@@ -152,7 +161,7 @@ function obavjestenje() {
     P('PREDMET: Obavijest zaposlenima o preduzimanju aktivnosti usmjerenih na izradu plana integriteta JU OŠ „Stijena“, dostavlja se'),
     P('Poštovane kolegice i kolege,'),
     P('Vlada Unsko-sanskog kantona je, na prijedlog Ureda za borbu protiv korupcije Unsko-sanskog kantona, usvojila Uputstvo za izradu i provođenje planova integriteta u institucijama u Unsko-sanskom kantonu. U skladu s tim Uputstvom i Zakonom o prevenciji korupcije u Unsko-sanskom kantonu, obaveza naše institucije je da izradi i usvoji plan integriteta.'),
-    P(`S tim u vezi, informišem vas da sam dana ${B} donio Odluku o izmjenama i dopunama Odluke o izradi plana integriteta (broj ${B} od dana ${B}). Ovom odlukom za menadžera/koordinatora radne grupe imenovana je Sabina Žunić, pedagog, a za članove radne grupe imenovani su: Edin Pehlić, Dženita Hepić, Elvira Vatić, Dževaira Džehverović, Semira Džakulić i Kenan Vukalić.`),
+    P(`S tim u vezi, informišem vas da sam dana 23.11.2026. godine donio Odluku o izmjenama i dopunama Odluke o izradi plana integriteta (broj ${B} od dana 23.11.2026. godine). Ovom odlukom za menadžera/koordinatora radne grupe imenovana je Sabina Žunić, pedagog, a za članove radne grupe imenovani su: Edin Pehlić, Dženita Hepić, Elvira Vatić, Dževaira Džehverović, Semira Džakulić i Kenan Vukalić.`),
     P('Kako bismo na što sveobuhvatniji način prikupili informacije i podatke koji su radnoj grupi potrebni za izradu plana integriteta, neophodna je podrška, pomoć te aktivno učešće svih zaposlenih u našoj instituciji. Naglašavam obavezu da su svi zaposleni u JU OŠ „Stijena“ dužni da pruže svu pomoć i informacije potrebne za proces izrade i provođenje plana integriteta, te da sarađuju sa radnom grupom.'),
     P('S poštovanjem,'), ...potpis('DIREKTOR ŠKOLE', 'Mersad Vatić'),
     left('Dostavljeno: oglasna tabla; a/a.', { size: 19 }),
@@ -161,25 +170,26 @@ function obavjestenje() {
 
 function program() {
   const rowsSrc = SRC.program.map((r) => (/^Faza/.test(r[1] || '') ? [{ t: r[1], b: true, fill: C.band, span: 2 }, { t: r[2], b: true, fill: C.band }, { t: r[3], b: true, fill: C.band }] : [r[0], r[1], r[2], r[3]]));
+  const IZ = 'Izvršeno, 23.11.2026.';
   const F = [
     ['Faza 1: MJERA/AKTIVNOST', 'ODGOVORNA OSOBA', 'ROK'],
-    ['Donošenje Odluke o izmjenama i dopunama Odluke o izradi (imenovanje radne grupe)', 'Direktor', B],
-    ['Priprema Programa rada radne grupe', 'Radna grupa', '15 dana od Odluke o izmjenama'],
-    ['Odobravanje Programa rada radne grupe', 'Direktor', '3 dana od prijema Programa'],
-    ['Obavještavanje zaposlenih o planiranim aktivnostima na izradi plana integriteta', 'Direktor', 'Uz odobrenje Programa'],
+    ['Donošenje Odluke o izmjenama i dopunama Odluke o izradi (imenovanje radne grupe)', 'Direktor', IZ],
+    ['Priprema Programa rada radne grupe', 'Radna grupa', IZ],
+    ['Odobravanje Programa rada radne grupe', 'Direktor', IZ],
+    ['Obavještavanje zaposlenih o planiranim aktivnostima na izradi plana integriteta', 'Direktor', IZ],
     ['Faza 2: MJERA/AKTIVNOST', 'ODGOVORNA OSOBA', 'ROK'],
-    ['Početna procjena stanja integriteta', 'Radna grupa', '20 dana od Odluke o izmjenama'],
-    ['Prikupljanje neophodne dokumentacije za izradu plana integriteta', 'Radna grupa; sekretar; knjigovođa', '20 dana od Odluke o izmjenama'],
-    ['Pregled i analiza prikupljene dokumentacije u vezi sa procjenom izloženosti i otpornosti institucije rizicima', 'Radna grupa', '25 dana od Odluke o izmjenama'],
-    ['Analiza rezultata anonimne ankete zaposlenih (provedene 2025. godine)', 'Radna grupa; psiholog', '25 dana od Odluke o izmjenama'],
-    ['Identifikacija i analiza rizika i faktora rizika', 'Radna grupa', '30 dana od Odluke o izmjenama'],
-    ['Procjena i rangiranje rizika', 'Radna grupa', '30 dana od Odluke o izmjenama'],
+    ['Početna procjena stanja integriteta', 'Radna grupa', IZ],
+    ['Prikupljanje neophodne dokumentacije za izradu plana integriteta', 'Radna grupa; sekretar; knjigovođa', IZ],
+    ['Pregled i analiza prikupljene dokumentacije u vezi sa procjenom izloženosti i otpornosti institucije rizicima', 'Radna grupa', IZ],
+    ['Analiza rezultata anonimne ankete zaposlenih (provedene u skladu s Programom 610-95/2025)', 'Radna grupa; psiholog', IZ],
+    ['Identifikacija i analiza rizika i faktora rizika', 'Radna grupa', IZ],
+    ['Procjena i rangiranje rizika', 'Radna grupa', IZ],
     ['Faza 3: MJERA/AKTIVNOST', 'ODGOVORNA OSOBA', 'ROK'],
-    ['Odabir prijedloga mjera za unapređenje integriteta i određivanje prioriteta predloženih mjera', 'Radna grupa', '38 dana od Odluke o izmjenama'],
-    ['Izrada i podnošenje Izvještaja o stanju integriteta u instituciji', 'Radna grupa', '42 dana od Odluke o izmjenama'],
+    ['Odabir prijedloga mjera za unapređenje integriteta i određivanje prioriteta predloženih mjera', 'Radna grupa', IZ],
+    ['Izrada i podnošenje Izvještaja o stanju integriteta u instituciji', 'Radna grupa', IZ],
     ['Faza 4: MJERA/AKTIVNOST', 'ODGOVORNA OSOBA', 'ROK'],
-    ['Priprema i dostavljanje rukovodiocu institucije nacrta plana integriteta', 'Radna grupa', '45 dana od Odluke o izmjenama'],
-    ['Pregled predloženog plana integriteta i dostavljanje istog na mišljenje Uredu za borbu protiv korupcije Unsko-sanskog kantona', 'Direktor', '8 dana od prijema nacrta'],
+    ['Priprema i dostavljanje rukovodiocu institucije nacrta plana integriteta', 'Radna grupa', '23.11.2026.'],
+    ['Pregled predloženog plana integriteta i dostavljanje istog na mišljenje Uredu za borbu protiv korupcije Unsko-sanskog kantona', 'Direktor', '23.11.2026.'],
     ['Usvajanje plana integriteta / imenovanje osobe zadužene za nadzor nad provođenjem plana integriteta', 'Direktor', 'Nakon pozitivnog mišljenja Ureda'],
     ['Dostava usvojenog plana Uredu i objava na web stranici škole', 'Direktor; sekretar', '15 dana od usvajanja'],
   ];
@@ -202,19 +212,19 @@ function program() {
     H2('5.2. Program rada radne grupe za izradu plana integriteta (nastavak postupka)', { pb: true }),
     kv([['Naziv institucije', 'Javna ustanova Osnovna škola „Stijena“'], ['Rukovodilac institucije', 'Mersad Vatić, direktor'], ['Menadžer/koordinator radne grupe', 'Sabina Žunić, pedagog'],
       ['Članovi radne grupe', 'Edin Pehlić, Dženita Hepić, Elvira Vatić, Dževaira Džehverović, Semira Džakulić, Kenan Vukalić'], ['Angažovani vanjski konsultanti', 'Nema'],
-      ['Datum odobravanja programa rada', B], ['Početak izrade plana integriteta', B], ['Očekivani završetak', B]], 3000, WP, { size: 19 }),
+      ['Datum odobravanja programa rada', '23.11.2026. godine'], ['Početak izrade plana integriteta', '28.01.2025. godine (nastavak 23.11.2026. godine)'], ['Očekivani završetak', '23.11.2026. godine (dostava nacrta direktoru)']], 3000, WP, { size: 19 }),
     spacer(6),
     table([600, 5038, 2200, 1800], rows, { size: 18, header: 0 }),
     spacer(6),
     P('**Zaduženja članova** radne grupe utvrđena su u dijelu 3.3. **Način praćenja provođenja programa rada:** menadžer/koordinator vodi zapisnike sa sastanaka radne grupe (datum, prisutni, dnevni red, zaključci, zaduženja i rokovi) i nakon svake faze pisano izvještava direktora. Zapisnici čine sastavni dio dokumentacije plana integriteta.'),
     ...potpis('DIREKTOR ŠKOLE', 'Mersad Vatić'),
-    H2('5.3. Zapisnici sa sastanaka radne grupe', { pb: true }),
-    P('Radna grupa održava najmanje četiri sastanka. Za svaki sastanak sačinjava se zapisnik prema sljedećem obrascu:'),
-    ...zap.flatMap(([n2, dr]) => [
-      P(`**Zapisnik – ${n2.toLowerCase()} radne grupe za izradu plana integriteta JU OŠ „Stijena“**`, { keepNext: true, before: 160, after: 60 }),
-      table([2600, 7038], [[{ t: 'Datum i vrijeme', b: true, fill: C.light }, B], [{ t: 'Mjesto', b: true, fill: C.light }, B], [{ t: 'Prisutni', b: true, fill: C.light }, B], [{ t: 'Odsutni', b: true, fill: C.light }, B],
-        [{ t: 'Dnevni red', b: true, fill: C.light }, dr], [{ t: 'Zaključci i zaduženja', b: true, fill: C.light }, '\n\n\n'], [{ t: 'Zapisničar / Menadžer-koordinator', b: true, fill: C.light }, `${B} / Sabina Žunić`]], { header: 0, size: 18, cantSplit: true }),
-    ]),
+    H2('5.3. Zapisnik sa sastanka radne grupe', { pb: true }),
+    P('**Zapisnik sa sastanka radne grupe za izradu plana integriteta JU OŠ „Stijena“**', { keepNext: true, after: 60 }),
+    table([2600, 7038], [[{ t: 'Datum', b: true, fill: C.light }, '23.11.2026. godine'], [{ t: 'Mjesto', b: true, fill: C.light }, 'JU OŠ „Stijena“, Stijena bb, Cazin'],
+      [{ t: 'Prisutni', b: true, fill: C.light }, CLAN.map((c) => `${c[0]}, ${c[1]}`).join('; ')], [{ t: 'Odsutni', b: true, fill: C.light }, '—'],
+      [{ t: 'Dnevni red', b: true, fill: C.light }, ['1. Usklađivanje izrade plana integriteta sa Zakonom o prevenciji korupcije u USK i Uputstvom', '2. Razmatranje rezultata ankete zaposlenih i početne procjene stanja integriteta', '3. Utvrđivanje rizika, ocjena njihovog intenziteta i prijedlog mjera', '4. Utvrđivanje Izvještaja o stanju integriteta i nacrta plana integriteta']],
+      [{ t: 'Zaključci', b: true, fill: C.light }, [`1. Utvrđen je nacrt Plana integriteta JU OŠ „Stijena“ sa ${N.uk} identifikovana rizika i ${N.mj} mjera za unapređenje integriteta.`, '2. Usvojen je Izvještaj radne grupe o stanju integriteta (Prilog 1).', '3. Nacrt plana dostavlja se direktoru s prijedlogom da ga uputi Uredu za borbu protiv korupcije USK radi davanja mišljenja.']],
+      [{ t: 'Zapisničar', b: true, fill: C.light }, '_______________________________'], [{ t: 'Menadžer/koordinator', b: true, fill: C.light }, 'Sabina Žunić  _______________________']], { header: 0, size: 18, cantSplit: true }),
   ];
 }
 
@@ -234,8 +244,8 @@ function okvir() {
     ['Zakon o kontroli i ograničenoj upotrebi duhana, duhanskih i ostalih proizvoda za pušenje', 'Sl. novine FBiH'], ['Uredba sa zakonskom snagom o ustanovama', ''],
   ];
   const kant = ['Pravilnik o definiranju kriterija za proglašavanje uposlenika za čijim je radom djelimično ili potpuno prestala potreba, te uvjeti preuzimanja uposlenika iz jedne škole u drugu', 'Pravilnik s kriterijima o bodovanju kandidata za prijem u radni odnos u odgojno-obrazovnim ustanovama', 'Pravilnik o praćenju, napredovanju i ocjenjivanju znanja učenika osnovne i srednje škole', 'Pravilnik o provođenju Smotre sposobnosti, znanja i stvaralaštva i sporta učenika osnovnih i srednjih škola USK-a', 'Pravilnik o polaganju stručnog ispita nastavnika i stručnih saradnika', 'Pravilnik o odgoju i obrazovanju, praćenju i ocjenjivanju djece sa poteškoćama u razvoju u USK-a', 'Pravilnik o načinu obavljanja obavezne dezinfekcije, dezinsekcije i deratizacije', 'Pravilnik o uvjetima i načinu ostvarivanja prava na naknadu plaće za vrijeme privremene spriječenosti za rad', 'Pravilnik o sadržaju i vođenju evidencije o radnicima', 'Pravilnik o učeničkim zadrugama', 'Pravilnik o kriteriju i postupku osnivanja škole kad nije osiguran dovoljan broj učenika', 'Pravilnik o stručno-pedagoškom nadzoru (Obrazac SPN 1-10)', 'Pravilnik o bržem napredovanju učenika i završavanju dva razreda u istoj školskoj godini', 'Pravilnik o upisu osnovne škole u registar', 'Pravilnik o kriterijima za proglašenje učenika generacije', 'Pravilnik o načinu i obliku provođenja odgojno-obrazovne podrške i stručnog tretmana', 'Pravilnik o vođenju evidencije o neprihvatljivim oblicima ponašanja i zaštiti učenika', 'Pravilnik o formiranju i radu školskih odbora', 'Pravilnik o kriterijima o školskim nazivima i simbolima i organizaciji školskih manifestacija', 'Pravilnik o organizaciji i realizaciji izleta, studijskih posjeta, ekskurzija, kampovanja/logorovanja, društveno-korisnog rada i drugih oblika odgojno-obrazovnog rada u osnovnoj i srednjoj školi', 'Smjernice za izuzimanje djeteta od pohađanja određene škole', 'Instrukcija o načinu vođenja dokumentacije i evidencije i izdavanja svjedodžbi', 'Protokol o postupanju u slučaju napuštanja i nepohađanja nastave', 'Protokol o postupanju u slučaju nasilja koje uključuje djecu', 'Protokol za prevenciju i postupanje u slučajevima prosjačenja i drugih oblika eksploatacije djece u Gradu Cazinu'];
-  const interni = [['Pravila škole', B, 'Na snazi'], ['Pravilnik o radu', '610-1133/24 od 27.09.2024.', 'Na snazi'], ['Pravilnik o reprezentaciji i poklonima', B, 'Na snazi'], ['Pravilnik o internim kontrolama i internim kontrolnim postupcima', B, 'Na snazi'], ['Pravilnik o kućnom redu', B, 'Na snazi'], ['Pravilnik o postupku direktnog sporazuma', B, 'Na snazi; usklađuje se sa važećim Zakonom o javnim nabavkama'], ['Pravilnik o disciplinskoj i materijalnoj odgovornosti radnika', B, 'Na snazi'], ['Pravilnik o naknadi štete', B, 'Na snazi'], ['Pravilnik o radu Vijeća učenika; Poslovnik o radu Vijeća učenika', B, 'Na snazi'], ['Poslovnik o radu Vijeća roditelja škole', B, 'Na snazi'], ['Poslovnik o radu Školskog odbora', B, 'Na snazi'],
-    ['Pravilnik o postupku internog prijavljivanja korupcije (čl. 22. Zakona)', B, 'Mjera M-Z10.1.1'], ['Rješenje o ovlaštenom licu za prijem prijava korupcije (čl. 18. Zakona)', B, 'Mjera M-Z10.1.1'], ['Kodeks ponašanja zaposlenih', B, 'Mjera M-Z7.1.1'], ['Akt o zaštiti ličnih podataka', B, 'Mjera M-Z4.2.1'], ['Procedura upravljanja sukobom interesa i registar izjava', B, 'Mjera M-Z8.1.1']];
+  const interni = [['Pravila škole', 'Na snazi'], ['Pravilnik o radu (broj 610-1133/24 od 27.09.2024.)', 'Na snazi'], ['Pravilnik o reprezentaciji i poklonima', 'Na snazi'], ['Pravilnik o internim kontrolama i internim kontrolnim postupcima', 'Na snazi'], ['Pravilnik o kućnom redu', 'Na snazi'], ['Pravilnik o postupku direktnog sporazuma', 'Na snazi; usklađuje se sa važećim Zakonom o javnim nabavkama'], ['Pravilnik o disciplinskoj i materijalnoj odgovornosti radnika', 'Na snazi'], ['Pravilnik o naknadi štete', 'Na snazi'], ['Pravilnik o radu Vijeća učenika; Poslovnik o radu Vijeća učenika', 'Na snazi'], ['Poslovnik o radu Vijeća roditelja škole', 'Na snazi'], ['Poslovnik o radu Školskog odbora', 'Na snazi'],
+    ['Pravilnik o postupku internog prijavljivanja korupcije (čl. 22. Zakona)', 'Mjera M-Z10.1.1'], ['Rješenje o ovlaštenom licu za prijem prijava korupcije (čl. 18. Zakona)', 'Mjera M-Z10.1.1'], ['Kodeks ponašanja zaposlenih', 'Mjera M-Z7.1.1'], ['Akt o zaštiti ličnih podataka', 'Mjera M-Z4.2.1'], ['Procedura upravljanja sukobom interesa i registar izjava', 'Mjera M-Z8.1.1']];
   return [
     H1('6. Zakonski okvir i interni propisi'),
     P('Radna grupa je izvršila popis normativnih akata kojima se uređuje rad škole: zakona, uredbi, strateških dokumenata, kantonalnih pravilnika, instrukcija i protokola, te internih akata škole.'),
@@ -244,7 +254,7 @@ function okvir() {
     H2('6.2. Kantonalni pravilnici, instrukcije i protokoli'),
     ...kant.map((t) => bullet(t, 0, { size: 20 })),
     H2('6.3. Interni akti škole'),
-    table([4600, 2400, 2638], [['Interni akt', 'Broj i datum', 'Status'], ...interni], { size: 18 }),
+    table([6000, 3638], [['Interni akt', 'Status'], ...interni.map((r) => [r[0], r[1].replace('Mjera ', 'Donosi se – mjera ')])], { size: 18 }),
   ];
 }
 
@@ -276,7 +286,7 @@ function izvjestaj() {
     P('Početna procjena izvršena je na osnovu analize zakonskih i podzakonskih akata i internih propisa, opisa radnih mjesta, stručnog znanja članova radne grupe o funkcionisanju škole i rezultata anonimne ankete zaposlenih (Prilog 2). Utvrđeno je da se poslovni procesi u pravilu obavljaju u skladu s propisima i da zaposleni u velikoj mjeri imaju povjerenje u zakonitost rada škole. Istovremeno su utvrđene sljedeće slabosti:'),
     ...['sistem internog prijavljivanja nije u potpunosti usklađen sa Zakonom o prevenciji korupcije u USK, a većina zaposlenih ne zna kako anonimno prijaviti kršenje integriteta;', 'nije određena osoba niti uspostavljena procedura za upravljanje sukobom interesa;', 'interni akti nisu dostupni na jednom mjestu niti objavljeni na web stranici škole;', 'teme integriteta i etike ne razmatraju se redovno, a kodeks ponašanja zaposlenih nije donesen;', 'mali broj izvršilaca u administrativno-finansijskoj službi ograničava podjelu dužnosti;', 'kriteriji ocjenjivanja, zapošljavanja i raspodjele dodatnih zaduženja nisu dovoljno transparentni prema zaposlenima, roditeljima i kandidatima.'].map((t) => bullet(t)),
     H2('8.2. Mehanizam otpornosti institucije na eventualne propuste'),
-    P('Škola ima istaknuto sanduče za prijavu koruptivnog ponašanja. Mehanizmi otpornosti su nadzor Školskog odbora i osnivača, stručno-pedagoški nadzor, prosvjetna inspekcija, interne kontrole prema Pravilniku o internim kontrolama i internim kontrolnim postupcima, kolektivno odlučivanje stručnih organa i pravo roditelja na prigovor. Ovi mehanizmi jačaju se mjerama iz dijela 11, posebno donošenjem pravilnika o internom prijavljivanju, određivanjem ovlaštenog lica i označavanjem sandučeta natpisom „ZA PRIJAVU KORUPCIJE“.'),
+    P('Škola ima na vidnom mjestu istaknuto sanduče s natpisom „ZA PRIJAVU KORUPCIJE“. Mehanizmi otpornosti su nadzor Školskog odbora i osnivača, stručno-pedagoški nadzor, prosvjetna inspekcija, interne kontrole prema Pravilniku o internim kontrolama i internim kontrolnim postupcima, kolektivno odlučivanje stručnih organa i pravo roditelja na prigovor. Ovi mehanizmi jačaju se mjerama iz dijela 11, posebno donošenjem pravilnika o internom prijavljivanju i rješenja o ovlaštenom licu.'),
     H2('8.3. Analiza ranjivih aktivnosti'),
     table([1700, 3000, 2938, 2000], [['Aspekt', 'Rezultat ankete (Prilog 2)', 'Procjena radne grupe', 'Povezani rizici'],
       ['A – Rizične aktivnosti i podložnost korupciji', '64,86% ne zna kako anonimno prijaviti kršenje integriteta; 44% ne zna gdje su dostupni interni akti', 'Kontrolni okvir za prijave i dostupnost akata treba ojačati', 'Z1.3, Z10.1, Z11.2'],
@@ -362,7 +372,7 @@ function statusQuo() {
   return [
     H1('10. Analiza postojećeg stanja (status quo)'),
     H2('10.1. Analiza na temelju ankete'),
-    P('Radna grupa je provela anonimnu anketu zaposlenih pomoću upitnika za samoprocjenu integriteta, koji sadrži 34 pitanja grupisana u šest oblasti (A–F). Upitnik i izvještaj o rezultatima nalaze se u Prilogu 2. Ključni rezultati i njihova veza s rizicima:'),
+    P('Radna grupa je provela anonimnu anketu zaposlenih pomoću upitnika za samoprocjenu integriteta, koji sadrži 34 pitanja grupisana u šest oblasti (A–F), u skladu s Programom rada broj 610-95/2025 (rok: 14.02.2025.). Upitnik i izvještaj o rezultatima nalaze se u Prilogu 2. Ključni rezultati i njihova veza s rizicima:'),
     table([1500, 3200, 3438, 1500], [['Oblast / pitanje', 'Rezultat ankete', 'Zaključak radne grupe', 'Rizici'],
       ['A / 1', '91,89% svoja radna mjesta ne smatra podložnim korupciji', 'Potrebna je edukacija o prepoznavanju rizika u svakodnevnom radu.', 'Z7.1'],
       ['A / 5, 6', '83,78% smatra da se zakonska regulativa dosljedno provodi; 78,38% ocjenjuje mehanizam odgovornosti odličnim ili dobrim', 'Visok nivo povjerenja u zakonitost rada škole.', 'Z1.1'],
@@ -434,7 +444,7 @@ function prijave() {
     H1('13. Postupak prijave korupcije i zaštita prijavitelja'),
     P('Postupak je usklađen s članovima 13–37. Zakona o prevenciji korupcije u USK, a detaljno se uređuje Pravilnikom o postupku internog prijavljivanja korupcije (član 22. Zakona).'),
     H2('13.1. Ovlašteno lice'),
-    P(`Za prijem i postupanje po prijavama korupcije direktor rješenjem određuje ovlašteno lice (član 18. Zakona): ${B} (ime i prezime, radno mjesto), kontakt: 037/543-536; osstijena@hotmail.com. Ovlašteno lice ima VII stepen stručne spreme, završen pravni fakultet (240 ECTS ili ekvivalent) i najmanje tri godine radnog iskustva nakon sticanja visoke stručne spreme, odnosno, izuzetno, VII stepen druge vrste stručne spreme.`),
+    P('Za prijem i postupanje po prijavama korupcije direktor rješenjem određuje ovlašteno lice (član 18. Zakona): **Semira Džakulić, sekretar škole**, a u slučaju odsutnosti ili sukoba interesa **Mersad Vatić, direktor**. Kontakt: 037/543-536; osstijena@hotmail.com. Ovlaštena lica imaju VII stepen stručne spreme (240 ECTS), u skladu sa članom 18. Zakona.'),
     H2('13.2. Načini podnošenja prijave'),
     ...['putem protokola škole;', 'putem pošte;', 'putem elektronske pošte (osstijena@hotmail.com);', 'putem sandučeta s natpisom „ZA PRIJAVU KORUPCIJE“, postavljenog na vidnom i dostupnom mjestu (član 19. Zakona);', 'usmeno, na zapisnik kod ovlaštenog lica.'].map((t) => bullet(t)),
     P('Eksterna prijava podnosi se Uredu za borbu protiv korupcije Unsko-sanskog kantona (Bihaćkih branilaca 2, 77000 Bihać; prijave korupcije: 037/305-507, prijavikorupciju@antikorupcijausk.ba; online prijava na web stranici Ureda). Interno prijavljivanje nije uslov za eksterno prijavljivanje (član 23. Zakona).'),
@@ -461,13 +471,13 @@ function zavrsni() {
     H1('14. Završni akti'),
     P('Plan integriteta i Odluka o usvajanju i provođenju plana integriteta donose se u nacrtu, a konačno se donose nakon pribavljenog pozitivnog mišljenja Ureda za borbu protiv korupcije Unsko-sanskog kantona.', { size: 20 }),
     H2('14.1. Nacrt odluke o usvajanju i provođenju plana integriteta'),
-    ...brDat(),
+    ...brDat(B),
     P(`Na osnovu člana 43., 46., 47. i 49. ${ZAKON} i ${UPU}, a nakon pribavljenog mišljenja Ureda za borbu protiv korupcije Unsko-sanskog kantona broj ${B} od ${B}, direktor Javne ustanove Osnovna škola „Stijena“ donosi`),
     center('ODLUKU', { bold: true, before: 120, after: 0 }), center('o usvajanju i provođenju Plana integriteta JU OŠ „Stijena“', { bold: true }),
     art(1), P('Ovom odlukom usvaja se Plan integriteta Javne ustanove Osnovna škola „Stijena“ koji je pripremila radna grupa za izradu plana integriteta.'),
-    art(2), P(`Stupanjem na snagu ove odluke razrješavaju se dužnosti menadžer/koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj 610-93/2025 od 28.01.2025. godine i Odluka o izmjenama i dopunama broj ${B} od ${B}).`),
+    art(2), P(`Stupanjem na snagu ove odluke razrješavaju se dužnosti menadžer/koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj 610-93/2025 od 28.01.2025. godine i Odluka o izmjenama i dopunama broj ${B} od 23.11.2026. godine).`),
     art(3),
-    P(`(1) Za osobu zaduženu za nadzor nad provođenjem plana integriteta imenuje se: ${B} (ime i prezime i funkcija).`),
+    P('(1) Za osobu zaduženu za nadzor nad provođenjem plana integriteta imenuje se: Dževaira Džehverović, socijalni radnik.'),
     P('(2) Osoba zadužena za nadzor nad provođenjem plana integriteta ima zadatak da prati provođenje Plana integriteta, a posebno dijela koji se odnosi na mjere za poboljšanje integriteta institucije, te davanje prijedloga za njegovo unapređenje.'),
     P('(3) Svi zaposleni u JU OŠ „Stijena“ dužni su obavijestiti osobu zaduženu za nadzor nad provođenjem plana integriteta o situaciji, pojavi ili radnji koje na osnovu razumnog uvjerenja mogu dovesti do narušavanja integriteta institucije.'),
     P('(4) Zaposleni u instituciji treba da, na zahtjev osobe zadužene za nadzor nad provođenjem plana integriteta, dostave potrebne podatke i informacije od značaja za provođenje plana integriteta, a koje nisu u suprotnosti sa važećim propisima.'),
@@ -477,10 +487,10 @@ function zavrsni() {
     ...potpis('DIREKTOR ŠKOLE', 'Mersad Vatić'),
     left('Dostavljeno: Uredu za borbu protiv korupcije Unsko-sanskog kantona; osobi zaduženoj za nadzor nad provođenjem Plana integriteta; članovima radne grupe; a/a.', { size: 19 }),
     H2('14.2. Nacrt rješenja o određivanju menadžera integriteta', { pb: true }),
-    ...brDat(),
+    ...brDat(B),
     P(`Na osnovu člana 44. tačka f) i člana 46. stav (1) ${ZAKON}, direktor Javne ustanove Osnovna škola „Stijena“ donosi`),
     center('RJEŠENJE', { bold: true, before: 120, after: 0 }), center('o određivanju menadžera integriteta', { bold: true }),
-    P(`1. ${B} (ime i prezime, radno mjesto) određuje se za menadžera integriteta JU OŠ „Stijena“ – osobu odgovornu za praćenje i nadzor nad provođenjem Plana integriteta.`),
+    P(`1. Dževaira Džehverović, socijalni radnik, određuje se za menadžera integriteta JU OŠ „Stijena“ – osobu odgovornu za praćenje i nadzor nad provođenjem Plana integriteta.`),
     P('2. Menadžer integriteta prati provođenje mjera iz Plana integriteta, vodi evidenciju o njihovom provođenju, podnosi polugodišnji izvještaj direktoru, priprema godišnji izvještaj Uredu za borbu protiv korupcije USK i daje prijedloge za izmjenu plana.'),
     P('3. Direktor i svi zaposleni dužni su menadžeru integriteta, na njegov zahtjev, dostaviti potrebne podatke i informacije od značaja za provođenje plana integriteta (član 46. stav (2) Zakona).'),
     P('4. Rješenje stupa na snagu danom donošenja Odluke o usvajanju i provođenju plana integriteta.'),
@@ -489,8 +499,8 @@ function zavrsni() {
     ...brDat(),
     P(`Na osnovu člana 18. ${ZAKON}, direktor Javne ustanove Osnovna škola „Stijena“ donosi`),
     center('RJEŠENJE', { bold: true, before: 120, after: 0 }), center('o određivanju ovlaštenog lica za prijem prijava korupcije i postupanje po prijavama', { bold: true }),
-    P(`1. ${B} (ime i prezime, stručna sprema, radno mjesto), koji/a ispunjava uslove iz člana 18. Zakona, određuje se za ovlašteno lice za prijem prijava korupcije i postupanje po prijavama u JU OŠ „Stijena“.`),
-    P(`2. U slučaju odsutnosti ili sukoba interesa ovlaštenog lica, poslove obavlja ${B} (ime i prezime, radno mjesto).`),
+    P(`1. Semira Džakulić, sekretar škole, VII stepen stručne spreme (240 ECTS), koja ispunjava uslove iz člana 18. Zakona, određuje se za ovlašteno lice za prijem prijava korupcije i postupanje po prijavama u JU OŠ „Stijena“.`),
+    P('2. U slučaju odsutnosti ili sukoba interesa ovlaštenog lica, poslove obavlja Mersad Vatić, direktor škole, VII stepen stručne spreme (240 ECTS).'),
     P('3. Ovlašteno lice postupa po prijavama u skladu s članovima 20. i 21. Zakona i Pravilnikom o postupku internog prijavljivanja korupcije, vodi povjerljivu evidenciju prijava i štiti identitet prijavitelja.'),
     P('4. Rješenje stupa na snagu danom donošenja.'),
     ...potpis('DIREKTOR ŠKOLE', 'Mersad Vatić'),
