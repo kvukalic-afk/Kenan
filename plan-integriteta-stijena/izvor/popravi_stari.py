@@ -18,6 +18,15 @@ def _cl(o):
     if isinstance(o, dict): return {k: _cl(v) for k, v in o.items()}
     return o
 R = _cl(R)
+_TERM = [('Menadžer integriteta', 'Osoba zadužena za nadzor'), ('menadžera integriteta', 'osobe zadužene za nadzor'), ('menadžeru integriteta', 'osobi zaduženoj za nadzor'), ('menadžer integriteta', 'osoba zadužena za nadzor')]
+def _term(o):
+    if isinstance(o, str):
+        for a, b in _TERM: o = o.replace(a, b)
+        return o
+    if isinstance(o, list): return [_term(x) for x in o]
+    if isinstance(o, dict): return {k: _term(v) for k, v in o.items()}
+    return o
+R = _term(R)
 TBL = list(d.tables)  # reference na izvorne tabele prije umetanja novih
 B = '____________'
 BR = {'odluka': '610-1015/2026', 'obavijest': '610-1016/2026', 'program': '610-1017/2026', 'izvjestaj': '610-1018/2026', 'dopis': '610-1019/2026'}
@@ -148,7 +157,7 @@ PL = {1: '1 – neznatne', 2: '2 – značajne', 3: '3 – vrlo značajne'}
 # ───────── 1. Naslovna i osnovne informacije
 replace_in(find('Cazin, juni 2021'), 'juni 2021. godine', '23.11.2026. godine')
 set_text(find('Datum usvajanje plana integriteta'), f'Datum usvajanja plana integriteta {B}')
-for old, new in [('1. Sabina Žunić,pedagog - koordinator radne grupe', '1. Sabina Žunić, pedagog – menadžer/koordinator radne grupe'), ('3. Dženita Hepić,knjigovođa', '3. Dženita Hepić, knjigovođa'), ('5. Dževaira Džehverović, soc.radnik', '5. Dževaira Džehverović, socijalni radnik')]:
+for old, new in [('1. Sabina Žunić,pedagog - koordinator radne grupe', '1. Sabina Žunić, pedagog - koordinator radne grupe'), ('3. Dženita Hepić,knjigovođa', '3. Dženita Hepić, knjigovođa'), ('5. Dževaira Džehverović, soc.radnik', '5. Dževaira Džehverović, soc. radnik')]:
     hit = [p for p in paras() if norm(p.text) == old]
     if hit: set_text(hit[0], new)
 p6 = find('6. Semira Džakulić,sekretar')
@@ -166,15 +175,15 @@ for p in [p for p in paras() if norm(p.text) == 'Datum: 28.01.2025. godine']:
 set_text(find('Na osnovu Strategije za borbu protiv korupcije 2015'),
          'Na osnovu člana 43. stav (2) Zakona o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 24/25) i Strategije za borbu protiv korupcije Unsko-sanskog kantona 2023.-2027. („Službeni glasnik Unsko-sanskog kantona“, broj 26/23), a u vezi sa realizacijom mjera i aktivnosti predviđenih Akcionim planom za provođenje Strategije za borbu protiv korupcije Unsko-sanskog kantona, direktor JU OŠ „Stijena“ donosi:')
 set_text(find('Za koordinatora radne grupe zadužene za izradu plana integriteta u JU OŠ „Stijena, imenuje se'),
-         'Za menadžera/koordinatora radne grupe zadužene za izradu plana integriteta u JU OŠ „Stijena“, imenuje se Sabina Žunić, pedagog škole.')
-for old, new in [('1. Edin Pehlić,nastavnik', '1. Edin Pehlić, nastavnik'), ('2. Dženita Hepić,knjigovođa škole', '2. Dženita Hepić, knjigovođa škole'), ('3. Elvira Vatić,nastavnik', '3. Elvira Vatić, nastavnik'), ('4. Dževaira Džehverović,soc.radnik škole', '4. Dževaira Džehverović, socijalni radnik škole')]:
+         'Za koordinatora radne grupe zadužene za izradu plana integriteta u JU OŠ „Stijena“, imenuje se Sabina Žunić, pedagog škole.')
+for old, new in [('1. Edin Pehlić,nastavnik', '1. Edin Pehlić, nastavnik'), ('2. Dženita Hepić,knjigovođa škole', '2. Dženita Hepić, knjigovođa škole'), ('3. Elvira Vatić,nastavnik', '3. Elvira Vatić, nastavnik'), ('4. Dževaira Džehverović,soc.radnik škole', '4. Dževaira Džehverović, soc. radnik škole')]:
     set_text(find(old), new)
 p5 = find('5. Semira Džakilić,sekretar škole')
 set_text(p5, '5. Semira Džakulić, sekretar škole')
 add_after(p5, '6. Kenan Vukalić, psiholog škole')
-replace_in(find('Mandat koordinatora i članova radne grupe'), 'Mandat koordinatora', 'Mandat menadžera/koordinatora')
-set_text(find('3. Agenciji za prevenciju korupcije i koordinaciju borbe protiv korupcije'), '3. Uredu za borbu protiv korupcije Unsko-sanskog kantona;')
-set_text(find('4. Timu Ureda za borbu protiv korupcije Vlade USK'), '4. Oglasna tabla;')
+_ag = find('3. Agenciji za prevenciju korupcije i koordinaciju borbe protiv korupcije'); _ag._p.getparent().remove(_ag._p)
+set_text(find('4. Timu Ureda za borbu protiv korupcije Vlade USK'), '3. Uredu za borbu protiv korupcije Unsko-sanskog kantona;')
+set_text([p for p in paras() if norm(p.text) == '5. a/a'][0], '4. a/a')
 
 # ───────── 4. Obavijest
 set_text(find('Broj: 610-94/2025'), f"Broj: {BR['obavijest']}")
@@ -184,9 +193,9 @@ set_text(find('izradila je i usvojila Pravila za izradu i provođenje planova in
 set_text(find('S tim u vezi, informišem vas da sam dana 28.01.2025'),
          f'S tim u vezi, informišem vas da sam dana 23.11.2026. godine donio Odluku o izradi plana integriteta i imenovanju članova radne grupe za izradu plana integriteta (broj:\u00a0{BR["odluka"].replace("-", "\u2011")}).')
 set_text(find('Ovom odlukom za koordinatora radne grupe imenovan je Sabina Žunić'),
-         'Ovom odlukom za menadžera/koordinatora radne grupe imenovana je Sabina Žunić, pedagog škole, a za članove radne grupe imenovani su:')
+         'Ovom odlukom za koordinatora radne grupe imenovana je Sabina Žunić, pedagog škole, a za članove radne grupe imenovani su:')
 set_text(find('1. Edina Pehlić,nastavnik'), '1. Edin Pehlić, nastavnik')
-for old, new in [('2. Dženita Hepić,knjigovođa', '2. Dženita Hepić, knjigovođa'), ('3. Elvira Vatić,nastavnik', '3. Elvira Vatić, nastavnik'), ('4. Dževaira Džehverović,soc.radnik škole', '4. Dževaira Džehverović, socijalni radnik škole')]:
+for old, new in [('2. Dženita Hepić,knjigovođa', '2. Dženita Hepić, knjigovođa'), ('3. Elvira Vatić,nastavnik', '3. Elvira Vatić, nastavnik'), ('4. Dževaira Džehverović,soc.radnik škole', '4. Dževaira Džehverović, soc. radnik škole')]:
     hits = [p for p in paras() if norm(p.text) == old]
     for h in hits: set_text(h, new)
 p5b = find('5. Semira Džakulić, sekretar škole', nth=1)
@@ -319,8 +328,8 @@ lines = [
     (f'Na osnovu člana 43., 46., 47. i 49. Zakona o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 24/25) i Uputstva za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 11/26), a nakon pribavljenog mišljenja Ureda za borbu protiv korupcije Unsko-sanskog kantona broj {B} od {B}, direktor JU OŠ „Stijena“ donosi', False, False),
     ('ODLUKU o usvajanju i provođenju Plana integriteta JU OŠ „Stijena“', True, False),
     ('Član 1. Ovom odlukom usvaja se Plan integriteta JU OŠ „Stijena“ koji je pripremila radna grupa za izradu plana integriteta.', False, False),
-    (f'Član 2. Stupanjem na snagu ove odluke razrješavaju se dužnosti menadžer/koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj\u00a0' + BR['odluka'].replace('-', '\u2011') + ' od 23.11.2026. godine).', False, False),
-    ('Član 3. (1) Za osobu zaduženu za nadzor nad provođenjem plana integriteta (menadžera integriteta) imenuje se Dževaira Džehverović, socijalni radnik. (2) Osoba zadužena za nadzor prati provođenje Plana integriteta, a posebno dijela koji se odnosi na mjere za poboljšanje integriteta, te daje prijedloge za njegovo unapređenje. (3) Svi zaposleni dužni su obavijestiti osobu zaduženu za nadzor o situaciji, pojavi ili radnji koje na osnovu razumnog uvjerenja mogu dovesti do narušavanja integriteta institucije i, na njen zahtjev, dostaviti potrebne podatke i informacije. (4) Škola svake druge godine procjenjuje učinkovitost plana integriteta i godišnje, do 31. marta tekuće godine za prethodnu godinu, dostavlja Uredu izvještaj o provođenju plana integriteta.', False, False),
+    (f'Član 2. Stupanjem na snagu ove odluke razrješavaju se dužnosti koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj\u00a0' + BR['odluka'].replace('-', '\u2011') + ' od 23.11.2026. godine).', False, False),
+    ('Član 3. (1) Za osobu zaduženu za nadzor nad provođenjem plana integriteta (menadžera integriteta) imenuje se Dževaira Džehverović, soc. radnik. (2) Osoba zadužena za nadzor prati provođenje Plana integriteta, a posebno dijela koji se odnosi na mjere za poboljšanje integriteta, te daje prijedloge za njegovo unapređenje. (3) Svi zaposleni dužni su obavijestiti osobu zaduženu za nadzor o situaciji, pojavi ili radnji koje na osnovu razumnog uvjerenja mogu dovesti do narušavanja integriteta institucije i, na njen zahtjev, dostaviti potrebne podatke i informacije. (4) Škola svake druge godine procjenjuje učinkovitost plana integriteta i godišnje, do 31. marta tekuće godine za prethodnu godinu, dostavlja Uredu izvještaj o provođenju plana integriteta.', False, False),
     ('Član 4. Plan integriteta objavljuje se na web stranici škole i dostavlja Uredu za borbu protiv korupcije Unsko-sanskog kantona u roku od 15 dana od dana donošenja ove odluke. Plan važi četiri godine od dana usvajanja.', False, False),
     ('Član 5. Ova odluka stupa na snagu danom donošenja.', False, False),
     ('Direktor škole: ____________________ /Vatić Mersad/', False, False),
