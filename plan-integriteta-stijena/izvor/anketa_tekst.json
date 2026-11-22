@@ -1,0 +1,315 @@
+{
+ "upitnik": [
+  [
+   "A - Procjena rizičnih aktivnosti i podložnosti koruptivnom djelovanju"
+  ],
+  [
+   "1. Da li obavljate aktivnosti koje su, po Vašem mišljenju, podložne nepravilnostima, korupciji i koruptivnom dejstvu?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "2. Ukoliko obavljate aktivnosti koje su podložne nepravilnostima, korupciji i koruptivnom dejstvu (tzv.“rizične aktivnosti“), možete li navesti dva primjera za iste: Primjer broj 1:______________________________________________________________",
+   [
+    "Primjer broj 2:______________________________________________________________"
+   ]
+  ],
+  [
+   "3. Da li smatrate da u Školi nedostaje neki interni akt koji se odnosi na neko osjetljivo područje?",
+   [
+    "1. Da",
+    "2. Ne",
+    "U slučaju odgovora DA navedite koji __________________________________________"
+   ]
+  ],
+  [
+   "4. Da li su svi interni propisi dostupni na jednom mjestu unutar Škole?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Ne znam"
+   ]
+  ],
+  [
+   "5. Da li se po Vašem mišljenju u radu Škole dosljedno provodi zakonska regulativa?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Djelimično"
+   ]
+  ],
+  [
+   "6. Kako biste ocijenili mehanizman odgovornosti u školi?",
+   [
+    "1. Odlična",
+    "2. Dobra",
+    "3. Nedovoljna",
+    "4. Ne mogu to procijeniti"
+   ]
+  ],
+  [
+   "7. Da li je bilo određenih pokušaja osoba unutar ili van Vaše institucije da utiču na profesionalne odluke Vas ili nekog Vašeg saradnika?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Ne želim odgovoriti na ovo pitanje"
+   ]
+  ],
+  [
+   "8. Da li ste upoznati sa načinom na koji možete anonimno prijaviti kršenje integriteta unutar Vaše institucije?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "9. Ako je odgovor DA, navedite način na koji možete anonimno prijaviti kršenje integriteta unutar Vaše institucije:",
+   [
+    "_________________________________________________________________________"
+   ]
+  ],
+  [
+   "10. Da li u Vašoj instituciji postoje propisi koji se odnose na prihvatanje poklona ili znakova gostoprimstva?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Ne znam"
+   ]
+  ],
+  [
+   "11. Da li ste upoznati sa sadržajem Pravilnika kojim je regulisan prijem uposlenika u radni odnos?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "12. Da li biste prijavili slučajeve neregularnog zapošljavanja u Vašoj ustanovi, kršenja internih akata kao i ostale oblike nepravilnosti u radu ustanove?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Ne znam kome bih prijavio/la navedne nepravilnosti"
+   ]
+  ],
+  [
+   "13. Ocjenite radna mjesta prema podložnosti koruptivnim djelovanjima (5 – velika vjerovatnoća za korupciju, 4 – visoka vjerovatnoća, 3 - srednja vjerovatnoća, 2 – mala vjerovatnoća, 1 – nepostojanje prijetnje):",
+   [
+    "Direktor ____, profesor/nastavnik____, pedagog___, sekretar___, knjigovođa___, bibliotekar___, domar/ložač___, pomoćno tehničko osoblje___."
+   ]
+  ],
+  [
+   "B – Opis radnog mjesta , poslovna konsultacija i izvještavanje/ocjena rada"
+  ],
+  [
+   "14. Da li Vam je poznat opis Vašeg radnog mjesta?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "15. Da li se održavaju zajedničke poslovne konsultacije (sastanci) sa Vašim nadređenima i bliskim saradnicima?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "16. Ukoliko održavate zajedničke poslovne konsultacije (sastanke), navedite njihovu prosječnu učestalost?",
+   [
+    "1. Manje od jednom mjesečno",
+    "2. Jednom mjesečno",
+    "3. Više od jednom mjesečno"
+   ]
+  ],
+  [
+   "17. Ukoliko održavate zajedničke poslovne konsultacije, navedite koliko često razgovarate na temu jačanja ličnog i institucionalnog integriteta?",
+   [
+    "1. Nikada",
+    "2. Manje od jednom mjesečno",
+    "3. Jednom mjesečno",
+    "4. Više od jednom mjesečno"
+   ]
+  ],
+  [
+   "18. Da li je Vaš nadređeni brzo i lahko dostupan za konsultacije?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "C- Profesionalni život u odnosu na privatni"
+  ],
+  [
+   "19. Da li ste ikada bili suočeni sa pitanjima/poslovima u kojima bi Vaše profesionalne odluke mogle ostaviti posljedice po vaš privatni život?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "20. Ukoliko je odgovor na prethodno pitanje „Da“, da li ste to pitanje/posao predali nekom drugom na rješavanje, da li ste tražili svoje izuzeće prilikom donošenja odluka ili ste uključili saradnika ili nadređenog pri donošenju odluke?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Nisam znao kako bih postupio/la u navedenoj situaciji"
+   ]
+  ],
+  [
+   "D – Kontakti sa osobama izvan Škole u okviru Vaših poslovnih aktivnosti"
+  ],
+  [
+   "21. Kontaktirate li sa osobama izvan Vaše institucije u okviru obavljanja Vaših redovnih poslovnih aktivnosti?",
+   [
+    "1.Da",
+    "2.Ne"
+   ]
+  ],
+  [
+   "22. Da li Vaš nadređeni zna sa kojim osobama izvan Vaše institucije kontaktirate u okviru obavljanja Vaših redovnih poslovnih aktivnosti?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "23. Da li je vaš nadređeni upoznat sa tematikom i prirodom tih kontakata?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Ne znam"
+   ]
+  ],
+  [
+   "E – Rezultati i njihov kvalitet"
+  ],
+  [
+   "24. U instituciji u kojoj sam zaposlen/a važnije je uraditi poslove/radne zadatke u skladu sa pravilima nego ih završiti na vrijeme.",
+   [
+    "1. Slažem se",
+    "2. Niti se slažem, niti se ne slažem",
+    "3. Ne slažem se"
+   ]
+  ],
+  [
+   "25. U instituciji u kojoj sam zaposlen/a količina obavljenog posla je često važnija od kvaliteta obavljenog posla.",
+   [
+    "1. Slažem se",
+    "2. Niti se slažem, niti se ne slažem",
+    "3. Ne slažem se"
+   ]
+  ],
+  [
+   "26. U instituciji u kojoj sam zaposlen/a često je dozvoljena improvizacija sa ciljem ostvarivanja rezultata.",
+   [
+    "1. Slažem se",
+    "2. Niti se slažem, niti se ne slažem",
+    "3. Ne slažem se"
+   ]
+  ],
+  [
+   "27. U instituciji u kojoj sam zaposlen/a većina saradnika daje prednost vlastitim interesima u odnosu na profesionalni rad.",
+   [
+    "1. Slažem se",
+    "2. Niti se slažem, niti se ne slažem",
+    "3. Ne slažem se"
+   ]
+  ],
+  [
+   "F - Upravljanje sredstvima i stvarima koje pripadaju školi"
+  ],
+  [
+   "28. Kako ocjenjujete opskrbu materijalom, sredstvima rada, prostorom za rad (prostorije, namještaj, oprema)?",
+   [
+    "1.Sasvim dovoljno",
+    "2.Generalno dovoljno",
+    "3.Nedovoljno, ali se snalazimo",
+    "4.Nedovoljno i to prouzrokuje poteškoće u mom radu",
+    "5.Ne mogu to procijeniti"
+   ]
+  ],
+  [
+   "29. Da li ste čuli za slučajeve prevare, krađe ili drugih radnji koje predstavljaju kršenje integriteta unutar Vaše institucije?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "30. Da li, unutar Vaše institucije postoje izrađeni propisi/usvojene procedure koji se odnose na prethodno navedene slučajeve te da li se navedeni propisi/procedure provode u praksi?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Ne znam"
+   ]
+  ],
+  [
+   "31. Da li se izrađuje godišnji plan javnih nabavki u skladu sa odobrenim budžetskim sredstvima?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Ne znam"
+   ]
+  ],
+  [
+   "32. Da li postoje interni propisi kojima su regulisane procedure javnih nabavki u Školi?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Ne znam"
+   ]
+  ],
+  [
+   "33. Da li je u Vašoj instituciji imenovano lice koje ima zadatak da prati da li su zaposleni u sukobu interesa prilikom obavljanja djelatnosti?",
+   [
+    "1. Da",
+    "2. Ne",
+    "3. Ne znam"
+   ]
+  ],
+  [
+   "34. Da li mislite da je potrebno imenovati lice koje će pratiti da li su zaposleni u sukobu interesa prilikom obavljanja djelatnosti?",
+   [
+    "1. Da",
+    "2. Ne"
+   ]
+  ],
+  [
+   "@Ukoliko imate dodatne napomene i komentare, odnosno prijedloge mjera za izbjegavanje rizika, molimo da navedete:",
+   [
+    "____________________________________________________________________________",
+    "____________________________________________________________________________",
+    "____________________________________________________________________________"
+   ]
+  ]
+ ],
+ "rezultati": [
+  "Radna grupa je izvršila analizu statusa quo kroz analizu upitnika za samoprocjenu integriteta. Upitnik je bio jednoobrazan za sve radnike i sastoji se od 34 pitanja, koja su grupisana u 6 oblasti. Upitnik su popunila 72 radnika, odnosno 96 % zaposlenih u školi. Tri zaposlenika nisu dostavila ispunjenu anketu.",
+  "Oblasti navedene u upitniku su:",
+  "A - Procjena rizičnih aktivnosti i podložnosti koruptivnom djelovanju;",
+  "B - Opis radnog mjesta, poslovna konsultacija i izvještavanje/ocjena rada;",
+  "C – Profesionalni život u odnosu na privatni",
+  "D - Kontakti sa osobama izvan škole u okviru Vaših poslovnih aktivnosti",
+  "E – Rezultati i njihov kvalitet",
+  "F - Upravljanje sredstvima i stvarima koje pripadaju školi.",
+  "Upitnici su popunjavani ručno i anonimnost popunjavanja upitnika je bila osigurana. Radna grupa je analizu radila ručno po principu brojčanog i procentualnog iskazivanja odgovora na postavljena pitanja. Kasnije je primjenjena formula osjetljivosti na korupciju, kako bi se dobili podaci o intervalu osjetljivosti po pojedinim pitanjima, odnosno aspektima/dijelovima upitnika.",
+  "U nastavku su prikazani važniji rezultati upitnika:",
+  "@Dio A.",
+  "Većina radnika (91,89%) svoja radna mjesta je ocijenila kao radna mjesta koja nisu podložna koruptivnom djelovanju (podmićivanje, utaja, pronevjera, favorizovanje). 83,78% radnika smatra da se u školi dosljedno provodi zakonska regulativa. Većina radnika (78,38%) ocijenilo je mehanizam odgovornosti u školi odličnim i dobrim. 47% radnika je upoznato gdje su dostupni interni akti unutar škole, 44% radnika ne zna gdje su dostupni interni akti unutar škole, a 81,08 % radnika ne smatra da u školi nedostaje neki interni akt koji se odnosi na neko osjetljivo područje (npr. ocjenjivanje učenika). 64,86% zaposlenih nije upoznato sa načinom na koji mogu anonimno prijaviti kršenje integriteta unutar institucije.",
+  "@Dio B.",
+  "97,30% radnika je upoznato sa opisom i odgovornostima radnog mjesta koje obavljaju.",
+  "97,30% radnika održava zajedničke poslovne konsultacije sa nadređenima i bliskim saradnicima, pri čemu 16,22% radnika na pomenutim sastancima nikada nije razgovaralo na temu jačanja ličnog i institucionalnog integriteta. 100 % zaposlenih se slaže da im je nadređeni brzo i lahko dostupan za konsultacije.",
+  "@Dio C.",
+  "13,51% anketiranih je bilo suočeno sa pitanjima u kojima bi njihove profesionalne odluke mogle ostaviti posljedice po privatni život, od kojih niko pomenuta pitanja nije predao nekom drugom na rješavanje, odnosno uključio  saradnika ili nadređenog pri donošenju odluke.",
+  "@Dio D.",
+  "45,95% radnika kontaktira sa osobama izvan škole u okviru vlastitih poslovnih aktivnosti. Nadređeni u većini slučajeva nije upoznat sa vrstom, sadržajem i prirodom kontakata koji se ostvaruju sa osobama izvan škole u okviru poslovnih aktivnosti.",
+  "@Dio E.",
+  "Samo 10,81% radnika smatra da većina saradnika daje prednost vlastitim interesima u odnosu na profesionalni rad. Većina zaposlenih 64,86% se ne slaže kada je u pitanju količina obavljenog posla na uštrb kvaliteta, odnosno kada treba birati između posla urađenog po pravilima i posla urađenog na vrijeme.",
+  "@Dio F.",
+  "54,05 % zaposlenih smatra da je opskrba materijalom i sredstvima za rad sasvim, odnosno generalno dovoljna,a nema uposlenika koji smatraju da im nedovoljna opskrba materijalom prouzrokuje poteškoće u radu. 81,08% zaposlenih nikada čuo za slučajeve prevare, krađe ili drugih radnji koje predstavljaju kršenje integriteta u školi, dok 72,97% ne zna da li unutar škole postoje izrađeni propisi/procedure koji se odnose na prethodno navedeno. 86,49% radnika upoznato je da se godišnji plan javnih nabavki izrađuje u skladu sa potrebama i odobrenim budžetom, ali 40,54% ih ne zna da li postoje interni propisi kojima je regulisano provođenje postupaka javnih nabavki. 78,38% zaposlenih smatra da je potrebno imenovati lice koje će pratiti da li su zaposleni u sukobu interesa prilikom obavljanja djelatnosti.",
+  "Radna grupa analizirala je rezultate upitnika primjenjujući formulu osjetljivosti na korupciju. Nakon analize upitnika utvrđeno je da u školi postoji mala mogućnost nastajanja koruptivnih radnji i pri tome su posljedice po instituciju neznatne."
+ ]
+}

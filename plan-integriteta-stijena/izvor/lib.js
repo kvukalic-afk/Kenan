@@ -21,6 +21,7 @@ const W_LANDSCAPE = PAGE.h - 2 * PAGE.m; // 14570
 // Inline oznake: **podebljano**, [POTVRDITI ...] crveno podebljano, [NACRT] i sl.
 function runs(text, base = {}) {
   const out = [];
+  if (module.exports.CISTO) text = String(text ?? '').replace(/\s*\[(?:POTVRDITI|DOPUNITI|PRIJEDLOG|RADNA OCJENA)[^\]]*\]/g, '');
   const re = /(\*\*[^*]+\*\*|\[(?:POTVRDITI|DOPUNITI|NACRT|PRIJEDLOG|RADNA OCJENA)[^\]]*\])/g;
   let last = 0; let m;
   const s = String(text ?? '');
