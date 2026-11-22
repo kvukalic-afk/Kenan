@@ -20,6 +20,7 @@ def _cl(o):
 R = _cl(R)
 TBL = list(d.tables)  # reference na izvorne tabele prije umetanja novih
 B = '____________'
+BR = {'odluka': '610-1015/2026', 'obavijest': '610-1016/2026', 'program': '610-1017/2026', 'izvjestaj': '610-1018/2026', 'dopis': '610-1019/2026'}
 norm = lambda s: re.sub(r'\s+', ' ', s or '').strip()
 
 # ───────── pomoćne funkcije
@@ -147,6 +148,9 @@ PL = {1: '1 – neznatne', 2: '2 – značajne', 3: '3 – vrlo značajne'}
 # ───────── 1. Naslovna i osnovne informacije
 replace_in(find('Cazin, juni 2021'), 'juni 2021. godine', '23.11.2026. godine')
 set_text(find('Datum usvajanje plana integriteta'), f'Datum usvajanja plana integriteta {B}')
+for old, new in [('1. Sabina Žunić,pedagog - koordinator radne grupe', '1. Sabina Žunić, pedagog – menadžer/koordinator radne grupe'), ('3. Dženita Hepić,knjigovođa', '3. Dženita Hepić, knjigovođa'), ('5. Dževaira Džehverović, soc.radnik', '5. Dževaira Džehverović, socijalni radnik')]:
+    hit = [p for p in paras() if norm(p.text) == old]
+    if hit: set_text(hit[0], new)
 p6 = find('6. Semira Džakulić,sekretar')
 set_text(p6, '6. Semira Džakulić, sekretar')
 add_after(p6, '7. Kenan Vukalić, psiholog')
@@ -156,7 +160,7 @@ set_text(find('Agencija za prevenciju korupcije i koordinaciju borbe protiv koru
          'Zakonom o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 24/25) propisana je obaveza svih javnih ustanova čiji je osnivač Unsko-sanski kanton da donesu i provode plan integriteta, u skladu sa Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 11/26) i Strategijom za borbu protiv korupcije Unsko-sanskog kantona 2023.–2027.')
 
 # ───────── 3. Odluka o izradi
-set_text(find('Broj: 610-93/2025'), f'Broj: {B}')
+set_text(find('Broj: 610-93/2025'), f"Broj: {BR['odluka']}")
 for p in [p for p in paras() if norm(p.text) == 'Datum: 28.01.2025. godine']:
     set_text(p, 'Datum: 23.11.2026. godine')
 set_text(find('Na osnovu Strategije za borbu protiv korupcije 2015'),
@@ -173,12 +177,12 @@ set_text(find('3. Agenciji za prevenciju korupcije i koordinaciju borbe protiv k
 set_text(find('4. Timu Ureda za borbu protiv korupcije Vlade USK'), '4. Oglasna tabla;')
 
 # ───────── 4. Obavijest
-set_text(find('Broj: 610-94/2025'), f'Broj: {B}')
+set_text(find('Broj: 610-94/2025'), f"Broj: {BR['obavijest']}")
 set_text(find('inegriteta JU OŠ „Stijena, dostavlja se'), 'integriteta JU OŠ „Stijena“, dostavlja se:')
 set_text(find('izradila je i usvojila Pravila za izradu i provođenje planova integriteta'),
          'Vlada Unsko-sanskog kantona, na prijedlog Ureda za borbu protiv korupcije Unsko-sanskog kantona, usvojila je Uputstvo za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu (u daljem tekstu: Uputstvo). U skladu sa Zakonom o prevenciji korupcije u Unsko-sanskom kantonu i navedenim Uputstvom, obaveza naše institucije je da izradi i usvoji plan integriteta.')
 set_text(find('S tim u vezi, informišem vas da sam dana 28.01.2025'),
-         f'S tim u vezi, informišem vas da sam dana 23.11.2026. godine donio Odluku o izradi plana integriteta i imenovanju članova radne grupe za izradu plana integriteta (broj: {B}).')
+         f'S tim u vezi, informišem vas da sam dana 23.11.2026. godine donio Odluku o izradi plana integriteta i imenovanju članova radne grupe za izradu plana integriteta (broj:\u00a0{BR["odluka"].replace("-", "\u2011")}).')
 set_text(find('Ovom odlukom za koordinatora radne grupe imenovan je Sabina Žunić'),
          'Ovom odlukom za menadžera/koordinatora radne grupe imenovana je Sabina Žunić, pedagog škole, a za članove radne grupe imenovani su:')
 set_text(find('1. Edina Pehlić,nastavnik'), '1. Edin Pehlić, nastavnik')
@@ -194,7 +198,7 @@ for lab, old in [('DATUM DONOŠENJA ODLUKE', '28.01.2025'), ('DATUM DONOŠENJA P
     p = find(lab)
     replace_in(p, old, '23.11.2026')
 set_text(find('U skladu sa smjernicama za izradu i provođenje Plana integriteta'),
-         f'U skladu sa Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu, direktor JU OŠ „Stijena“, na prijedlog Radne grupe, imenovane Odlukom direktora o izradi Plana integriteta, broj: {B} od 23.11.2026. godine, odobrava')
+         f'U skladu sa Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu, direktor JU OŠ „Stijena“, na prijedlog Radne grupe, imenovane Odlukom direktora o izradi Plana integriteta, broj:\u00a0{BR["odluka"].replace("-", "\u2011")} od 23.11.2026. godine, odobrava')
 T0 = TBL[0]
 for row in T0.rows:
     seen = set()
@@ -207,7 +211,7 @@ for row in T0.rows:
         elif 'mišljenje Agenciji' in t: cell_set(c, 'Pregled predloženog Plana integriteta i dostavljanje istog na mišljenje Uredu za borbu protiv korupcije Unsko-sanskog kantona')
         elif t == 'Rok uslovljen mišljenjem Agencije': cell_set(c, 'Nakon pozitivnog mišljenja Ureda')
 set_text(find('Stijena, 31.03.2026'), 'Stijena, 23.11.2026.')
-set_text(find('Broj: 610-95/2025'), f'Broj: {B}')
+set_text(find('Broj: 610-95/2025'), f"Broj: {BR['program']}")
 
 # ───────── 6. Zakonski okvir – dodati antikorupcijske propise
 ok = find('Okvirni zakon o osnovnom i srednjem obrazovanju u BiH')
@@ -283,7 +287,7 @@ for p in paras():
         is_sub = bool(re.match(r'^\d\.\s', norm(p.text)))
         p.style = d.styles['Normal']
         for r in p.runs: r.bold = is_sub
-set_text(find('Ovlašteno lice: Sekretar škole'), 'Ovlašteno lice: Semira Džakulić, sekretar škole; u slučaju odsutnosti ili sukoba interesa: Mersad Vatić, direktor (član 18. Zakona o prevenciji korupcije u USK).')
+set_text(find('Ovlašteno lice: Sekretar škole'), 'Ovlašteno lice: Semira Džakulić, sekretar škole (član 18. Zakona o prevenciji korupcije u USK). Prijava se može podnijeti i direktoru škole kao odgovornom licu institucije (član 17. Zakona).')
 replace_in(find('putem sandučeta za prijavu korupcije'), 'putem sandučeta za prijavu korupcije', 'putem sandučeta s natpisom „ZA PRIJAVU KORUPCIJE“')
 add_after(find('usmeno na zapisnik'), '•\tEksterna prijava podnosi se Uredu za borbu protiv korupcije USK (037/305-507, prijavikorupciju@antikorupcijausk.ba); interna prijava nije uslov za eksternu.')
 replace_in(find('provjeriti potpunost prijave'), 'provjeriti potpunost prijave', 'provjeriti potpunost prijave i, po potrebi, pozvati prijavitelja da je dopuni u roku od 7 dana')
@@ -302,7 +306,7 @@ set_text(find('Radna grupa izvijestila je direktora škole o rezultatima upitnik
 replace_in(find('Direktor škole će donijeti Odluku o usvajanju Plana integriteta'), 'Direktor škole će donijeti', 'Nakon pozitivnog mišljenja Ureda, direktor škole će donijeti')
 set_text(find('uočeno je da u školi ne postoje rizici osjetljivosti'),
          'Nakon razmatranja i analize upitnika, analize zakonskih i podzakonskih propisa i internih akata kojima je uređen rad škole, uočeno je da u školi nisu zabilježeni slučajevi korupcije, ali da postoje rizici u pojedinim oblastima rada, koji su identifikovani, procijenjeni i obuhvaćeni mjerama za upravljanje rizicima.')
-set_text(find('Broj: 610-277/2026'), f'Broj: {B}')
+set_text(find('Broj: 610-277/2026'), f"Broj: {BR['izvjestaj']}")
 set_text(find('Datum: 31.03.2026. god'), 'Datum: 23.11.2026. godine')
 set_text(find('Članovima Radne grupe 5x'), 'Članovima Radne grupe 7x')
 
@@ -315,7 +319,7 @@ lines = [
     (f'Na osnovu člana 43., 46., 47. i 49. Zakona o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 24/25) i Uputstva za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 11/26), a nakon pribavljenog mišljenja Ureda za borbu protiv korupcije Unsko-sanskog kantona broj {B} od {B}, direktor JU OŠ „Stijena“ donosi', False, False),
     ('ODLUKU o usvajanju i provođenju Plana integriteta JU OŠ „Stijena“', True, False),
     ('Član 1. Ovom odlukom usvaja se Plan integriteta JU OŠ „Stijena“ koji je pripremila radna grupa za izradu plana integriteta.', False, False),
-    (f'Član 2. Stupanjem na snagu ove odluke razrješavaju se dužnosti menadžer/koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj {B} od 23.11.2026. godine).', False, False),
+    (f'Član 2. Stupanjem na snagu ove odluke razrješavaju se dužnosti menadžer/koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj\u00a0' + BR['odluka'].replace('-', '\u2011') + ' od 23.11.2026. godine).', False, False),
     ('Član 3. (1) Za osobu zaduženu za nadzor nad provođenjem plana integriteta (menadžera integriteta) imenuje se Dževaira Džehverović, socijalni radnik. (2) Osoba zadužena za nadzor prati provođenje Plana integriteta, a posebno dijela koji se odnosi na mjere za poboljšanje integriteta, te daje prijedloge za njegovo unapređenje. (3) Svi zaposleni dužni su obavijestiti osobu zaduženu za nadzor o situaciji, pojavi ili radnji koje na osnovu razumnog uvjerenja mogu dovesti do narušavanja integriteta institucije i, na njen zahtjev, dostaviti potrebne podatke i informacije. (4) Škola svake druge godine procjenjuje učinkovitost plana integriteta i godišnje, do 31. marta tekuće godine za prethodnu godinu, dostavlja Uredu izvještaj o provođenju plana integriteta.', False, False),
     ('Član 4. Plan integriteta objavljuje se na web stranici škole i dostavlja Uredu za borbu protiv korupcije Unsko-sanskog kantona u roku od 15 dana od dana donošenja ove odluke. Plan važi četiri godine od dana usvajanja.', False, False),
     ('Član 5. Ova odluka stupa na snagu danom donošenja.', False, False),
@@ -326,7 +330,7 @@ for text, bold, pb in lines:
     anchor = new_par_after(anchor, text, bold=bold, page_break=pb)
 
 # ───────── 14. Dopis Uredu
-set_text(find('Broj: 610-278/2026'), f'Broj: {B}')
+set_text(find('Broj: 610-278/2026'), f"Broj: {BR['dopis']}")
 set_text(find('Datum: 31.03.2026', nth=0), 'Datum: 23.11.2026. godine')
 predmet = find('PREDMET: Plan integriteta JU OŠ „Stijena“,mišljenje')
 set_text(predmet, 'PREDMET: Plan integriteta JU OŠ „Stijena“, mišljenje – traži se')
@@ -335,6 +339,12 @@ set_text(find('Poštovani,dostavljamo vam izmjenjeni Plan integriteta'),
          'Poštovani, dostavljamo Vam izmijenjeni Plan integriteta JU OŠ „Stijena“ na mišljenje. Prethodni Plan integriteta bio je dostavljen Agenciji za prevenciju korupcije i koordinaciju borbe protiv korupcije i vraćen na izmjenu i doradu zbog uočenih nedostataka. Plan je usklađen sa Zakonom o prevenciji korupcije u Unsko-sanskom kantonu i Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu, a uz njega se dostavlja i nacrt Odluke o usvajanju i provođenju plana integriteta.')
 set_text(find('Radna grupa za izradu Plana integriteta je izmjenila i doradila vraćeni plan'),
          'Radna grupa za izradu Plana integriteta izmijenila je i doradila vraćeni plan, te Vam dostavljamo izmijenjenu verziju na mišljenje i daljnje postupanje.')
+
+# ───────── uklanjanje praznih paragrafa između sadržaja i prijeloma stranice
+sdt = d.element.body.find(qn('w:sdt'))
+nxt = sdt.getnext()
+while nxt is not None and nxt.tag == qn('w:p') and not ''.join(t.text or '' for t in nxt.iter(qn('w:t'))).strip() and nxt.find('.//' + qn('w:br')) is None and nxt.find('.//' + qn('w:sectPr')) is None:
+    rem = nxt; nxt = nxt.getnext(); rem.getparent().remove(rem)
 
 # ───────── ažuriranje sadržaja pri otvaranju u Wordu
 settings = d.settings.element
