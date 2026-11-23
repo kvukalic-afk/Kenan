@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Ikona } from '../components/Ikona';
@@ -15,8 +16,16 @@ function pozdrav(): string {
   return h < 10 ? 'Dobro jutro' : h < 18 ? 'Dobar dan' : 'Dobro veče';
 }
 
+const PIN_PODSJETNIK = 'pin-podsjetnik-skriven';
+
+function pinPodsjetnikSkriven(): boolean {
+  try { return localStorage.getItem(PIN_PODSJETNIK) === '1'; } catch { return false; }
+}
+
 export function Pocetna() {
   const postavke = usePostavke();
+  const [bezPinaSkriveno, setBezPinaSkriveno] = useState(pinPodsjetnikSkriven);
+  const pinUkljucen = useLiveQuery(async () => !!(await db.postavke.get('postavke'))?.pinHash, []);
   const kon = useKontrola();
   const podaci = useLiveQuery(async () => {
     const [razgovori, radionice, saradnja, ucenici, aktivnosti, brzeBiljeske] = await Promise.all([
@@ -103,6 +112,20 @@ export function Pocetna() {
           <span className="rastegni"><strong>AI asistent</strong><span className="blijedo"> · pitaj o dokumentaciji, propisima, planu</span></span>
           <Ikona ime="desno" />
         </a>
+
+        {imaPodataka && pinUkljucen === false && !bezPinaSkriveno && (
+          <div className="obavjestenje upozorenje">
+            <Ikona ime="brava" />
+            <span className="tekst">
+              <strong>PIN nije uključen na ovom uređaju</strong>
+              <span className="malo" style={{ display: 'block' }}>U appu su povjerljivi podaci. PIN se ne prenosi rezervnom kopijom, pa ga na svakom uređaju uključiš posebno.</span>
+              <span className="red-dugmadi" style={{ marginTop: 6 }}>
+                <a className="dugme primarno malo" href="#/postavke">Uključi PIN</a>
+                <button type="button" className="dugme tiho malo" onClick={() => { try { localStorage.setItem(PIN_PODSJETNIK, '1'); } catch { /* ignore */ } setBezPinaSkriveno(true); }}>Ne sada</button>
+              </span>
+            </span>
+          </div>
+        )}
 
         {podsjetnik && (
           <a className="obavjestenje upozorenje" href="#/postavke?kopija=1" style={{ textDecoration: 'none', color: 'inherit' }}>

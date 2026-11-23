@@ -127,22 +127,27 @@ export function napraviPlan(lokalno: Snimak, dolazno: Snimak): PlanUvoza {
 
   let postavke: Partial<Postavke> | null = null;
   if (dolazno.postavke && novije(dolazno.postavke.updatedAt ?? '', lokalno.postavke?.updatedAt ?? '')) {
-    const { pinHash: _p, zadnjaKopija: _z, ...ostalo } = dolazno.postavke;
-    void _p; void _z;
-    postavke = ostalo;
+    postavke = bezLokalnihPostavki(dolazno.postavke);
   }
 
   const zbir = (r: Record<TabelaKopije, unknown[]>) => TABELE_KOPIJE.reduce((s, t) => s + r[t].length, 0);
   return { dodati, azurirati, obrisati, noviTragovi, postavke, broj: { dodati: zbir(dodati), azurirati: zbir(azurirati), obrisati: zbir(obrisati) } };
 }
 
+/** Postavke koje pripadaju samo ovom uređaju (PIN, zaključavanje, datum zadnje kopije) – ne idu u kopiju i uvoz ih ne mijenja. */
+export const LOKALNE_POSTAVKE = ['pinHash', 'pinDuzina', 'zakljucajNakonSek', 'zadnjaKopija'] as const;
+
+export function bezLokalnihPostavki(p: Partial<Postavke>): Partial<Postavke> {
+  const c: Partial<Postavke> = { ...p };
+  for (const k of LOKALNE_POSTAVKE) delete c[k];
+  return c;
+}
+
 /** Sadržaj kopije bez PIN-a i datuma zadnje kopije. */
 export function pripremiZaIzvoz(s: Snimak): Snimak {
   let postavke: Partial<Postavke> | null = null;
   if (s.postavke) {
-    const { pinHash: _p, zadnjaKopija: _z, ...ostalo } = s.postavke;
-    void _p; void _z;
-    postavke = ostalo;
+    postavke = bezLokalnihPostavki(s.postavke);
   }
   return { ...s, postavke };
 }

@@ -1,6 +1,6 @@
 import { db } from './db';
 import { sacuvajPostavke } from './repo';
-import { napraviPlan, nazivFajlaKopije, pripremiZaIzvoz, TABELE_KOPIJE, type PlanUvoza, type Snimak } from '../lib/backup';
+import { bezLokalnihPostavki, napraviPlan, nazivFajlaKopije, pripremiZaIzvoz, TABELE_KOPIJE, type PlanUvoza, type Snimak } from '../lib/backup';
 import { desifruj, jePaket, sifruj } from '../lib/kripto';
 import { snimakBaze } from '../lib/podaci';
 import { preuzmi } from '../lib/preuzimanje';
@@ -73,7 +73,7 @@ export async function primijeniPlan(plan: PlanUvoza): Promise<void> {
     if (plan.noviTragovi.length) await db.obrisano.bulkPut(plan.noviTragovi);
     if (plan.postavke) {
       const p = await db.postavke.get('postavke');
-      if (p) await db.postavke.put({ ...p, ...plan.postavke, id: 'postavke', pinHash: p.pinHash, zadnjaKopija: p.zadnjaKopija });
+      if (p) await db.postavke.put({ ...p, ...bezLokalnihPostavki(plan.postavke), id: 'postavke' });
     }
   });
 }

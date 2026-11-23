@@ -7,6 +7,7 @@ import { Modal } from './components/Polja';
 import { ToastProvider } from './components/Toast';
 import { prikazVremena } from './lib/datum';
 import { idi, useRuta } from './lib/router';
+import { dozvoliKratakIzlazak, izlazakJeDozvoljen, ponistiIzuzetak } from './lib/zakljucavanje';
 import type { Nacrt, VrstaUnosa } from './types';
 import { Pocetna } from './screens/Pocetna';
 import { Ucenici } from './screens/Ucenici';
@@ -58,31 +59,63 @@ function Zakljucavanje() {
   const postavke = useLiveQuery(() => db.postavke.get('postavke'), []);
   const [zakljucano, setZakljucano] = useState<boolean | null>(null);
   const zadnjaAktivnost = useRef(Date.now());
+  const skrivenoOd = useRef<number | null>(null);
   const pinHash = postavke?.pinHash ?? '';
+  const nakonSek = postavke?.zakljucajNakonSek ?? 0;
 
   // pri otvaranju: zaključaj ako je PIN uključen
   useEffect(() => {
     if (postavke && zakljucano === null) setZakljucano(!!postavke.pinHash);
   }, [postavke, zakljucano]);
 
-  // nakon 5 minuta neaktivnosti (i kad se app vrati iz pozadine)
+  // Telefon app obično ne gasi nego ga samo „uspava“ – zato se PIN traži i kad se
+  // app vrati iz pozadine (odmah ili nakon izabranog vremena), te nakon 5 min neaktivnosti.
   useEffect(() => {
     if (!pinHash) return;
     const aktivnost = () => { zadnjaAktivnost.current = Date.now(); };
-    const provjeri = () => {
-      if (Date.now() - zadnjaAktivnost.current > NEAKTIVNOST_MS) setZakljucano(true);
+    const klik = (e: Event) => {
+      aktivnost();
+      const el = e.target as HTMLElement | null;
+      if (el?.closest?.('input[type=file]') || (el?.closest?.('label') as HTMLLabelElement | null)?.querySelector('input[type=file]')) dozvoliKratakIzlazak();
     };
-    const vidljivost = () => (document.visibilityState === 'visible' ? provjeri() : undefined);
+    const otisao = () => {
+      if (izlazakJeDozvoljen()) { skrivenoOd.current = null; return; }
+      skrivenoOd.current = Date.now();
+      // „Odmah“: sakrij sadržaj već pri izlasku, da se ne vidi ni u pregledu otvorenih appova.
+      if (nakonSek === 0) setZakljucano(true);
+    };
+    const vratio = () => {
+      ponistiIzuzetak();
+      const sada = Date.now();
+      if (skrivenoOd.current !== null && sada - skrivenoOd.current >= nakonSek * 1000) setZakljucano(true);
+      else if (sada - zadnjaAktivnost.current > NEAKTIVNOST_MS) setZakljucano(true);
+      skrivenoOd.current = null;
+      zadnjaAktivnost.current = sada;
+    };
+    const provjeri = () => {
+      if (document.visibilityState === 'visible' && Date.now() - zadnjaAktivnost.current > NEAKTIVNOST_MS) setZakljucano(true);
+    };
+    const vidljivost = () => (document.visibilityState === 'hidden' ? otisao() : vratio());
+    const vracenIzKesa = (e: PageTransitionEvent) => { if (e.persisted) { skrivenoOd.current ??= 0; vratio(); } };
+    const stampa = () => dozvoliKratakIzlazak();
     const dogadjaji = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'input'];
     dogadjaji.forEach((d) => window.addEventListener(d, aktivnost, { passive: true, capture: true }));
+    window.addEventListener('click', klik, { capture: true });
     document.addEventListener('visibilitychange', vidljivost);
+    window.addEventListener('pagehide', otisao);
+    window.addEventListener('pageshow', vracenIzKesa);
+    window.addEventListener('beforeprint', stampa);
     const t = window.setInterval(provjeri, 10_000);
     return () => {
       dogadjaji.forEach((d) => window.removeEventListener(d, aktivnost, { capture: true }));
+      window.removeEventListener('click', klik, { capture: true });
       document.removeEventListener('visibilitychange', vidljivost);
+      window.removeEventListener('pagehide', otisao);
+      window.removeEventListener('pageshow', vracenIzKesa);
+      window.removeEventListener('beforeprint', stampa);
       window.clearInterval(t);
     };
-  }, [pinHash]);
+  }, [pinHash, nakonSek]);
 
   if (zakljucano === null) return null;
   const jeZakljucano = zakljucano && !!pinHash;
@@ -95,7 +128,7 @@ function Zakljucavanje() {
       </div>
       {jeZakljucano && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, overflow: 'auto' }}>
-          <Zakljucano pinHash={pinHash} onOtkljucaj={() => { zadnjaAktivnost.current = Date.now(); setZakljucano(false); }} />
+          <Zakljucano pinHash={pinHash} pinDuzina={postavke?.pinDuzina} onOtkljucaj={() => { zadnjaAktivnost.current = Date.now(); setZakljucano(false); }} />
         </div>
       )}
     </>

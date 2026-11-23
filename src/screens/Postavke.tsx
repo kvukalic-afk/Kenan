@@ -9,6 +9,7 @@ import { useToast } from '../components/Toast';
 import { NAZIVI_TABELA, TABELE_KOPIJE, type PlanUvoza } from '../lib/backup';
 import { nazivSkolskeGodine, prikazVremena, skolskaGodinaZaDatum } from '../lib/datum';
 import { hashirajPin, jeIspravanPin, PogresnaLozinka, provjeriPin } from '../lib/kripto';
+import { OPCIJE_ZAKLJUCAVANJA } from '../lib/zakljucavanje';
 import { snimakBaze, usePostavke, useSifrarnik } from '../lib/podaci';
 import { aiPostavke, CHATGPT_MODELI, sacuvajAIPostavke, sroci, type AIPostavke } from '../lib/ai';
 import { napraviExcel, nazivExcelFajla } from '../lib/excel';
@@ -66,8 +67,21 @@ export function Postavke({ otvoriKopiju }: { otvoriKopiju?: boolean }) {
         <section className="kartica">
           <h2>PIN za otključavanje</h2>
           <p className="malo blijedo">
-            {postavke.pinHash ? 'PIN je uključen. App se zaključava pri otvaranju i nakon 5 minuta neaktivnosti.' : 'PIN je isključen. Preporuka: uključi PIN (4–6 cifara).'}
+            {postavke.pinHash
+              ? 'PIN je uključen. App traži PIN pri otvaranju, kad se vratiš u app i nakon 5 minuta neaktivnosti.'
+              : 'PIN je isključen. Preporuka: uključi PIN (4–6 cifara). PIN važi samo na ovom uređaju i ne prenosi se rezervnom kopijom.'}
           </p>
+          {postavke.pinHash && (
+            <div style={{ marginBottom: 10 }}>
+              <span className="malo blijedo">Traži PIN kad izađem iz appa i vratim se:</span>
+              <div className="chipovi" style={{ marginTop: 4 }}>
+                {OPCIJE_ZAKLJUCAVANJA.map((o) => (
+                  <button key={o.sek} type="button" className="chip mali" aria-pressed={(postavke.zakljucajNakonSek ?? 0) === o.sek}
+                    onClick={() => void sacuvajPostavke({ zakljucajNakonSek: o.sek }, false)}>{o.naziv}</button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="red-dugmadi">
             <button type="button" className="dugme" onClick={() => setPin('postavi')}><Ikona ime="brava" /> {postavke.pinHash ? 'Promijeni PIN' : 'Uključi PIN'}</button>
             {postavke.pinHash && <button type="button" className="dugme" onClick={() => setPin('iskljuci')}>Isključi PIN</button>}
@@ -182,13 +196,13 @@ function PinDijalog({ rezim, sacuvanHash, onZatvori }: { rezim: 'postavi' | 'isk
   const potvrdi = async () => {
     if (sacuvanHash && !(await provjeriPin(stari, sacuvanHash))) return setGreska('Trenutni PIN nije tačan.');
     if (rezim === 'iskljuci') {
-      await sacuvajPostavke({ pinHash: '' }, false);
+      await sacuvajPostavke({ pinHash: '', pinDuzina: undefined }, false);
       toast('PIN je isključen');
       return onZatvori();
     }
     if (!jeIspravanPin(novi)) return setGreska('PIN mora imati 4 do 6 cifara.');
     if (novi !== ponovo) return setGreska('PIN-ovi se ne poklapaju.');
-    await sacuvajPostavke({ pinHash: await hashirajPin(novi) }, false);
+    await sacuvajPostavke({ pinHash: await hashirajPin(novi), pinDuzina: novi.length }, false);
     toast('PIN je sačuvan ✓');
     onZatvori();
   };

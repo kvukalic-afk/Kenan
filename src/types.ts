@@ -143,6 +143,10 @@ export interface Postavke {
   imePsihologa: string;
   skolskaGodinaPocetak: number;
   pinHash: string; // '' = PIN isključen; format "salt:hash" (base64)
+  /** Broj cifara PIN-a – da se app otključa čim se upiše zadnja cifra. */
+  pinDuzina?: number;
+  /** Nakon koliko sekundi van appa se traži PIN (0 ili prazno = odmah). */
+  zakljucajNakonSek?: number;
   imenaUDokumentima?: boolean; // imena učenika u printu i Excelu (zadano: da)
   zadnjaKopija: string; // ISO ili ''
   updatedAt: string;

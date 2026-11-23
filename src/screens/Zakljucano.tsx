@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { provjeriPin } from '../lib/kripto';
+import { db } from '../db/db';
 import { BrisanjeSvega } from './Postavke';
 
-export function Zakljucano({ pinHash, onOtkljucaj }: { pinHash: string; onOtkljucaj: () => void }) {
+export function Zakljucano({ pinHash, pinDuzina, onOtkljucaj }: { pinHash: string; pinDuzina?: number; onOtkljucaj: () => void }) {
   const [pin, setPin] = useState('');
   const [greska, setGreska] = useState('');
   const [pokusaji, setPokusaji] = useState(0);
@@ -10,6 +11,7 @@ export function Zakljucano({ pinHash, onOtkljucaj }: { pinHash: string; onOtklju
   const [sada, setSada] = useState(Date.now());
   const [zaboravljen, setZaboravljen] = useState(false);
   const [brisanje, setBrisanje] = useState(false);
+  const [provjerava, setProvjerava] = useState(false);
   const blokirano = blokiranoDo > sada;
 
   useEffect(() => {
@@ -19,7 +21,13 @@ export function Zakljucano({ pinHash, onOtkljucaj }: { pinHash: string; onOtklju
   }, [blokirano]);
 
   const provjeri = async (p: string) => {
-    if (await provjeriPin(p, pinHash)) {
+    if (provjerava || p.length < 4) return;
+    setProvjerava(true);
+    const tacno = await provjeriPin(p, pinHash);
+    setProvjerava(false);
+    if (tacno) {
+      // stari PIN-ovi nemaju zapisanu dužinu – zapamti je da se idući put otključa bez „OK“
+      if (pinDuzina !== p.length) void db.postavke.update('postavke', { pinDuzina: p.length });
       onOtkljucaj();
       return;
     }
@@ -34,10 +42,12 @@ export function Zakljucano({ pinHash, onOtkljucaj }: { pinHash: string; onOtklju
   };
 
   const dodaj = (c: string) => {
-    if (blokirano) return;
+    if (blokirano || provjerava) return;
     setGreska('');
     const p = (pin + c).slice(0, 6);
     setPin(p);
+    // otključaj čim je upisana zadnja cifra
+    if (pinDuzina && p.length === pinDuzina) void provjeri(p);
   };
 
   // Sa tastature računara
@@ -45,7 +55,7 @@ export function Zakljucano({ pinHash, onOtkljucaj }: { pinHash: string; onOtklju
     const f = (e: KeyboardEvent) => {
       if (zaboravljen || brisanje) return;
       if (/^\d$/.test(e.key)) dodaj(e.key);
-      else if (e.key === 'Backspace') setPin((p) => p.slice(0, -1));
+      else if (e.key === 'Backspace' && !provjerava) setPin((p) => p.slice(0, -1));
       else if (e.key === 'Enter' && pin.length >= 4) void provjeri(pin);
     };
     window.addEventListener('keydown', f);
@@ -56,7 +66,7 @@ export function Zakljucano({ pinHash, onOtkljucaj }: { pinHash: string; onOtklju
     <div className="zakljucano" role="dialog" aria-modal="true" aria-label="Aplikacija je zaključana">
       <img src="./icon-192.png" alt="" />
       <h1 style={{ margin: 0 }}>Evidencija psihologa</h1>
-      <p style={{ margin: 0 }}>Upiši PIN</p>
+      <p style={{ margin: 0 }}>{provjerava ? 'Provjeravam…' : 'Upiši PIN'}</p>
       <div className="pin-tacke" aria-label={`Upisano ${pin.length} cifara`}>
         {Array.from({ length: Math.max(4, pin.length) }, (_, i) => <span key={i} className={i < pin.length ? 'puna' : ''} />)}
       </div>
@@ -67,7 +77,7 @@ export function Zakljucano({ pinHash, onOtkljucaj }: { pinHash: string; onOtklju
         ))}
         <button type="button" className="tiho" onClick={() => setPin((p) => p.slice(0, -1))} aria-label="Obriši cifru">⌫</button>
         <button type="button" onClick={() => dodaj('0')} disabled={blokirano}>0</button>
-        <button type="button" className="tiho" onClick={() => void provjeri(pin)} disabled={pin.length < 4 || blokirano}>OK</button>
+        <button type="button" className={pin.length >= 4 ? 'ok-spremno' : 'tiho'} onClick={() => void provjeri(pin)} disabled={pin.length < 4 || blokirano || provjerava}>OK</button>
       </div>
       <button type="button" className="link" onClick={() => setZaboravljen(true)}>Zaboravljen PIN?</button>
       {zaboravljen && (

@@ -361,6 +361,8 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .tastatura { display: grid; grid-template-columns: repeat(3, 72px); gap: 14px; justify-content: center; }
 .tastatura button { width: 72px; height: 72px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--na-primarnoj) 40%, transparent); background: color-mix(in srgb, var(--na-primarnoj) 10%, transparent); color: inherit; font: inherit; font-size: 1.6rem; font-weight: 500; cursor: pointer; }
 .tastatura button.tiho { border: none; background: none; font-size: 0.95rem; }
+.tastatura button.ok-spremno { font-size: 1.05rem; font-weight: 700; background: var(--na-primarnoj); color: var(--primarna); border-color: transparent; }
+.tastatura button:disabled { opacity: 0.5; }
 .zakljucano .greska { color: #ffd6d2; font-weight: 600; min-height: 1.4em; }
 .zakljucano .link { background: none; border: none; color: inherit; text-decoration: underline; font: inherit; cursor: pointer; min-height: 44px; }
 

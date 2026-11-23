@@ -80,11 +80,15 @@ describe('uvoz rezervne kopije bez duplikata', () => {
   });
 
   it('PIN i datum zadnje kopije se ne izvoze i ne preuzimaju', () => {
-    const s = { ...prazan(), postavke: { id: 'postavke' as const, nazivSkole: 'S', imePsihologa: 'I', skolskaGodinaPocetak: 2026, pinHash: 'tajna', zadnjaKopija: T1, updatedAt: T2 } };
+    const s = { ...prazan(), postavke: { id: 'postavke' as const, nazivSkole: 'S', imePsihologa: 'I', skolskaGodinaPocetak: 2026, pinHash: 'tajna', pinDuzina: 4, zakljucajNakonSek: 60, zadnjaKopija: T1, updatedAt: T2 } };
     const izvoz = pripremiZaIzvoz(s);
     expect(izvoz.postavke).not.toHaveProperty('pinHash');
+    expect(izvoz.postavke).not.toHaveProperty('pinDuzina');
+    expect(izvoz.postavke).not.toHaveProperty('zakljucajNakonSek');
     const p = napraviPlan({ ...prazan(), postavke: { updatedAt: T1 } }, s);
     expect(p.postavke).toMatchObject({ nazivSkole: 'S' });
     expect(p.postavke).not.toHaveProperty('pinHash');
+    expect(p.postavke).not.toHaveProperty('pinDuzina');
+    expect(p.postavke).not.toHaveProperty('zadnjaKopija');
   });
 });
