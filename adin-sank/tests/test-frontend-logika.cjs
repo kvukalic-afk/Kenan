@@ -139,3 +139,19 @@ test('UID je jedinstven', () => {
   for (let i = 0; i < 5000; i++) s.add(L.uid('E'));
   assert.equal(s.size, 5000);
 });
+
+test('paket: karta + trener, samo trener, tip proizvoda', () => {
+  const karta = { product_id: 'clan30', naziv: 'Mjesečna karta', cijena: 40, clanarina_mjeseci: 1, tip: 'clanarina' };
+  const tr = { product_id: 'trener', naziv: 'Lični trener', cijena: 60, clanarina_mjeseci: 1, tip: 'trener' };
+  const clan = { istek: '2026-12-01', trener_do: '' };
+  const p1 = L.paket(karta, tr, '', clan, '2026-11-21');
+  assert.equal(p1.ukupno, 100);
+  assert.equal(p1.spreman, false, 'trener mora biti izabran');
+  const p2 = L.paket(karta, tr, 'Edin', clan, '2026-11-21');
+  assert.equal(p2.spreman, true);
+  assert.equal(p2.stavke.map(x => x.do).join(','), '2027-01-01,2026-12-21');
+  assert.equal(L.paket(null, null, '', clan, '2026-11-21').spreman, false);
+  assert.equal(L.paket(null, tr, 'Kenan', clan, '2026-11-21').ukupno, 60);
+  const d = L.podijeli([karta, tr, { naziv: 'Dnevni trening', cijena: 3 }, { naziv: 'Red Bull', prati_zalihu: true }, { naziv: 'Peškir', cijena: 2 }]);
+  assert.equal([d.clanarine.length, d.treneri.length, d.dnevne.length, d.roba.length, d.usluge.length].join(), '1,1,1,1,1');
+});

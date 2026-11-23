@@ -8,7 +8,9 @@
 /* ═══════ POSTAVKE — mijenjaj samo ovdje ═══════ */
 var CONFIG = {
   ADMIN_PIN: '2580',                 // početni PIN za vlasnika (poslije se mijenja u aplikaciji: Vlasnik → Postavke)
-  RADNICI: ['Kenan', 'Edvin'],       // velika dugmad na prvom ekranu (+ "Drugi")
+  RADNICI: ['Kenan', 'Edvin'],       // velika dugmad na prvom ekranu (+ "Drugi") — mijenja se i u aplikaciji
+  TRENERI: ['Kenan', 'Edin'],        // ko može biti lični trener — mijenja se i u aplikaciji
+  VLASNICI: 'Edin & Kenan',          // pozdrav u vlasničkom pregledu
   TZ: 'Europe/Sarajevo',
   PREVOZ: 0.03,                      // 3% na nabavnu cijenu robe (prevoz)
   PLATA_UDIO: 0.30,                  // plata radnika = 30% sedmičnog profita
@@ -25,7 +27,7 @@ var TAB = {
 
 var KOLONE = {
   PROIZVODI: ['product_id', 'kategorija', 'naziv', 'cijena', 'nabavna_cijena', 'prati_zalihu',
-    'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci'],
+    'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci', 'tip'],
   SMJENE: ['shift_id', 'datum', 'radnik', 'vrijeme_pocetka', 'vrijeme_kraja', 'status',
     'ukupno_prodano_klikovima', 'ukupno_prodano_po_inventuri', 'promet', 'kasa_ocekivano',
     'kasa_stvarno', 'kasa_razlika', 'kasa_razlog', 'broj_razlika', 'vrijednost_razlike',
@@ -36,7 +38,7 @@ var KOLONE = {
     'dopunjeno', 'evidentirano_prodano', 'ocekivano_zavrsno', 'stvarno_zavrsno',
     'prodano_po_inventuri', 'razlika_kom', 'razlika_KM'],
   CLANOVI: ['member_id', 'ime', 'telefon', 'vrsta', 'pocetak', 'istek', 'zadnje_produzenje',
-    'napomena', 'aktivan', 'brava_id'],
+    'napomena', 'aktivan', 'brava_id', 'trener', 'trener_do'],
   ULAZI: ['izvor_id', 'datum', 'vrijeme', 'nacin', 'korisnik_brave', 'ime', 'member_id', 'clanarina', 'napomena']
 };
 
@@ -46,32 +48,34 @@ var TEKST_KOLONE = {
   SMJENE: ['shift_id', 'datum', 'vrijeme_pocetka', 'vrijeme_kraja', 'created_at', 'updated_at'],
   DOGADJAJI: ['event_id', 'shift_id', 'datum', 'timestamp', 'product_id'],
   INVENTURA: ['shift_id', 'datum', 'product_id'],
-  CLANOVI: ['member_id', 'telefon', 'pocetak', 'istek', 'zadnje_produzenje', 'brava_id'],
+  CLANOVI: ['member_id', 'telefon', 'pocetak', 'istek', 'zadnje_produzenje', 'brava_id', 'trener_do'],
   ULAZI: ['izvor_id', 'datum', 'vrijeme', 'korisnik_brave', 'member_id']
 };
 
 var SEED_PROIZVODI = [
-  // product_id, kategorija, naziv, cijena, nabavna, prati_zalihu, aktivan, redoslijed, minimum, clanarina_mjeseci
-  ['voda05', 'Voda', 'Voda 0,5 L', 1.00, 0.50, true, true, 10, 6, 0],
-  ['voda1', 'Voda', 'Voda 1 L', 2.00, 0.80, true, true, 20, 4, 0],
-  ['redbull', 'Energy', 'Red Bull', 4.00, 2.30, true, true, 30, 6, 0],
-  ['rodeo', 'Energy', 'Rodeo', 2.00, 1.00, true, true, 40, 4, 0],
-  ['xl', 'Energy', 'XL', 2.00, 1.00, true, true, 50, 4, 0],
-  ['kong', 'Energy', 'Kong', 2.00, 1.00, true, true, 60, 4, 0],
-  ['sultan_power', 'Energy', 'Sultan Power', 2.00, 1.00, true, true, 70, 4, 0],
-  ['sultan_kola', 'Sokovi', 'Sultan Kola', 2.00, 1.00, true, true, 80, 4, 0],
-  ['powerade', 'Sport', 'PowerRade', 2.50, 1.70, true, true, 90, 4, 0],
-  ['protein', 'Suplementi', 'Protein', 3.00, 2.30, true, true, 100, 3, 0],
-  ['kreatin', 'Suplementi', 'Kreatin', 2.00, 1.10, true, true, 110, 3, 0],
-  ['preworkout', 'Suplementi', 'Preworkout', 4.00, 3.00, true, true, 120, 3, 0],
-  ['dnevna', 'Usluge', 'Dnevni trening', 3.00, 0, false, true, 130, 0, 0],
-  ['peskir', 'Usluge', 'Peškir najam', 2.00, 0, false, true, 140, 0, 0],
-  ['clan30', 'Članarine', 'Mjesečna članarina', 30.00, 0, false, true, 150, 0, 1],
-  ['clan50', 'Članarine', 'Mjesečna 24/7', 50.00, 20.00, false, true, 160, 0, 1]
+  // product_id, kategorija, naziv, cijena, nabavna, prati_zalihu, aktivan, redoslijed, minimum, clanarina_mjeseci, tip
+  ['voda05', 'Voda', 'Voda 0,5 L', 1.00, 0.50, true, true, 10, 6, 0, 'roba'],
+  ['voda1', 'Voda', 'Voda 1 L', 2.00, 0.80, true, true, 20, 4, 0, 'roba'],
+  ['redbull', 'Energy', 'Red Bull', 4.00, 2.30, true, true, 30, 6, 0, 'roba'],
+  ['rodeo', 'Energy', 'Rodeo', 2.00, 1.00, true, true, 40, 4, 0, 'roba'],
+  ['xl', 'Energy', 'XL', 2.00, 1.00, true, true, 50, 4, 0, 'roba'],
+  ['kong', 'Energy', 'Kong', 2.00, 1.00, true, true, 60, 4, 0, 'roba'],
+  ['sultan_power', 'Energy', 'Sultan Power', 2.00, 1.00, true, true, 70, 4, 0, 'roba'],
+  ['sultan_kola', 'Sokovi', 'Sultan Kola', 2.00, 1.00, true, true, 80, 4, 0, 'roba'],
+  ['powerade', 'Sport', 'PowerRade', 2.50, 1.70, true, true, 90, 4, 0, 'roba'],
+  ['protein', 'Suplementi', 'Protein', 3.00, 2.30, true, true, 100, 3, 0, 'roba'],
+  ['kreatin', 'Suplementi', 'Kreatin', 2.00, 1.10, true, true, 110, 3, 0, 'roba'],
+  ['preworkout', 'Suplementi', 'Preworkout', 4.00, 3.00, true, true, 120, 3, 0, 'roba'],
+  ['dnevna', 'Karte', 'Dnevna karta', 3.00, 0, false, true, 130, 0, 0, 'dnevna'],
+  ['peskir', 'Usluge', 'Peškir najam', 2.00, 0, false, true, 140, 0, 0, 'usluga'],
+  ['clan30', 'Članarine', 'Mjesečna članarina', 30.00, 0, false, true, 150, 0, 1, 'clanarina'],
+  ['clan50', 'Članarine', 'Mjesečna 24/7', 50.00, 20.00, false, true, 160, 0, 1, 'clanarina'],
+  ['trener', 'Trener', 'Lični trener (mjesečno)', 60.00, 60.00, false, true, 170, 0, 1, 'trener']
 ];
 
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
+var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
 
 /* ═══════════════════════════════════════════════════════════════
  *  WEB APLIKACIJA
@@ -133,6 +137,17 @@ function zakljucano_(fn) {
 }
 
 function svojstva_() { return PropertiesService.getScriptProperties(); }
+
+/** Liste koje vlasnik mijenja u aplikaciji (Postavke); ako nisu mijenjane — iz CONFIG-a. */
+function lista_(kljuc, pod) {
+  try {
+    var v = JSON.parse(svojstva_().getProperty(kljuc) || 'null');
+    if (Array.isArray(v) && v.length) return v.map(String);
+  } catch (e) { /* */ }
+  return pod.slice();
+}
+function radnici_() { return lista_('RADNICI', CONFIG.RADNICI); }
+function treneri_() { return lista_('TRENERI', CONFIG.TRENERI); }
 
 function aktivniPin_() {
   var p = svojstva_().getProperty('ADMIN_PIN');
@@ -358,9 +373,23 @@ function proizvodi_(sviUkljucujuciNeaktivne) {
       clanarina_mjeseci: Math.max(0, Math.round(num_(r.clanarina_mjeseci)))
     };
   });
+  lista.forEach(function (p, i) { p.tip = tipProizvoda_(t.redovi.filter(function (r) { return s_(r.product_id); })[i], p); });
   lista.sort(function (a, b) { return a.redoslijed - b.redoslijed || (a.naziv < b.naziv ? -1 : 1); });
   return sviUkljucujuciNeaktivne ? lista : lista.filter(function (p) { return p.aktivan; });
 }
+
+/** Vrsta proizvoda: iz kolone `tip`, a ako je prazna — pogađa se (stari Sheet ostaje ispravan). */
+function tipProizvoda_(r, p) {
+  var t = s_(r && r.tip).toLowerCase();
+  if (TIPOVI_PROIZVODA.indexOf(t) >= 0) return t;
+  if (p.prati_zalihu) return 'roba';
+  if (p.clanarina_mjeseci > 0) return /trener|trening personal|personal/i.test(p.naziv) ? 'trener' : 'clanarina';
+  if (/dnevn/i.test(p.naziv) || p.product_id === 'dnevna') return 'dnevna';
+  return 'usluga';
+}
+function jeClanarina_(p) { return p.tip === 'clanarina'; }
+function jeTrener_(p) { return p.tip === 'trener'; }
+function trebaClana_(p) { return p.tip === 'clanarina' || p.tip === 'trener'; }
 
 /** Trošak po komadu: roba = nabavna + prevoz, usluge/članarine = nabavna kakva jeste. */
 function trosak_(p) {
@@ -370,7 +399,7 @@ function trosak_(p) {
 function javniProizvod_(p) {
   return {
     product_id: p.product_id, kategorija: p.kategorija, naziv: p.naziv, cijena: p.cijena,
-    prati_zalihu: p.prati_zalihu, minimum: p.minimum, clanarina_mjeseci: p.clanarina_mjeseci
+    prati_zalihu: p.prati_zalihu, minimum: p.minimum, clanarina_mjeseci: p.clanarina_mjeseci, tip: p.tip
   };
 }
 
@@ -540,6 +569,20 @@ function osigurajTabele_(formatiraj) {
     uradjeno.push('upisano ' + SEED_PROIZVODI.length + ' proizvoda');
     if (formatiraj) checkboxeProizvoda_(pr);
   }
+
+  // stari Sheet (prije paketa s trenerom): dodaj proizvod "trener" jednom, nikad ponovo ako ga vlasnik obriše
+  try {
+    if (!svojstva_().getProperty('SEED_TRENER')) {
+      var tp = tabela_(TAB.PROIZVODI);
+      if (!tp.redovi.some(function (r) { return s_(r.product_id) === 'trener'; })) {
+        var o = {};
+        KOLONE.PROIZVODI.forEach(function (k, i) { o[k] = SEED_PROIZVODI[SEED_PROIZVODI.length - 1][i]; });
+        dodajRedove_(tp, [o]);
+        uradjeno.push('dodan proizvod Lični trener');
+      }
+      svojstva_().setProperty('SEED_TRENER', '1');
+    }
+  } catch (e) { /* */ }
 
   var pg = ss.getSheetByName(TAB.PREGLED);
   if (!pg) {
@@ -711,7 +754,8 @@ function clanJavno_(r) {
   return {
     member_id: s_(r.member_id), ime: s_(r.ime), telefon: s_(r.telefon), vrsta: s_(r.vrsta),
     pocetak: datum_(r.pocetak), istek: datum_(r.istek), napomena: s_(r.napomena),
-    aktivan: s_(r.aktivan) === '' ? true : bool_(r.aktivan), brava_id: s_(r.brava_id)
+    aktivan: s_(r.aktivan) === '' ? true : bool_(r.aktivan), brava_id: s_(r.brava_id),
+    trener: s_(r.trener), trener_do: datum_(r.trener_do)
   };
 }
 
@@ -798,7 +842,8 @@ function getBootstrap() {
       proizvodi: proizvodi.map(javniProizvod_),
       aktivna: aktivna,
       prijedlog: prijedlog_(tInv),
-      radnici: CONFIG.RADNICI,
+      radnici: radnici_(),
+      treneri: treneri_(),
       razlozi: CONFIG.RAZLOZI,
       clanovi: clanovi,
       danas: t.datum,
@@ -922,10 +967,10 @@ function obradiDogadjaje_(shiftId, events) {
 
     if (tip === 'SALE') {
       if (q < 1 || q > 50) { odbij(id, 'KOLICINA', 'Neispravna količina.'); return; }
-      if (p.clanarina_mjeseci > 0) {
+      if (trebaClana_(p)) {
         if (q !== 1) { odbij(id, 'KOLICINA', 'Članarina se prodaje jedna po jedna.'); return; }
         if (!tClan) tClan = tabela_(TAB.CLANOVI);
-        var rez = prodajClanarinu_(tClan, e.clan, p, t);
+        var rez = jeTrener_(p) ? prodajTrenera_(tClan, e.clan, p, t) : prodajClanarinu_(tClan, e.clan, p, t);
         if (rez.greska) { odbij(id, 'CLAN', rez.greska); return; }
         napomena = (napomena ? napomena + ' · ' : '') + rez.napomena;
         izlaz.clanovi.push(rez.clan);
@@ -933,7 +978,7 @@ function obradiDogadjaje_(shiftId, events) {
       ukupno = r2_(q * p.cijena);
     } else if (tip === 'UNDO_SALE') {
       q = -Math.abs(q);
-      if (p.clanarina_mjeseci > 0) { odbij(id, 'CLAN_UNDO', 'Članarina se ne poništava ovdje. Javi vlasniku.'); return; }
+      if (trebaClana_(p)) { odbij(id, 'CLAN_UNDO', 'Članarina se ne poništava ovdje. Javi vlasniku.'); return; }
       if ((neto[kljuc] || 0) + q < 0) { odbij(id, 'NEMA_STA_PONISTITI', 'Nema prodaje koja bi se poništila.'); return; }
       ukupno = r2_(q * p.cijena);
     } else if (tip === 'RESTOCK') {
@@ -990,6 +1035,37 @@ function prodajClanarinu_(tClan, c, p, t) {
   if (!prod.aktivna) izmjene.pocetak = t.datum;
   azurirajRed_(tClan, red, izmjene);
   return { clan: clanJavno_(red), napomena: 'Član ' + s_(red.ime) + ', važi do ' + dT_(prod.istek) };
+}
+
+/** Nađe člana ili ga napravi (novi član: ime + telefon). */
+function nadjiIliNapraviClana_(tClan, c, t) {
+  c = c || {};
+  var mid = s_(c.member_id).slice(0, 80);
+  if (!mid) return { greska: 'Nije izabran član.' };
+  var red = null;
+  tClan.redovi.forEach(function (r) { if (s_(r.member_id) === mid) red = r; });
+  if (red) return { red: red, novi: false };
+  var ime = s_(c.ime).slice(0, 80);
+  if (!ime) return { greska: 'Upiši ime novog člana.' };
+  var novi = {
+    member_id: mid, ime: ime, telefon: s_(c.telefon).slice(0, 40), vrsta: '', pocetak: '', istek: '',
+    zadnje_produzenje: '', napomena: '', aktivan: true, trener: '', trener_do: ''
+  };
+  dodajRedove_(tClan, [novi]);
+  novi._red = tClan.sh.getLastRow();
+  tClan.redovi.push(novi);
+  return { red: novi, novi: true };
+}
+
+/** Lični trener (dodatak na kartu): bilježi trenera i do kada važi. */
+function prodajTrenera_(tClan, c, p, t) {
+  var n = nadjiIliNapraviClana_(tClan, c, t);
+  if (n.greska) return n;
+  var trener = s_(c && c.trener).slice(0, 60);
+  if (!trener) return { greska: 'Izaberi trenera.' };
+  var prod = produziClanarinu_(datum_(n.red.trener_do), t.datum, p.clanarina_mjeseci || 1);
+  azurirajRed_(tClan, n.red, { trener: trener, trener_do: prod.istek, aktivan: true });
+  return { clan: clanJavno_(n.red), napomena: 'Trener ' + trener + ' za ' + s_(n.red.ime) + ', do ' + dT_(prod.istek) };
 }
 
 /**
@@ -1227,6 +1303,9 @@ function getAdminData(pin) {
     var prazno = function () { return { promet: 0, profit: 0, kom: 0 }; };
     var danas = prazno(), sedmica = prazno(), prosla = prazno(), mjesec = prazno(), d7 = prazno();
     var poProizvodu = {}, poRadniku = {};
+    var kartePrazno = function () { return { dnevne: prazno(), mjesecne: prazno(), trener: prazno() }; };
+    var karte = { danas: kartePrazno(), mjesec: kartePrazno() };
+    karte.mjesec.nove = 0; karte.mjesec.produzene = 0;
     tDog.redovi.forEach(function (r) {
       var tip = s_(r.tip_dogadjaja);
       if (tip !== 'SALE' && tip !== 'UNDO_SALE') return;
@@ -1235,6 +1314,15 @@ function getAdminData(pin) {
       var q = num_(r.kolicina), uk = num_(r.ukupno);
       var pr = uk - q * trosak_(p);
       var dodaj = function (o) { o.promet += uk; o.profit += pr; o.kom += q; };
+      var kt = p.tip ? karteGrupa_(p.tip) : null;
+      if (kt) {
+        var napo = s_(r.napomena);
+        if (d === per.danas) dodaj(karte.danas[kt]);
+        if (d >= per.mjesecOd && d <= per.danas) {
+          dodaj(karte.mjesec[kt]);
+          if (kt === 'mjesecne' && tip === 'SALE') { if (/^Novi član/.test(napo)) karte.mjesec.nove++; else karte.mjesec.produzene++; }
+        }
+      }
       if (d === per.danas) dodaj(danas);
       if (d >= per.od7 && d <= per.danas) dodaj(d7);
       if (d >= per.sedmicaOd && d <= per.danas) dodaj(sedmica);
@@ -1250,6 +1338,14 @@ function getAdminData(pin) {
     });
     var zaokruzi = function (o) { o.promet = r2_(o.promet); o.profit = r2_(o.profit); return o; };
     [danas, sedmica, prosla, mjesec, d7].forEach(zaokruzi);
+    ['danas', 'mjesec'].forEach(function (k) { ['dnevne', 'mjesecne', 'trener'].forEach(function (g) { zaokruzi(karte[k][g]); }); });
+    var sviCl = tabela_(TAB.CLANOVI).redovi.map(clanJavno_).filter(function (c) { return c.member_id && c.aktivan; });
+    karte.aktivnih_karti = sviCl.filter(function (c) { return c.istek && c.istek >= t.datum; }).length;
+    karte.sa_trenerom = sviCl.filter(function (c) { return c.trener_do && c.trener_do >= t.datum; })
+      .map(function (c) { return { member_id: c.member_id, ime: c.ime, telefon: c.telefon, trener: c.trener, trener_do: c.trener_do, istek: c.istek }; })
+      .sort(function (a, b) { return a.trener_do < b.trener_do ? -1 : 1; });
+    karte.po_treneru = {};
+    karte.sa_trenerom.forEach(function (c) { karte.po_treneru[c.trener] = (karte.po_treneru[c.trener] || 0) + 1; });
 
     var manjak = 0, visak = 0, kasaRaz = 0, smjenaMj = 0;
     var otvorena = null;
@@ -1319,9 +1415,13 @@ function getAdminData(pin) {
         return {
           product_id: p.product_id, kategorija: p.kategorija, naziv: p.naziv, cijena: p.cijena, nabavna: p.nabavna,
           prati_zalihu: p.prati_zalihu, aktivan: p.aktivan, minimum: p.minimum, redoslijed: p.redoslijed,
-          clanarina_mjeseci: p.clanarina_mjeseci
+          clanarina_mjeseci: p.clanarina_mjeseci, tip: p.tip
         };
-      })
+      }),
+      karte: karte,
+      treneri: treneri_(),
+      radnici: radnici_(),
+      vlasnici: CONFIG.VLASNICI
     };
   });
 }
@@ -1366,7 +1466,13 @@ function saveProduct(pin, p) {
         minimum: Math.max(0, Math.round(num_(p.minimum))),
         clanarina_mjeseci: Math.max(0, Math.round(num_(p.clanarina_mjeseci)))
       };
-      if (izmjene.clanarina_mjeseci > 0) izmjene.prati_zalihu = false;
+      var tip = s_(p.tip).toLowerCase();
+      if (TIPOVI_PROIZVODA.indexOf(tip) < 0) tip = izmjene.prati_zalihu ? 'roba' : (izmjene.clanarina_mjeseci > 0 ? 'clanarina' : 'usluga');
+      izmjene.tip = tip;
+      if (tip === 'roba') izmjene.prati_zalihu = true;
+      else izmjene.prati_zalihu = false;
+      if (tip === 'clanarina' || tip === 'trener') izmjene.clanarina_mjeseci = izmjene.clanarina_mjeseci || 1;
+      else izmjene.clanarina_mjeseci = 0;
       if (red) {
         if (s_(p.redoslijed) !== '') izmjene.redoslijed = num_(p.redoslijed);
         azurirajRed_(t, red, izmjene);
@@ -1382,5 +1488,34 @@ function saveProduct(pin, p) {
       if (t.sh.getLastRow() > 1) { try { checkboxeProizvoda_(t.sh); } catch (e) { /* */ } }
       return { product_id: k, novi: true };
     });
+  });
+}
+
+function karteGrupa_(tip) {
+  return tip === 'dnevna' ? 'dnevne' : tip === 'clanarina' ? 'mjesecne' : tip === 'trener' ? 'trener' : null;
+}
+
+/** Vlasnik mijenja spisak radnika i trenera (dugmad u aplikaciji). */
+function saveLists(pin, liste) {
+  return api_(function () {
+    provjeriPin_(pin);
+    liste = liste || {};
+    var ocisti = function (l) {
+      var v = (Array.isArray(l) ? l : String(l || '').split(',')).map(function (x) { return s_(x).slice(0, 40); }).filter(function (x) { return x; });
+      var jed = [];
+      v.forEach(function (x) { if (jed.indexOf(x) < 0) jed.push(x); });
+      return jed.slice(0, 12);
+    };
+    if (liste.radnici !== undefined) {
+      var r = ocisti(liste.radnici);
+      if (!r.length) throw greska_('RADNICI', 'Upiši bar jednog radnika.');
+      svojstva_().setProperty('RADNICI', JSON.stringify(r));
+    }
+    if (liste.treneri !== undefined) {
+      var tr = ocisti(liste.treneri);
+      if (!tr.length) throw greska_('TRENERI', 'Upiši bar jednog trenera.');
+      svojstva_().setProperty('TRENERI', JSON.stringify(tr));
+    }
+    return { radnici: radnici_(), treneri: treneri_() };
   });
 }

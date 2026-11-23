@@ -88,6 +88,15 @@ Najlakše u aplikaciji: **Vlasnik › → Proizvodi** (+ Novi proizvod, klik na 
 - `minimum` = ispod koliko komada te aplikacija upozori. `clanarina_mjeseci` = 1 samo za članarine.
 - Promjena je vidljiva kad radnik ponovo otvori aplikaciju.
 
+## 10a. Karte, članarine i paketi s trenerom
+
+- **Dnevna karta**: jedan tap na pločicu 🎫 na vrhu ekrana prodaje.
+- **Mjesečna karta / trener** (pločica 🏋️): izaberi člana (ili + Novi član) → označi kartu i/ili ličnog trenera i izaberi trenera → **NAPLAĆENO**. Primjer: karta 40 + trener 60 = 100 KM u kasi. Karta i trener se produžavaju od datuma isteka ako još važe, inače od danas.
+- **Cijene i nove ponude** (npr. godišnja karta, studentska, 3 mjeseca): **Vlasnik → Proizvodi → + Novi proizvod / ponuda** → izaberi vrstu (Roba / Dnevna karta / Mjesečna karta / Lični trener / Ostala usluga) i koliko mjeseci traje.
+- **Novac za trenera**: kod proizvoda Lični trener polje "Ide treneru" je po defaultu jednako cijeni (60). Tako taj novac ne ulazi u profit kluba ni u 30% plate radnika. Ako ste vi treneri i hoćete da ulazi u profit, stavi 0.
+- **Spisak radnika i trenera**: **Vlasnik → Postavke**.
+- **Evidencija**: **Vlasnik → Karte** (dnevne i mjesečne danas/mjesec, nove i produžene, ko ima trenera i do kada).
+
 ## 11. Provjera da sve radi (5 minuta)
 
 Uradi ovo jednom nakon postavljanja (poslije možeš obrisati redove testa iz SMJENE/DOGADJAJI/INVENTURA):
@@ -103,7 +112,7 @@ Uradi ovo jednom nakon postavljanja (poslije možeš obrisati redove testa iz SM
 
 ## 12. Šta gdje gledaš (vlasnik)
 
-- U aplikaciji: dno prvog ekrana **Vlasnik ›** → PIN → Danas / Vrata / Smjene / Članovi / Zalihe / Proizvodi / Mjesec / Postavke.
+- U aplikaciji: dno prvog ekrana **Vlasnik ›** → PIN → Danas / Karte / Vrata / Smjene / Članovi / Zalihe / Proizvodi / Mjesec / Postavke.
 - Napomene radnika (dugme "✎ Napomena za vlasnika") vidiš u izvještaju smjene i u tabu Smjene.
 - Vrata, svjetla i ulazi članova: vidi **`TUYA_POVEZIVANJE.md`**.
 - U Sheetu: tab **PREGLED** (promet, profit, plata, top proizvodi, po radniku, članarine, historija). Ne upisuj ništa u PREGLED, to su formule.

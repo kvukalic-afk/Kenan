@@ -52,7 +52,7 @@ test('vlasnik dodaje i mijenja proizvod iz aplikacije; radnik ga odmah vidi', ()
   const b2 = ok(g.getBootstrap());
   assert.equal(b2.proizvodi.find(p => p.product_id === 'redbull').cijena, 4.5);
   assert.ok(!b2.proizvodi.some(p => p.product_id === 'kong'));
-  assert.equal(g.__tabela('PROIZVODI').length, 18, 'ništa obrisano');
+  assert.equal(g.__tabela('PROIZVODI').length, 19, 'ništa obrisano');
   // vlasnik vidi i neaktivne + nabavnu
   const a = ok(g.getAdminData('2580'));
   assert.equal(a.proizvodi.find(p => p.product_id === 'kong').aktivan, false);
@@ -175,4 +175,68 @@ test('Tuya potpis odgovara službenom algoritmu (nezavisna provjera)', () => {
   const str = 'POST\n' + crypto.createHash('sha256').update('{"k":1}').digest('hex') + '\n\n/v1.0/x?a=1&b=2';
   assert.equal(sig, crypto.createHmac('sha256', 'sec').update('cidtok1700000000000n1' + str).digest('hex').toUpperCase());
   assert.equal(g.sha256Hex_(''), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+});
+
+test('PAKET: mjesečna karta 40 + trener 60 — oboje u kasi, član dobija kartu i trenera, vlasnik vidi evidenciju', () => {
+  const g = okruzenje();
+  // vlasnik postavi kartu na 40 KM (primjer iz prakse)
+  ok(g.saveProduct('2580', { product_id: 'clan30', naziv: 'Mjesečna karta', kategorija: 'Članarine', cijena: 40, nabavna: 0, tip: 'clanarina', aktivan: true }));
+  const b = ok(g.getBootstrap());
+  assert.deepEqual(b.treneri, ['Kenan', 'Edin']);
+  assert.equal(b.proizvodi.find(p => p.product_id === 'trener').tip, 'trener');
+  assert.equal(b.proizvodi.find(p => p.product_id === 'dnevna').tip, 'dnevna');
+  ok(g.startShift({ shift_id: 'K', radnik: 'Edvin', pocetna: pocetno(g) }));
+  const clan = { member_id: 'M-P', ime: 'Nermin', telefon: '061', trener: 'Edin' };
+  const r = ok(g.pushEvents('K', [
+    { event_id: 'k1', shift_id: 'K', tip: 'SALE', product_id: 'clan30', kolicina: 1, clan },
+    { event_id: 'k2', shift_id: 'K', tip: 'SALE', product_id: 'trener', kolicina: 1, clan },
+    { event_id: 'k3', shift_id: 'K', tip: 'SALE', product_id: 'dnevna', kolicina: 1 },
+    { event_id: 'k4', shift_id: 'K', tip: 'SALE', product_id: 'trener', kolicina: 1, clan: { member_id: 'M-X', ime: 'Bez trenera' } }
+  ]));
+  assert.deepEqual(r.primljeno, ['k1', 'k2', 'k3']);
+  assert.equal(r.odbijeni[0].message, 'Izaberi trenera.');
+  const c = g.__tabela('CLANOVI').find(x => x.member_id === 'M-P');
+  assert.equal(c.istek, '2026-12-21');
+  assert.equal(c.trener, 'Edin');
+  assert.equal(c.trener_do, '2026-12-21');
+  assert.equal(g.__tabela('CLANOVI').length, 2, 'jedan član, ne dva (+ član iz odbijenog paketa bez trenera)');
+  const z = ok(g.closeShift('K', pocetno(g), '103', ''));
+  assert.equal(z.izvjestaj.promet, 103);
+  assert.deepEqual(z.izvjestaj.usluge.map(u => [u.naziv, u.km]), [['Dnevna karta', 3], ['Mjesečna karta', 40], ['Lični trener (mjesečno)', 60]]);
+  const a = ok(g.getAdminData('2580'));
+  assert.equal(a.karte.mjesec.dnevne.kom, 1);
+  assert.equal(a.karte.mjesec.mjesecne.promet, 40);
+  assert.equal(a.karte.mjesec.nove, 1);
+  assert.equal(a.karte.mjesec.trener.promet, 60);
+  assert.equal(a.karte.mjesec.trener.profit, 0, 'trenerov novac ne ulazi u profit (ni u platu radnika) dok vlasnik ne promijeni');
+  assert.equal(a.karte.aktivnih_karti, 1);
+  assert.equal(a.karte.sa_trenerom[0].ime, 'Nermin');
+  assert.equal(a.karte.po_treneru.Edin, 1);
+  assert.equal(a.danas.profit, 43);
+});
+
+test('Postavke: vlasnik mijenja spisak radnika i trenera', () => {
+  const g = okruzenje();
+  assert.equal(g.saveLists('0000', { radnici: ['X'] }).code, 'PIN');
+  assert.equal(g.saveLists('2580', { treneri: ' , ' }).code, 'TRENERI');
+  const r = ok(g.saveLists('2580', { radnici: ['Edvin', 'Amra', 'Edvin', ' '], treneri: 'Edin, Kenan, Amar' }));
+  assert.deepEqual(r.radnici, ['Edvin', 'Amra']);
+  assert.deepEqual(r.treneri, ['Edin', 'Kenan', 'Amar']);
+  const b = ok(g.getBootstrap());
+  assert.deepEqual(b.radnici, ['Edvin', 'Amra']);
+  assert.deepEqual(b.treneri, ['Edin', 'Kenan', 'Amar']);
+});
+
+test('saveProduct: tip određuje ponašanje (roba se broji, karta ne)', () => {
+  const g = okruzenje();
+  ok(g.saveProduct('2580', { naziv: 'Godišnja karta', kategorija: 'Članarine', cijena: 350, tip: 'clanarina', prati_zalihu: true }));
+  ok(g.saveProduct('2580', { naziv: 'Proteinska čokoladica', kategorija: 'Suplementi', cijena: 3, nabavna: 1.5, tip: 'roba' }));
+  const b = ok(g.getBootstrap());
+  const god = b.proizvodi.find(p => p.naziv === 'Godišnja karta');
+  assert.equal(god.prati_zalihu, false);
+  assert.equal(god.clanarina_mjeseci, 1);
+  assert.equal(god.tip, 'clanarina');
+  assert.equal(b.proizvodi.find(p => p.naziv === 'Proteinska čokoladica').prati_zalihu, true);
+  ok(g.saveProduct('2580', { product_id: god.product_id, naziv: 'Godišnja karta', kategorija: 'Članarine', cijena: 350, tip: 'clanarina', clanarina_mjeseci: 12 }));
+  assert.equal(ok(g.getBootstrap()).proizvodi.find(p => p.naziv === 'Godišnja karta').clanarina_mjeseci, 12);
 });

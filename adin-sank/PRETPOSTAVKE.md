@@ -20,6 +20,10 @@
 | 16 | Član se na bravi prepoznaje po **istom imenu** kao u Smart Life ili po koloni `brava_id` | Vlasnik → Članovi |
 | 17 | Data centar Tuye je **Central Europe** | Vlasnik → Vrata → Postavke |
 
+| 18 | **Lični trener**: 60 KM mjesečno, po defaultu ide treneru u cijelosti (ne ulazi u profit ni u platu radnika). Treneri na spisku: Kenan, Edin | Vlasnik → Proizvodi / Postavke |
+| 19 | Mjesečna karta i dalje stoji na **30 KM** (i 24/7 na 50) jer cijenu nisi potvrdio. Ako je sada 40, promijeni je u Vlasnik → Proizvodi | Vlasnik → Proizvodi |
+| 20 | Vlasnici u pozdravu: **Edin & Kenan**; radnici na prvom ekranu: Kenan, Edvin | `CONFIG` / Vlasnik → Postavke |
+
 ## Ograničenja koja trebaš znati
 
 - Aplikacija se mora **otvoriti** dok ima interneta (Google je servira). Kad je jednom otvorena, prodaja radi i bez interneta, a sinhronizuje se kasnije.

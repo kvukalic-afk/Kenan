@@ -188,6 +188,25 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByTestId('radnik').filter({ hasText: 'Edvin' }).waitFor();
     assert.equal((await page.locator('[data-tile="redbull"] .badge').textContent()).trim(), '2');
 
+    // paket: mjesečna karta + lični trener (Edin), novi član
+    await page.locator('[data-tile="clanarina"]').click();
+    await page.getByRole('button', { name: '+ Novi član' }).click();
+    await page.getByPlaceholder('npr. Amel Hodžić').fill('Nermin Test');
+    await page.getByPlaceholder('06x xxx xxx').fill('061 555 444');
+    await page.getByRole('button', { name: 'Dalje', exact: true }).click();
+    await page.locator('[data-karta="clan30"]').click();
+    await page.locator('[data-trener-paket="trener"]').click();
+    assert.match(await page.getByRole('button', { name: /Izaberi trenera/ }).textContent(), /Izaberi trenera/);
+    await page.locator('[data-trener="Edin"]').click();
+    assert.match(await page.getByTestId('paket-ukupno').textContent(), /90,00/);
+    await page.screenshot({ path: path.join(SLIKE, '6b-paket.png') });
+    await page.getByRole('button', { name: /NAPLAĆENO 90,00 KM/ }).click();
+    await cekajSync(page);
+    const nermin = g.__tabela('CLANOVI').find(c => c.ime === 'Nermin Test');
+    assert.equal(nermin.trener, 'Edin');
+    assert.ok(nermin.istek && nermin.trener_do);
+    await page.screenshot({ path: path.join(SLIKE, '6c-smjena-karte.png') });
+
     // napomena za vlasnika
     await page.getByRole('button', { name: '✎ Napomena za vlasnika' }).click();
     await page.getByTestId('napomena').fill('Frižider ne hladi');
@@ -199,7 +218,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     const st2 = { offline: false, pozivi: [] };
     const t2 = await noviTelefon(browser, g, st2);
     await t2.page.getByTestId('radnik').filter({ hasText: 'Edvin' }).waitFor();
-    assert.match(await t2.page.getByTestId('promet').textContent(), /8,00/);
+    assert.match(await t2.page.getByTestId('promet').textContent(), /98,00/);
 
     // telefon 1 offline proda još jedan; u međuvremenu vlasnik (telefon 2) zatvori smjenu bez brojanja
     st1.offline = true;
@@ -234,9 +253,14 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByText('TOP PROIZVODI').waitFor();
     await page.screenshot({ path: path.join(SLIKE, '8-mjesec.png'), fullPage: true });
 
+    await page.getByRole('button', { name: 'Karte', exact: true }).click();
+    await page.getByText('ČLANOVI S TRENEROM').waitFor();
+    await page.getByText('Nermin Test').waitFor();
+    await page.screenshot({ path: path.join(SLIKE, '8b-karte.png'), fullPage: true });
+
     // vlasnik dodaje novi proizvod
     await page.getByRole('button', { name: 'Proizvodi', exact: true }).click();
-    await page.getByRole('button', { name: '+ Novi proizvod' }).click();
+    await page.getByRole('button', { name: '+ Novi proizvod / ponuda' }).click();
     await page.getByTestId('p-naziv').fill('Monster');
     await page.getByTestId('p-cijena').fill('4,50');
     await page.getByTestId('p-nabavna').fill('2,60');

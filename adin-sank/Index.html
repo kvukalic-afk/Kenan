@@ -15,23 +15,29 @@
     --bg:#0F0F11; --card:#191A1D; --card2:#212227; --line:#2C2D33;
     --gold:#E8A33D; --gold2:rgba(232,163,61,.12); --text:#F5F2EC; --dim:#8F8A80;
     --red:#E5544B; --green:#5FB07A; --blue:#6E8FC4;
+    --goldg:linear-gradient(135deg,#F7D58B 0%,#E8A33D 45%,#C9852A 100%);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
     font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
     -webkit-font-smoothing:antialiased; overscroll-behavior:none; -webkit-text-size-adjust:100%;}
+  body{background:radial-gradient(900px 520px at 50% -180px, rgba(232,163,61,.13), transparent 65%) no-repeat, var(--bg); background-attachment:fixed;}
   #root{max-width:560px; margin:0 auto; min-height:100vh;}
+  .zl{background:var(--goldg); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .splash{min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .hero{display:flex; align-items:center; gap:16px; padding:14px 4px 6px;}
   button{font-family:inherit; cursor:pointer; touch-action:manipulation;}
   input{font-family:inherit;}
   a{color:var(--gold);}
   .head{display:flex; justify-content:space-between; align-items:center; gap:10px;
     padding:calc(12px + env(safe-area-inset-top)) 16px 12px; border-bottom:1px solid var(--line);
-    position:sticky; top:0; background:var(--bg); z-index:20;}
-  .logo{font-size:12.5px; font-weight:700; letter-spacing:1.7px;}
+    position:sticky; top:0; background:rgba(15,15,17,.92); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); z-index:20;}
+  .logo{font-size:12.5px; font-weight:700; letter-spacing:1.9px;}
   .logoSub{font-size:9px; letter-spacing:1.8px; color:var(--dim); margin-top:3px;}
   .wrap{padding:16px 16px 28px; display:flex; flex-direction:column; gap:12px;}
   .h1{font-size:23px; font-weight:700; line-height:1.2;}
-  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px;}
+  .card{background:linear-gradient(180deg,#1C1D21,#17181B); border:1px solid var(--line); border-radius:14px; padding:16px;}
+  .card.racun{border-color:rgba(232,163,61,.45); background:linear-gradient(180deg,rgba(232,163,61,.08),rgba(232,163,61,.02));}
   .card0{background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
   .lab{font-size:10px; font-weight:600; letter-spacing:2px; color:var(--dim); margin-bottom:8px;}
   .grp{font-size:10px; font-weight:700; letter-spacing:2.2px; color:var(--dim); margin:8px 0 6px 2px;}
@@ -44,15 +50,17 @@
   .good{font-size:13.5px; line-height:1.55; color:var(--green); background:rgba(95,176,122,.08);
     border:1px solid rgba(95,176,122,.5); border-radius:10px; padding:13px;}
   .sit{font-size:12px; color:var(--dim); margin-top:2px;}
-  .btn{width:100%; min-height:56px; margin-top:6px; padding:16px; background:var(--gold); border:none;
-    border-radius:12px; color:#141416; font-size:16px; font-weight:700; letter-spacing:.3px;}
-  .btn:disabled{opacity:.35;}
+  .btn{width:100%; min-height:56px; margin-top:6px; padding:16px; background:var(--goldg); border:none;
+    border-radius:13px; color:#141416; font-size:16px; font-weight:700; letter-spacing:.4px;
+    box-shadow:0 8px 22px rgba(232,163,61,.22), inset 0 1px 0 rgba(255,255,255,.35);}
+  .btn:active{transform:scale(.985);}
+  .btn:disabled{opacity:.35; box-shadow:none;}
   .btn.red{background:var(--red); color:#fff;}
   .btn2{width:100%; min-height:50px; padding:13px; background:transparent;
     border:1px solid var(--line); border-radius:11px; color:var(--dim); font-size:14px; font-weight:500;}
   .pick{flex:1; min-width:96px; min-height:64px; padding:14px 10px; background:var(--card);
     border:1.5px solid var(--line); border-radius:12px; color:var(--text); font-size:18px; font-weight:600;}
-  .pick.on{border-color:var(--gold); background:var(--gold2);}
+  .pick.on{border-color:var(--gold); background:var(--gold2); box-shadow:0 0 0 1px rgba(232,163,61,.25) inset;}
   .chip{min-height:48px; padding:10px 14px; background:var(--card); border:1.5px solid var(--line);
     border-radius:11px; color:var(--text); font-size:14px;}
   .chip.on{border-color:var(--gold); background:var(--gold2);}
@@ -83,9 +91,11 @@
   .tile .pr{font-size:13px; color:var(--gold); font-weight:600;}
   .tile .st{font-size:12px; color:var(--dim);}
   .tile .st.low{color:var(--red); font-weight:600;}
-  .tile.clan{border-style:dashed;}
+  .tile.karta{min-height:104px; background:linear-gradient(160deg,#22211E,#18181B); border-color:rgba(232,163,61,.35);}
+  .tile.zlatna{border-color:var(--gold); background:linear-gradient(160deg,rgba(232,163,61,.16),rgba(232,163,61,.03));}
+  .tile .ik{font-size:20px; line-height:1; margin-bottom:2px;}
   .badge{position:absolute; top:-8px; right:-6px; min-width:26px; height:26px;
-    padding:0 7px; border-radius:13px; background:var(--gold); color:#141416;
+    padding:0 7px; border-radius:13px; background:var(--goldg); box-shadow:0 3px 10px rgba(0,0,0,.4); color:#141416;
     font-size:13px; font-weight:700; display:grid; place-items:center;}
   .undo{position:fixed; left:12px; right:12px; bottom:calc(92px + env(safe-area-inset-bottom)); max-width:536px;
     margin:0 auto; display:flex; justify-content:space-between; align-items:center; gap:10px;
@@ -99,7 +109,8 @@
   .dock{position:fixed; bottom:0; left:0; right:0; max-width:560px; margin:0 auto;
     display:flex; justify-content:space-between; align-items:center; gap:12px;
     padding:10px 14px calc(12px + env(safe-area-inset-bottom));
-    background:var(--card); border-top:1px solid var(--line); z-index:25;}
+    background:rgba(25,26,29,.96); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    border-top:1px solid rgba(232,163,61,.25); z-index:25;}
   .dock .n{font-size:25px; font-weight:700; color:var(--gold); line-height:1.15;}
   .dock .u{font-size:12px; font-weight:400; color:var(--dim); margin-left:4px;}
   .dock button{min-height:54px; padding:0 18px; background:transparent; border:1.5px solid var(--red);
@@ -130,7 +141,7 @@
 <body>
 <div id="root"></div>
 <script>
-/* Generisano iz src/app.jsx (2026-11-21 13:47 UTC) — ne uređuj ručno, pokreni npm run build */
+/* Generisano iz src/app.jsx (2026-11-23 14:52 UTC) — ne uređuj ručno, pokreni npm run build */
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
@@ -316,6 +327,36 @@ var Logika = /* @__PURE__ */ function() {
     });
     return l;
   }
+  function tip(p) {
+    if (p.tip) return p.tip;
+    if (p.prati_zalihu) return "roba";
+    if (p.clanarina_mjeseci > 0) return /trener|personal/i.test(p.naziv) ? "trener" : "clanarina";
+    if (/dnevn/i.test(p.naziv) || p.product_id === "dnevna") return "dnevna";
+    return "usluga";
+  }
+  function podijeli(proizvodi) {
+    var o = { dnevne: [], clanarine: [], treneri: [], roba: [], usluge: [] };
+    (proizvodi || []).forEach(function(p) {
+      var t = tip(p);
+      (t === "dnevna" ? o.dnevne : t === "clanarina" ? o.clanarine : t === "trener" ? o.treneri : t === "roba" ? o.roba : o.usluge).push(p);
+    });
+    return o;
+  }
+  function paket(karta, trener, trenerIme, clan, danas) {
+    var stavke = [], ukupno = 0;
+    if (karta) {
+      var pk = produzenje(clan && clan.istek, danas, karta.clanarina_mjeseci);
+      stavke.push({ p: karta, tekst: karta.naziv, cijena: karta.cijena, do: pk.istek });
+      ukupno += karta.cijena;
+    }
+    if (trener) {
+      var pt = produzenje(clan && clan.trener_do, danas, trener.clanarina_mjeseci);
+      stavke.push({ p: trener, tekst: trener.naziv + (trenerIme ? " — " + trenerIme : ""), cijena: trener.cijena, do: pt.istek });
+      ukupno += trener.cijena;
+    }
+    var spreman = stavke.length > 0 && (!trener || !!trenerIme);
+    return { stavke, ukupno: Math.round(ukupno * 100) / 100, spreman };
+  }
   function grupisi(lista) {
     var red = [];
     lista.forEach(function(p) {
@@ -375,7 +416,10 @@ var Logika = /* @__PURE__ */ function() {
     normaliziraj,
     traziClanove,
     grupisi,
-    tekstIzvjestaja
+    tekstIzvjestaja,
+    tip,
+    podijeli,
+    paket
   };
 }();
 if (typeof module !== "undefined" && module.exports) module.exports = Logika;
@@ -495,7 +539,7 @@ function App() {
   const ucitaj = useCallback(async () => {
     try {
       const r = await api("getBootstrap");
-      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, radnici: r.radnici || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [] };
+      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, radnici: r.radnici || [], treneri: r.treneri || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [] };
       setPodaci(p);
       ls.set(LS.CACHE, p);
       if (r.aktivna) {
@@ -686,7 +730,7 @@ function App() {
       setRadi(false);
     }
   };
-  const zaglavlje = /* @__PURE__ */ React.createElement("div", { className: "head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "logo" }, "FITNESS CLUB ADIN"), /* @__PURE__ */ React.createElement("div", { className: "logoSub" }, faza === "admin" ? "VLASNIČKI PREGLED" : "EVIDENCIJA ŠANKA")), /* @__PURE__ */ React.createElement(Sync, { stanje: sinh, broj: red.length }));
+  const zaglavlje = /* @__PURE__ */ React.createElement("div", { className: "head" }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement(Amblem, { v: 34 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "logo" }, "FITNESS CLUB ", /* @__PURE__ */ React.createElement("span", { className: "zl" }, "ADIN")), /* @__PURE__ */ React.createElement("div", { className: "logoSub" }, faza === "admin" ? "VLASNIČKI PREGLED" : "RECEPCIJA · ŠANK"))), /* @__PURE__ */ React.createElement(Sync, { stanje: sinh, broj: red.length }));
   const toastEl = toast && /* @__PURE__ */ React.createElement(
     "div",
     {
@@ -696,7 +740,7 @@ function App() {
     },
     toast.tekst
   );
-  if (faza === "ucitavanje") return /* @__PURE__ */ React.createElement(React.Fragment, null, zaglavlje, /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Učitavam…")));
+  if (faza === "ucitavanje") return /* @__PURE__ */ React.createElement("div", { className: "splash" }, /* @__PURE__ */ React.createElement(Amblem, { v: 96 }), /* @__PURE__ */ React.createElement("div", { className: "logo", style: { fontSize: 15, marginTop: 18 } }, "FITNESS CLUB ", /* @__PURE__ */ React.createElement("span", { className: "zl" }, "ADIN")), /* @__PURE__ */ React.createElement("div", { className: "logoSub", style: { marginTop: 8 } }, "UČITAVAM…"));
   if (faza === "greska") return /* @__PURE__ */ React.createElement(React.Fragment, null, zaglavlje, /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => location.reload() }, "Pokušaj ponovo")));
   return /* @__PURE__ */ React.createElement(React.Fragment, null, zaglavlje, toastEl, faza === "radnik" && /* @__PURE__ */ React.createElement(
     Radnik,
@@ -731,6 +775,7 @@ function App() {
       smjena,
       proizvodi: podaci.proizvodi,
       clanovi: podaci.clanovi,
+      treneri: podaci.treneri || [],
       dodaj,
       pokaziToast,
       setClanovi: (c) => setPodaci((p) => __spreadProps(__spreadValues({}, p), { clanovi: c })),
@@ -772,6 +817,10 @@ function App() {
     setFaza(smjenaRef.current ? "smjena" : "radnik");
   }, pokaziToast }));
 }
+function Amblem({ v }) {
+  const n = v || 34;
+  return /* @__PURE__ */ React.createElement("svg", { width: n, height: n, viewBox: "0 0 64 64", "aria-hidden": "true", style: { flexShrink: 0, display: "block" } }, /* @__PURE__ */ React.createElement("defs", null, /* @__PURE__ */ React.createElement("linearGradient", { id: "adinZlato", x1: "0", y1: "0", x2: "1", y2: "1" }, /* @__PURE__ */ React.createElement("stop", { offset: "0", stopColor: "#F7D58B" }), /* @__PURE__ */ React.createElement("stop", { offset: ".5", stopColor: "#E8A33D" }), /* @__PURE__ */ React.createElement("stop", { offset: "1", stopColor: "#B8741F" }))), /* @__PURE__ */ React.createElement("circle", { cx: "32", cy: "32", r: "30", fill: "#141417", stroke: "url(#adinZlato)", strokeWidth: "2.5" }), /* @__PURE__ */ React.createElement("circle", { cx: "32", cy: "32", r: "25.5", fill: "none", stroke: "url(#adinZlato)", strokeOpacity: ".35", strokeWidth: "1" }), /* @__PURE__ */ React.createElement("path", { d: "M21 46 L32 16 L43 46", fill: "none", stroke: "url(#adinZlato)", strokeWidth: "5", strokeLinecap: "round", strokeLinejoin: "round" }), /* @__PURE__ */ React.createElement("rect", { x: "13", y: "33", width: "38", height: "3.2", rx: "1.6", fill: "url(#adinZlato)" }), /* @__PURE__ */ React.createElement("rect", { x: "10", y: "28.5", width: "4.5", height: "12.2", rx: "1.6", fill: "url(#adinZlato)" }), /* @__PURE__ */ React.createElement("rect", { x: "49.5", y: "28.5", width: "4.5", height: "12.2", rx: "1.6", fill: "url(#adinZlato)" }));
+}
 function Sync({ stanje, broj }) {
   if (broj === 0 && stanje !== "greska") {
     return /* @__PURE__ */ React.createElement("div", { className: "sync", "data-testid": "sync" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: "var(--green)" } }), "✓ Sve spremljeno");
@@ -785,7 +834,7 @@ function Radnik({ radnici, izabran, onDalje, onAdmin }) {
   const [izbor, setIzbor] = useState(izabran && lista.indexOf(izabran) < 0 ? "Drugi" : izabran || null);
   const [drugi, setDrugi] = useState(izabran && lista.indexOf(izabran) < 0 ? izabran : "");
   const ime = izbor === "Drugi" ? drugi.trim() : izbor;
-  return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "h1", style: { marginTop: 6 } }, "Ko je na smjeni?"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, lista.concat(["Drugi"]).map((r) => /* @__PURE__ */ React.createElement("button", { key: r, className: "pick" + (izbor === r ? " on" : ""), onClick: () => setIzbor(r) }, r))), izbor === "Drugi" && /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "hero" }, /* @__PURE__ */ React.createElement(Amblem, { v: 72 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginBottom: 4 } }, "STIJENA · CAZIN"), /* @__PURE__ */ React.createElement("div", { className: "h1" }, "Ko je na smjeni?"))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, lista.concat(["Drugi"]).map((r) => /* @__PURE__ */ React.createElement("button", { key: r, className: "pick" + (izbor === r ? " on" : ""), onClick: () => setIzbor(r) }, r))), izbor === "Drugi" && /* @__PURE__ */ React.createElement(
     "input",
     {
       className: "inp",
@@ -838,7 +887,7 @@ function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart })
     onStart(o);
   } }, radi ? "Počinjem…" : fali.length > 0 ? "Još " + fali.length + " za prebrojati" : "ZAPOČNI SMJENU"), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: nazad }, "Nazad"));
 }
-function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, onZavrsi }) {
+function Smjena({ smjena, proizvodi, clanovi, treneri, dodaj, pokaziToast, setClanovi, onZavrsi }) {
   const [zadnji, setZadnji] = useState(null);
   const [sheet, setSheet] = useState(null);
   const [hit, setHit] = useState(null);
@@ -855,9 +904,12 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
     return () => clearTimeout(t);
   }, [zadnji]);
   const st = Logika.stanjeSmjene(smjena, proizvodi);
-  const obicni = proizvodi.filter((p) => !p.clanarina_mjeseci);
-  const clanarine = proizvodi.filter((p) => p.clanarina_mjeseci > 0);
-  const brojClanarina = clanarine.reduce((a, p) => a + st.prodano(p.product_id), 0);
+  const dio = Logika.podijeli(proizvodi);
+  const obicni = dio.dnevne.concat(dio.roba, dio.usluge);
+  const clanarine = dio.clanarine;
+  const paketi = dio.clanarine.concat(dio.treneri);
+  const brojClanarina = dio.clanarine.reduce((a, p) => a + st.prodano(p.product_id), 0);
+  const brojTrenera = dio.treneri.reduce((a, p) => a + st.prodano(p.product_id), 0);
   const prodaj = (p) => {
     if (!Logika.dozvoliTap(tapovi.current, p.product_id, Date.now(), 150)) return;
     dodaj("SALE", p.product_id, 1);
@@ -893,9 +945,12 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
     min = Math.max(0, Math.round(min));
     return Math.floor(min / 60) + "h " + String(min % 60).padStart(2, "0") + "m";
   })();
-  const grupe = Logika.grupisi(obicni);
-  if (clanarine.length) grupe.push({ ime: clanarine[0].kategorija, stavke: [], clan: true });
-  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "wrap", style: { paddingBottom: 170 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "12px 15px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginBottom: 4 } }, "SMJENA U TOKU"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 17, fontWeight: 600 }, "data-testid": "radnik" }, smjena.radnik)), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { className: "sit" }, "od ", smjena.vrijeme_pocetka), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 16, fontWeight: 600, color: "var(--gold)" } }, trajanjeTekst)))), grupe.map((g) => /* @__PURE__ */ React.createElement("div", { key: g.ime }, /* @__PURE__ */ React.createElement("div", { className: "grp" }, g.ime.toUpperCase()), /* @__PURE__ */ React.createElement("div", { className: "grid" }, g.stavke.map((p) => {
+  const grupe = Logika.grupisi(dio.roba);
+  if (dio.usluge.length) grupe.push({ ime: "Usluge", stavke: dio.usluge });
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "wrap", style: { paddingBottom: 170 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "12px 15px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginBottom: 4 } }, "SMJENA U TOKU"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 17, fontWeight: 600 }, "data-testid": "radnik" }, smjena.radnik)), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { className: "sit" }, "od ", smjena.vrijeme_pocetka), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 16, fontWeight: 600, color: "var(--gold)" } }, trajanjeTekst)))), (dio.dnevne.length > 0 || paketi.length > 0) && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "grp" }, "KARTE I ČLANARINE"), /* @__PURE__ */ React.createElement("div", { className: "grid" }, dio.dnevne.map((p) => {
+    const kom = st.prodano(p.product_id);
+    return /* @__PURE__ */ React.createElement("button", { key: p.product_id, "data-tile": p.product_id, className: "tile karta" + (hit === p.product_id ? " hit" : ""), onClick: () => prodaj(p) }, kom > 0 && /* @__PURE__ */ React.createElement("span", { className: "badge" }, kom), /* @__PURE__ */ React.createElement("span", { className: "ik" }, "🎫"), /* @__PURE__ */ React.createElement("span", { className: "nm" }, p.naziv), /* @__PURE__ */ React.createElement("span", { className: "bot" }, /* @__PURE__ */ React.createElement("span", { className: "pr" }, km(p.cijena), " KM"), /* @__PURE__ */ React.createElement("span", { className: "st" }, "1 tap")));
+  }), paketi.length > 0 && /* @__PURE__ */ React.createElement("button", { className: "tile karta zlatna", "data-tile": "clanarina", onClick: () => setSheet("clan") }, brojClanarina + brojTrenera > 0 && /* @__PURE__ */ React.createElement("span", { className: "badge" }, brojClanarina + brojTrenera), /* @__PURE__ */ React.createElement("span", { className: "ik" }, "🏋️"), /* @__PURE__ */ React.createElement("span", { className: "nm" }, "Mjesečna karta", dio.treneri.length ? " / trener" : ""), /* @__PURE__ */ React.createElement("span", { className: "bot" }, /* @__PURE__ */ React.createElement("span", { className: "pr" }, clanarine.map((p) => km(p.cijena).replace(",00", "")).join(" · "), dio.treneri.length ? " + " + dio.treneri.map((p) => km(p.cijena).replace(",00", "")).join(" · ") : "", " KM"))))), grupe.map((g) => /* @__PURE__ */ React.createElement("div", { key: g.ime }, /* @__PURE__ */ React.createElement("div", { className: "grp" }, g.ime.toUpperCase()), /* @__PURE__ */ React.createElement("div", { className: "grid" }, g.stavke.map((p) => {
     const kom = st.prodano(p.product_id);
     const ost = p.prati_zalihu && st.ocekivano.hasOwnProperty(p.product_id) ? st.ocekivano[p.product_id] : null;
     const nisko = ost !== null && ost <= Math.max(2, p.minimum || 0);
@@ -911,7 +966,7 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
       /* @__PURE__ */ React.createElement("span", { className: "nm" }, p.naziv),
       /* @__PURE__ */ React.createElement("span", { className: "bot" }, /* @__PURE__ */ React.createElement("span", { className: "pr" }, km(p.cijena), " KM"), ost !== null && /* @__PURE__ */ React.createElement("span", { className: "st" + (nisko ? " low" : "") }, "ima ", ost))
     );
-  }), g.clan && /* @__PURE__ */ React.createElement("button", { className: "tile clan", "data-tile": "clanarina", onClick: () => setSheet("clan") }, brojClanarina > 0 && /* @__PURE__ */ React.createElement("span", { className: "badge" }, brojClanarina), /* @__PURE__ */ React.createElement("span", { className: "nm" }, "Članarina"), /* @__PURE__ */ React.createElement("span", { className: "bot" }, /* @__PURE__ */ React.createElement("span", { className: "pr" }, clanarine.map((p) => km(p.cijena).replace(",00", "")).join(" / "), " KM")))))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 14 } }, /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 2 }, onClick: () => setSheet("dopuna") }, "+ DOPUNA ZALIHE"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("ispravka") }, "Ispravka")), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: () => setSheet("napomena") }, "✎ Napomena za vlasnika")), zadnji && /* @__PURE__ */ React.createElement("div", { className: "undo", "data-testid": "undo" }, /* @__PURE__ */ React.createElement("span", null, "✓ ", zadnji.p.naziv, " +1", zadnji.n > 1 ? " (×" + zadnji.n + ")" : ""), /* @__PURE__ */ React.createElement("button", { onClick: ponisti }, "PONIŠTI")), /* @__PURE__ */ React.createElement("div", { className: "dock" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9.5, letterSpacing: 1.6, color: "var(--dim)" } }, st.kom, " KOM · U KASI TREBA BITI"), /* @__PURE__ */ React.createElement("div", { className: "n", "data-testid": "promet" }, km(st.promet), /* @__PURE__ */ React.createElement("span", { className: "u" }, "KM"))), /* @__PURE__ */ React.createElement("button", { onClick: () => setSheet("zavrsi") }, "ZAVRŠI SMJENU")), sheet === "dopuna" && /* @__PURE__ */ React.createElement(
+  })))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 14 } }, /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 2 }, onClick: () => setSheet("dopuna") }, "+ DOPUNA ZALIHE"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("ispravka") }, "Ispravka")), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: () => setSheet("napomena") }, "✎ Napomena za vlasnika")), zadnji && /* @__PURE__ */ React.createElement("div", { className: "undo", "data-testid": "undo" }, /* @__PURE__ */ React.createElement("span", null, "✓ ", zadnji.p.naziv, " +1", zadnji.n > 1 ? " (×" + zadnji.n + ")" : ""), /* @__PURE__ */ React.createElement("button", { onClick: ponisti }, "PONIŠTI")), /* @__PURE__ */ React.createElement("div", { className: "dock" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9.5, letterSpacing: 1.6, color: "var(--dim)" } }, st.kom, " KOM · U KASI TREBA BITI"), /* @__PURE__ */ React.createElement("div", { className: "n", "data-testid": "promet" }, km(st.promet), /* @__PURE__ */ React.createElement("span", { className: "u" }, "KM"))), /* @__PURE__ */ React.createElement("button", { onClick: () => setSheet("zavrsi") }, "ZAVRŠI SMJENU")), sheet === "dopuna" && /* @__PURE__ */ React.createElement(
     Dopuna,
     {
       proizvodi: proizvodi.filter((p) => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id)),
@@ -946,15 +1001,29 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
   ), sheet === "clan" && /* @__PURE__ */ React.createElement(
     Clanarina,
     {
-      clanarine,
+      clanarine: dio.clanarine,
+      trenerProizvodi: dio.treneri,
+      treneri,
       clanovi,
       zatvori: () => setSheet(null),
-      potvrdi: (p, clan, noviIstek) => {
-        dodaj("SALE", p.product_id, 1, "", { member_id: clan.member_id, ime: clan.ime, telefon: clan.telefon || "" });
-        const azuriran = __spreadProps(__spreadValues({}, clan), { vrsta: p.product_id, istek: noviIstek });
+      potvrdi: (clan, pk, trenerIme) => {
+        const payload = { member_id: clan.member_id, ime: clan.ime, telefon: clan.telefon || "" };
+        const azuriran = __spreadValues({}, clan);
+        pk.stavke.forEach((st0) => {
+          if (Logika.tip(st0.p) === "trener") {
+            dodaj("SALE", st0.p.product_id, 1, "", __spreadProps(__spreadValues({}, payload), { trener: trenerIme }));
+            azuriran.trener = trenerIme;
+            azuriran.trener_do = st0.do;
+          } else {
+            dodaj("SALE", st0.p.product_id, 1, "", payload);
+            azuriran.vrsta = st0.p.product_id;
+            azuriran.istek = st0.do;
+          }
+        });
+        delete azuriran.novi;
         setClanovi(clanovi.filter((c) => c.member_id !== clan.member_id).concat([azuriran]));
         setSheet(null);
-        pokaziToast("✓ Članarina: " + clan.ime + ", važi do " + dT(noviIstek), "ok");
+        pokaziToast("✓ " + clan.ime + ": naplaćeno " + km(pk.ukupno) + " KM" + (azuriran.istek ? ", karta do " + dT(azuriran.istek) : ""), "ok");
         vibriraj(15);
       }
     }
@@ -1005,61 +1074,76 @@ function Ispravka({ proizvodi, st, zatvori, ponisti }) {
   const prodani = proizvodi.filter((p) => st.prodano(p.product_id) > 0);
   return /* @__PURE__ */ React.createElement(Sheet, { naslov: "Ispravka prodaje", zatvori }, /* @__PURE__ */ React.createElement("div", { className: "info", style: { marginBottom: 12 } }, "Ako si pogrešno kucao, skini višak ovdje (−1 po kliku). Ništa se ne briše — ispravka se bilježi."), !prodani.length && /* @__PURE__ */ React.createElement("div", { className: "info" }, "Još ništa nije prodano."), prodani.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card0" }, prodani.map((p) => /* @__PURE__ */ React.createElement("div", { className: "row", key: p.product_id }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15.5 } }, p.naziv), /* @__PURE__ */ React.createElement("div", { className: "sit" }, "prodano ", st.prodano(p.product_id))), /* @__PURE__ */ React.createElement("button", { className: "chip", style: { minWidth: 72, color: "var(--red)", borderColor: "rgba(229,84,75,.5)" }, onClick: () => ponisti(p) }, "−1")))), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 12 }, onClick: zatvori }, "Gotovo"));
 }
-function Clanarina({ clanarine, clanovi, zatvori, potvrdi }) {
+function Clanarina({ clanarine, trenerProizvodi, treneri, clanovi, zatvori, potvrdi }) {
   const [korak, setKorak] = useState("clan");
   const [upit, setUpit] = useState("");
   const [clan, setClan] = useState(null);
   const [ime, setIme] = useState("");
   const [tel, setTel] = useState("");
-  const [vrsta, setVrsta] = useState(null);
+  const [karta, setKarta] = useState(null);
+  const [trener, setTrener] = useState(null);
+  const [trenerIme, setTrenerIme] = useState("");
   const danas = Logika.danasSarajevo();
   const lista = Logika.traziClanove(clanovi, upit).slice(0, 40);
-  const naslov = korak === "clan" ? "Članarina — ko plaća?" : korak === "novi" ? "Novi član" : "Članarina — " + (clan && clan.ime);
-  return /* @__PURE__ */ React.createElement(Sheet, { naslov, zatvori }, korak === "clan" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("input", { className: "inp", placeholder: "Traži po imenu…", value: upit, onChange: (e) => setUpit(e.target.value) }), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 10 }, onClick: () => {
+  const pk = Logika.paket(karta, trener, trenerIme, clan, danas);
+  const listaTrenera = treneri && treneri.length ? treneri : ["Kenan", "Edin"];
+  const izaberi = (c) => {
+    setClan(c);
+    setTrener(null);
+    setTrenerIme(c.trener || "");
+    setKarta(clanarine.find((p) => p.product_id === c.vrsta) || (clanarine.length === 1 ? clanarine[0] : null));
+    setKorak("paket");
+  };
+  const naslov = korak === "clan" ? "Mjesečna karta — ko plaća?" : korak === "novi" ? "Novi član" : clan && clan.ime;
+  const stanjeClana = (c) => {
+    if (!c.istek) return { t: "nema karte", b: "var(--dim)" };
+    const dana = Math.round((Date.parse(c.istek) - Date.parse(danas)) / 864e5);
+    return dana < 0 ? { t: "istekla " + dT(c.istek), b: "var(--red)" } : { t: "do " + dT(c.istek), b: dana <= 5 ? "var(--gold)" : "var(--green)" };
+  };
+  return /* @__PURE__ */ React.createElement(Sheet, { naslov, zatvori }, korak === "clan" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("input", { className: "inp", placeholder: "Traži po imenu ili telefonu…", value: upit, onChange: (e) => setUpit(e.target.value) }), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 10 }, onClick: () => {
     setIme(upit.trim());
     setKorak("novi");
   } }, "+ Novi član"), /* @__PURE__ */ React.createElement("div", { className: "card0", style: { marginTop: 12 } }, !lista.length && /* @__PURE__ */ React.createElement("div", { className: "info", style: { border: "none" } }, upit ? 'Nema takvog člana. Klikni „Novi član".' : "Još nema upisanih članova."), lista.map((c) => {
-    const dana = c.istek ? Math.round((Date.parse(c.istek) - Date.parse(danas)) / 864e5) : null;
-    return /* @__PURE__ */ React.createElement("button", { key: c.member_id, className: "listbtn", onClick: () => {
-      setClan(c);
-      setVrsta(null);
-      setKorak("vrsta");
-    } }, /* @__PURE__ */ React.createElement("span", null, c.ime, /* @__PURE__ */ React.createElement("div", { className: "sit" }, c.telefon)), /* @__PURE__ */ React.createElement("span", { className: "sit", style: { color: dana === null ? "var(--dim)" : dana < 0 ? "var(--red)" : dana <= 5 ? "var(--gold)" : "var(--green)", textAlign: "right" } }, dana === null ? "" : dana < 0 ? "istekla " + dT(c.istek) : "do " + dT(c.istek)));
+    const sc = stanjeClana(c);
+    return /* @__PURE__ */ React.createElement("button", { key: c.member_id, className: "listbtn", onClick: () => izaberi(c) }, /* @__PURE__ */ React.createElement("span", null, c.ime, /* @__PURE__ */ React.createElement("div", { className: "sit" }, c.telefon, c.trener_do && c.trener_do >= danas ? " · 🏋️ " + c.trener : "")), /* @__PURE__ */ React.createElement("span", { className: "sit", style: { color: sc.b, textAlign: "right" } }, sc.t));
   }))), korak === "novi" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "IME I PREZIME"), /* @__PURE__ */ React.createElement("input", { className: "inp", value: ime, autoFocus: true, maxLength: 80, onChange: (e) => setIme(e.target.value), placeholder: "npr. Amel Hodžić" }), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 14 } }, "TELEFON"), /* @__PURE__ */ React.createElement("input", { className: "inp", value: tel, inputMode: "tel", maxLength: 40, onChange: (e) => setTel(e.target.value), placeholder: "06x xxx xxx" }), /* @__PURE__ */ React.createElement(
     "button",
     {
       className: "btn",
       style: { marginTop: 14 },
       disabled: ime.trim().length < 2,
-      onClick: () => {
-        setClan({ member_id: Logika.uid("M"), ime: ime.trim(), telefon: tel.trim(), istek: "", novi: true });
-        setKorak("vrsta");
-      }
+      onClick: () => izaberi({ member_id: Logika.uid("M"), ime: ime.trim(), telefon: tel.trim(), istek: "", trener: "", trener_do: "", novi: true })
     },
     "Dalje"
-  ), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setKorak("clan") }, "Nazad")), korak === "vrsta" && clan && /* @__PURE__ */ React.createElement(React.Fragment, null, clan.istek && /* @__PURE__ */ React.createElement("div", { className: "sit", style: { marginBottom: 10 } }, "Trenutno važi do ", dT(clan.istek), clan.istek < danas ? " (istekla)" : ""), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, clanarine.map((p) => {
-    const pr = Logika.produzenje(clan.istek, danas, p.clanarina_mjeseci);
+  ), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setKorak("clan") }, "Nazad")), korak === "paket" && clan && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "sit", style: { marginBottom: 12 } }, clan.novi ? "Novi član" : "Karta: " + stanjeClana(clan).t, clan.trener_do ? " · trener " + clan.trener + " do " + dT(clan.trener_do) : ""), clanarine.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "KARTA"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, clanarine.map((p) => {
+    const on = karta && karta.product_id === p.product_id;
     return /* @__PURE__ */ React.createElement(
       "button",
       {
         key: p.product_id,
-        className: "pick" + (vrsta && vrsta.product_id === p.product_id ? " on" : ""),
-        style: { textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" },
-        onClick: () => setVrsta(p)
+        "data-karta": p.product_id,
+        className: "pick" + (on ? " on" : ""),
+        style: { textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 60 },
+        onClick: () => setKarta(on ? null : p)
       },
-      /* @__PURE__ */ React.createElement("span", null, p.naziv, /* @__PURE__ */ React.createElement("div", { className: "sit" }, "važiće do ", dT(pr.istek))),
-      /* @__PURE__ */ React.createElement("span", { style: { color: "var(--gold)" } }, km(p.cijena), " KM")
+      /* @__PURE__ */ React.createElement("span", { style: { fontSize: 16 } }, on ? "✓ " : "", p.naziv, /* @__PURE__ */ React.createElement("div", { className: "sit" }, "važiće do ", dT(Logika.produzenje(clan.istek, danas, p.clanarina_mjeseci).istek))),
+      /* @__PURE__ */ React.createElement("span", { style: { color: "var(--gold)", fontSize: 17 } }, km(p.cijena))
     );
-  })), /* @__PURE__ */ React.createElement(
-    "button",
-    {
-      className: "btn",
-      style: { marginTop: 14 },
-      disabled: !vrsta,
-      onClick: () => potvrdi(vrsta, clan, Logika.produzenje(clan.istek, danas, vrsta.clanarina_mjeseci).istek)
-    },
-    vrsta ? "NAPLAĆENO " + km(vrsta.cijena) + " KM" : "Izaberi vrstu"
-  ), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setKorak(clan.novi ? "novi" : "clan") }, "Nazad")));
+  }))), trenerProizvodi.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 16 } }, "LIČNI TRENER (DODATNO)"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, trenerProizvodi.map((p) => {
+    const on = trener && trener.product_id === p.product_id;
+    return /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        key: p.product_id,
+        "data-trener-paket": p.product_id,
+        className: "pick" + (on ? " on" : ""),
+        style: { textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 56 },
+        onClick: () => setTrener(on ? null : p)
+      },
+      /* @__PURE__ */ React.createElement("span", { style: { fontSize: 16 } }, on ? "✓ " : "+ ", p.naziv),
+      /* @__PURE__ */ React.createElement("span", { style: { color: "var(--gold)", fontSize: 17 } }, km(p.cijena))
+    );
+  })), trener && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 } }, listaTrenera.map((t) => /* @__PURE__ */ React.createElement("button", { key: t, "data-trener": t, className: "chip" + (trenerIme === t ? " on" : ""), style: { flex: 1, minWidth: 90 }, onClick: () => setTrenerIme(t) }, t)))), pk.stavke.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card racun", style: { marginTop: 16 } }, pk.stavke.map((x, i) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: i }, /* @__PURE__ */ React.createElement("span", null, x.tekst, /* @__PURE__ */ React.createElement("div", { className: "sit" }, "do ", dT(x.do))), /* @__PURE__ */ React.createElement("b", null, km(x.cijena), " KM"))), /* @__PURE__ */ React.createElement("div", { className: "ln", style: { borderTop: "1px solid var(--line)", marginTop: 4, paddingTop: 10 } }, /* @__PURE__ */ React.createElement("span", { style: { fontWeight: 600 } }, "UKUPNO"), /* @__PURE__ */ React.createElement("b", { style: { color: "var(--gold)", fontSize: 22 }, "data-testid": "paket-ukupno" }, km(pk.ukupno), " KM"))), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 14 }, disabled: !pk.spreman, onClick: () => potvrdi(clan, pk, trener ? trenerIme : "") }, !pk.stavke.length ? "Izaberi kartu ili trenera" : trener && !trenerIme ? "Izaberi trenera" : "NAPLAĆENO " + km(pk.ukupno) + " KM"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setKorak(clan.novi ? "novi" : "clan") }, "Nazad")));
 }
 function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGotovo }) {
   const poId = {};
@@ -1160,7 +1244,7 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
     if (uspjeh) pokaziToast("✓ Izvještaj kopiran. Zalijepi ga u Viber ili WhatsApp.", "ok");
     else setPokaziTekst(true);
   };
-  return /* @__PURE__ */ React.createElement("div", { className: "wrap", style: { paddingBottom: 32 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { borderColor: izv.status === "OPEN" ? "var(--gold)" : "var(--green)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { color: izv.status === "OPEN" ? "var(--gold)" : "var(--green)" } }, izv.status === "OPEN" ? "SMJENA U TOKU" : "SMJENA ZAVRŠENA"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 21, fontWeight: 600 } }, izv.radnik), /* @__PURE__ */ React.createElement("div", { className: "sit" }, dT(izv.datum), " · ", izv.pocetak, izv.kraj ? " — " + izv.kraj : "", izv.trajanje_min !== null ? " · " + Logika.trajanje(izv.trajanje_min) : "")), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement("div", { className: "box" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PRODANO"), /* @__PURE__ */ React.createElement("div", { className: "big" }, izv.prodano_kom, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: "var(--dim)", marginLeft: 4 } }, "kom"))), /* @__PURE__ */ React.createElement("div", { className: "box" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PROMET"), /* @__PURE__ */ React.createElement("div", { className: "big", style: { color: "var(--gold)" }, "data-testid": "izv-promet" }, km(izv.promet), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: "var(--dim)", marginLeft: 4 } }, "KM")))), izv.kasa_stvarno !== null && izv.kasa_stvarno !== void 0 && /* @__PURE__ */ React.createElement("div", { className: "card", style: { borderColor: izv.kasa_razlika ? "var(--red)" : "var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "KASA"), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Treba biti"), /* @__PURE__ */ React.createElement("b", null, km(izv.kasa_ocekivano), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "U kasi"), /* @__PURE__ */ React.createElement("b", null, km(izv.kasa_stvarno), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Razlika"), /* @__PURE__ */ React.createElement("b", { "data-testid": "kasa-razlika", style: { color: izv.kasa_razlika ? "var(--red)" : "var(--green)" } }, izv.kasa_razlika ? km(izv.kasa_razlika) + " KM" : "✓ 0,00 KM"))), /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "INVENTURA"), izv.bez_brojanja ? /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, color: "var(--gold)" } }, "Nije prebrojano (zatvorio vlasnik).") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, color: "var(--green)" }, "data-testid": "poklapa" }, "✓ ", ok, " ", ok === 1 ? "proizvod se poklapa" : "proizvoda se poklapa"), problemi.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, color: "var(--red)", marginTop: 5 }, "data-testid": "razlike" }, "⚠ ", problemi.length, " ", problemi.length === 1 ? "proizvod ima razliku" : "proizvoda imaju razliku", " · ", km(izv.vrijednost_razlike), " KM")), izv.kasa_razlog && /* @__PURE__ */ React.createElement("div", { className: "sit", style: { marginTop: 8 } }, "Razlog: ", izv.kasa_razlog)), (izv.upozorenja || []).map((u, i) => /* @__PURE__ */ React.createElement("div", { className: "warn", key: i }, "⚠ ", u)), problemi.map((s) => /* @__PURE__ */ React.createElement(DetaljRazlike, { key: s.product_id, s })), izv.usluge && izv.usluge.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "USLUGE I ČLANARINE"), izv.usluge.map((u) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: u.product_id }, /* @__PURE__ */ React.createElement("span", null, u.naziv), /* @__PURE__ */ React.createElement("b", null, u.kom, " kom · ", km(u.km), " KM")))), izv.napomene && izv.napomene.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "NAPOMENE RADNIKA"), izv.napomene.map((n, i) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: i, style: { justifyContent: "flex-start" } }, /* @__PURE__ */ React.createElement("span", { className: "sit", style: { marginTop: 0, minWidth: 44 } }, n.vrijeme), /* @__PURE__ */ React.createElement("span", null, n.tekst)))), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: kopiraj }, "Kopiraj izvještaj (Viber / WhatsApp)"), pokaziTekst && /* @__PURE__ */ React.createElement("textarea", { className: "inp", readOnly: true, value: tekst, style: { minHeight: 180, fontSize: 13 }, onFocus: (e) => e.target.select() }), !uAdminu && /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: onNovo }, "Gotovo"));
+  return /* @__PURE__ */ React.createElement("div", { className: "wrap", style: { paddingBottom: 32 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { borderColor: izv.status === "OPEN" ? "var(--gold)" : "var(--green)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { color: izv.status === "OPEN" ? "var(--gold)" : "var(--green)" } }, izv.status === "OPEN" ? "SMJENA U TOKU" : "SMJENA ZAVRŠENA"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 21, fontWeight: 600 } }, izv.radnik), /* @__PURE__ */ React.createElement("div", { className: "sit" }, dT(izv.datum), " · ", izv.pocetak, izv.kraj ? " — " + izv.kraj : "", izv.trajanje_min !== null ? " · " + Logika.trajanje(izv.trajanje_min) : "")), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement("div", { className: "box" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PRODANO"), /* @__PURE__ */ React.createElement("div", { className: "big" }, izv.prodano_kom, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: "var(--dim)", marginLeft: 4 } }, "kom"))), /* @__PURE__ */ React.createElement("div", { className: "box" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PROMET"), /* @__PURE__ */ React.createElement("div", { className: "big", style: { color: "var(--gold)" }, "data-testid": "izv-promet" }, km(izv.promet), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: "var(--dim)", marginLeft: 4 } }, "KM")))), izv.kasa_stvarno !== null && izv.kasa_stvarno !== void 0 && /* @__PURE__ */ React.createElement("div", { className: "card", style: { borderColor: izv.kasa_razlika ? "var(--red)" : "var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "KASA"), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Treba biti"), /* @__PURE__ */ React.createElement("b", null, km(izv.kasa_ocekivano), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "U kasi"), /* @__PURE__ */ React.createElement("b", null, km(izv.kasa_stvarno), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Razlika"), /* @__PURE__ */ React.createElement("b", { "data-testid": "kasa-razlika", style: { color: izv.kasa_razlika ? "var(--red)" : "var(--green)" } }, izv.kasa_razlika ? km(izv.kasa_razlika) + " KM" : "✓ 0,00 KM"))), /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "INVENTURA"), izv.bez_brojanja ? /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, color: "var(--gold)" } }, "Nije prebrojano (zatvorio vlasnik).") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, color: "var(--green)" }, "data-testid": "poklapa" }, "✓ ", ok, " ", ok === 1 ? "proizvod se poklapa" : "proizvoda se poklapa"), problemi.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, color: "var(--red)", marginTop: 5 }, "data-testid": "razlike" }, "⚠ ", problemi.length, " ", problemi.length === 1 ? "proizvod ima razliku" : "proizvoda imaju razliku", " · ", km(izv.vrijednost_razlike), " KM")), izv.kasa_razlog && /* @__PURE__ */ React.createElement("div", { className: "sit", style: { marginTop: 8 } }, "Razlog: ", izv.kasa_razlog)), (izv.upozorenja || []).map((u, i) => /* @__PURE__ */ React.createElement("div", { className: "warn", key: i }, "⚠ ", u)), problemi.map((s) => /* @__PURE__ */ React.createElement(DetaljRazlike, { key: s.product_id, s })), izv.usluge && izv.usluge.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "KARTE, ČLANARINE I USLUGE"), izv.usluge.map((u) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: u.product_id }, /* @__PURE__ */ React.createElement("span", null, u.naziv), /* @__PURE__ */ React.createElement("b", null, u.kom, " kom · ", km(u.km), " KM")))), izv.napomene && izv.napomene.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "NAPOMENE RADNIKA"), izv.napomene.map((n, i) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: i, style: { justifyContent: "flex-start" } }, /* @__PURE__ */ React.createElement("span", { className: "sit", style: { marginTop: 0, minWidth: 44 } }, n.vrijeme), /* @__PURE__ */ React.createElement("span", null, n.tekst)))), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: kopiraj }, "Kopiraj izvještaj (Viber / WhatsApp)"), pokaziTekst && /* @__PURE__ */ React.createElement("textarea", { className: "inp", readOnly: true, value: tekst, style: { minHeight: 180, fontSize: 13 }, onFocus: (e) => e.target.select() }), !uAdminu && /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: onNovo }, "Gotovo"));
 }
 function Admin({ nazad, pokaziToast }) {
   const [pin, setPin] = useState(() => {
@@ -1222,7 +1306,7 @@ function Admin({ nazad, pokaziToast }) {
       }
     ), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !unos || radi, onClick: () => ucitaj(unos) }, radi ? "Provjeravam…" : "Uđi"), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: nazad }, "Nazad"));
   }
-  return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { className: "h1" }, "Pregled"), /* @__PURE__ */ React.createElement("button", { className: "chip", onClick: () => ucitaj(pin), disabled: radi }, radi ? "…" : "↻ Osvježi")), /* @__PURE__ */ React.createElement("div", { className: "tabs" }, [["danas", "Danas"], ["vrata", "Vrata"], ["smjene", "Smjene"], ["clanovi", "Članovi"], ["zalihe", "Zalihe"], ["proizvodi", "Proizvodi"], ["mjesec", "Mjesec"], ["postavke", "Postavke"]].map(([k, n]) => /* @__PURE__ */ React.createElement("button", { key: k, className: tab === k ? "on" : "", onClick: () => setTab(k) }, n))), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), d && tab === "danas" && /* @__PURE__ */ React.createElement(AdminDanas, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "zalihe" && /* @__PURE__ */ React.createElement(AdminZalihe, { d }), d && tab === "clanovi" && /* @__PURE__ */ React.createElement(AdminClanovi, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "proizvodi" && /* @__PURE__ */ React.createElement(AdminProizvodi, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "vrata" && /* @__PURE__ */ React.createElement(AdminVrata, { pin, pokaziToast }), d && tab === "postavke" && /* @__PURE__ */ React.createElement(AdminPostavke, { pin, setPin: (p) => {
+  return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginBottom: 2 } }, "DOBRO DOŠLI"), /* @__PURE__ */ React.createElement("div", { className: "h1", style: { fontSize: 21 } }, d && d.vlasnici || "Vlasnici")), /* @__PURE__ */ React.createElement("button", { className: "chip", onClick: () => ucitaj(pin), disabled: radi }, radi ? "…" : "↻ Osvježi")), /* @__PURE__ */ React.createElement("div", { className: "tabs" }, [["danas", "Danas"], ["karte", "Karte"], ["vrata", "Vrata"], ["smjene", "Smjene"], ["clanovi", "Članovi"], ["zalihe", "Zalihe"], ["proizvodi", "Proizvodi"], ["mjesec", "Mjesec"], ["postavke", "Postavke"]].map(([k, n]) => /* @__PURE__ */ React.createElement("button", { key: k, className: tab === k ? "on" : "", onClick: () => setTab(k) }, n))), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), d && tab === "danas" && /* @__PURE__ */ React.createElement(AdminDanas, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "zalihe" && /* @__PURE__ */ React.createElement(AdminZalihe, { d }), d && tab === "karte" && /* @__PURE__ */ React.createElement(AdminKarte, { d }), d && tab === "clanovi" && /* @__PURE__ */ React.createElement(AdminClanovi, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "proizvodi" && /* @__PURE__ */ React.createElement(AdminProizvodi, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "vrata" && /* @__PURE__ */ React.createElement(AdminVrata, { pin, pokaziToast }), d && tab === "postavke" && /* @__PURE__ */ React.createElement(AdminPostavke, { d, osvjezi: () => ucitaj(pin), pin, setPin: (p) => {
     setPin(p);
     try {
       sessionStorage.setItem("adin_pin", p);
@@ -1261,12 +1345,18 @@ function AdminDanas({ d, pin, osvjezi, pokaziToast }) {
   };
   return /* @__PURE__ */ React.createElement(React.Fragment, null, o ? /* @__PURE__ */ React.createElement("div", { className: o.stara ? "err" : "card", style: o.stara ? {} : { borderColor: "var(--gold)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { color: o.stara ? "var(--red)" : "var(--gold)" } }, o.stara ? "⚠ SMJENA OTVORENA PREDUGO" : "SMJENA U TOKU"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 17, fontWeight: 600, color: "var(--text)" } }, o.radnik, " · od ", o.od, " (", dT(o.datum), ")"), /* @__PURE__ */ React.createElement("div", { className: "sit" }, o.sati, " h · ", o.kom, " kom · ", km(o.promet), " KM"), o.stara && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, color: "var(--text)", fontSize: 13 } }, "Vjerovatno je zaboravljeno zatvaranje. Najbolje je da radnik sam završi smjenu s brojanjem. Ako to nije moguće, zatvori je ovdje."), !zatvaranje && /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setZatvaranje(true) }, "Zatvori bez brojanja…"), zatvaranje && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("input", { className: "inp", style: { marginTop: 10 }, placeholder: "Napomena (obavezno)", value: nap, onChange: (e) => setNap(e.target.value) }), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 8 } }, gr), /* @__PURE__ */ React.createElement("button", { className: "btn red", disabled: !nap.trim() || radi, onClick: zatvori }, radi ? "Zatvaram…" : "Zatvori smjenu"))) : /* @__PURE__ */ React.createElement("div", { className: "info" }, "Trenutno nema otvorene smjene."), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement(Broj, { lab: "PROMET DANAS", v: km(d.danas.promet), boja: "var(--gold)", sit: d.danas.kom + " kom" }), /* @__PURE__ */ React.createElement(Broj, { lab: "PROFIT DANAS", v: km(d.danas.profit), boja: "var(--green)" })), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement(Broj, { lab: "PROFIT OVE SEDMICE", v: km(d.sedmica.profit), sit: "promet " + km(d.sedmica.promet) + " KM" }), /* @__PURE__ */ React.createElement(Broj, { lab: "ZADNJIH 7 DANA", v: km(d.d7.promet), sit: "promet KM" })), /* @__PURE__ */ React.createElement("div", { className: "card", style: { borderColor: "var(--gold)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PLATA RADNIKA (", Math.round(d.plata.udio * 100), "% SEDMIČNOG PROFITA)"), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Za prošlu sedmicu (", dT(d.periodi.proslaOd), "–", dT(d.periodi.proslaDo), ") — isplata u ponedjeljak"), /* @__PURE__ */ React.createElement("b", { style: { color: "var(--gold)", fontSize: 18 } }, km(d.plata.prosla), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Ova sedmica do sada"), /* @__PURE__ */ React.createElement("b", null, km(d.plata.ova_do_sada), " KM")), /* @__PURE__ */ React.createElement("div", { className: "sit" }, "Profit prošle sedmice: ", km(d.prosla.profit), " KM (promet ", km(d.prosla.promet), " KM)")), (d.clanovi.istice.length > 0 || d.clanovi.istekli.length > 0) && /* @__PURE__ */ React.createElement("div", { className: "warn" }, "Članarine: ", d.clanovi.istice.length, " ističe u narednih 5 dana, ", d.clanovi.istekli.length, ' isteklo. Vidi tab „Članovi".'), d.zalihe.some((z) => z.nisko) && /* @__PURE__ */ React.createElement("div", { className: "warn" }, "Nisko na zalihi: ", d.zalihe.filter((z) => z.nisko).map((z) => z.naziv + " (" + z.kolicina + ")").join(", ")));
 }
+function AdminKarte({ d }) {
+  const k = d.karte;
+  if (!k) return null;
+  const red = (lab, x, dod) => /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, lab, dod ? /* @__PURE__ */ React.createElement("div", { className: "sit" }, dod) : null), /* @__PURE__ */ React.createElement("b", null, x.kom, " kom · ", /* @__PURE__ */ React.createElement("span", { style: { color: "var(--gold)" } }, km(x.promet), " KM")));
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement(Broj, { lab: "AKTIVNIH KARTI", v: k.aktivnih_karti, boja: "var(--gold)", sit: "članova s važećom kartom" }), /* @__PURE__ */ React.createElement(Broj, { lab: "S TRENEROM", v: k.sa_trenerom.length, boja: "var(--green)", sit: Object.keys(k.po_treneru).map((t) => t + " " + k.po_treneru[t]).join(" · ") || "—" })), /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "DANAS"), red("🎫 Dnevne karte", k.danas.dnevne), red("🏋️ Mjesečne karte", k.danas.mjesecne), red("💪 Trener", k.danas.trener)), /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "OVAJ MJESEC (OD ", dT(d.periodi.mjesecOd), ")"), red("🎫 Dnevne karte", k.mjesec.dnevne), red("🏋️ Mjesečne karte", k.mjesec.mjesecne, "nove: " + k.mjesec.nove + " · produžene: " + k.mjesec.produzene), red("💪 Trener", k.mjesec.trener), /* @__PURE__ */ React.createElement("div", { className: "ln", style: { borderTop: "1px solid var(--line)", marginTop: 4, paddingTop: 9 } }, /* @__PURE__ */ React.createElement("span", null, "Ukupno karte i treneri"), /* @__PURE__ */ React.createElement("b", { style: { color: "var(--gold)" } }, km(k.mjesec.dnevne.promet + k.mjesec.mjesecne.promet + k.mjesec.trener.promet), " KM"))), /* @__PURE__ */ React.createElement("div", { className: "grp" }, "ČLANOVI S TRENEROM"), /* @__PURE__ */ React.createElement("div", { className: "card0" }, !k.sa_trenerom.length && /* @__PURE__ */ React.createElement("div", { className: "info", style: { border: "none" } }, "Trenutno niko."), k.sa_trenerom.map((c) => /* @__PURE__ */ React.createElement("div", { className: "row", key: c.member_id, style: { minHeight: 60 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 15 } }, c.ime, /* @__PURE__ */ React.createElement("div", { className: "sit" }, "trener ", /* @__PURE__ */ React.createElement("b", { style: { color: "var(--text)" } }, c.trener), " do ", dT(c.trener_do), c.istek ? " · karta do " + dT(c.istek) : "")), /* @__PURE__ */ React.createElement(Telefon, { broj: c.telefon })))));
+}
 function AdminZalihe({ d }) {
   return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "info" }, d.otvorena ? "Očekivano stanje sada (početno + dopuna − prodaja u ovoj smjeni)." : "Stanje sa zadnjeg brojanja.", " Crveno = na minimumu ili ispod (minimum se mijenja u tabeli PROIZVODI)."), /* @__PURE__ */ React.createElement("div", { className: "card0" }, d.zalihe.map((z) => /* @__PURE__ */ React.createElement("div", { className: "row", key: z.product_id, style: { minHeight: 52 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 15 } }, z.naziv, /* @__PURE__ */ React.createElement("div", { className: "sit" }, "minimum ", z.minimum)), /* @__PURE__ */ React.createElement("b", { style: { fontSize: 20, color: z.nisko ? "var(--red)" : "var(--text)" } }, z.kolicina === null ? "—" : z.kolicina)))));
 }
 function Telefon({ broj }) {
   if (!broj) return null;
-  return /* @__PURE__ */ React.createElement("a", { href: "tel:" + String(broj).replace(/[^\d+]/g, ""), className: "chip", style: { textDecoration: "none", display: "inline-flex", alignItems: "center" } }, "📞 ", broj);
+  return /* @__PURE__ */ React.createElement("a", { href: "tel:" + String(broj).replace(/[^\d+]/g, ""), className: "chip", style: { textDecoration: "none", display: "inline-flex", alignItems: "center", whiteSpace: "nowrap", flexShrink: 0 } }, "📞 ", broj);
 }
 function AdminClanovi({ d, pin, osvjezi, pokaziToast }) {
   const c = d.clanovi;
@@ -1274,7 +1364,7 @@ function AdminClanovi({ d, pin, osvjezi, pokaziToast }) {
   const [uredi, setUredi] = useState(null);
   const svi = Logika.traziClanove(d.svi_clanovi || [], upit);
   const red = (x, boja, tekst) => /* @__PURE__ */ React.createElement("div", { className: "row", key: x.member_id, style: { minHeight: 60 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 15 } }, x.ime, /* @__PURE__ */ React.createElement("div", { className: "sit", style: { color: boja } }, tekst)), /* @__PURE__ */ React.createElement(Telefon, { broj: x.telefon }));
-  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Aktivnih članarina: ", /* @__PURE__ */ React.createElement("b", { style: { color: "var(--text)" } }, c.aktivnih), ". Članove i telefone možeš mijenjati u tabeli CLANOVI."), /* @__PURE__ */ React.createElement("div", { className: "grp" }, "ISTIČE U NAREDNIH 5 DANA"), /* @__PURE__ */ React.createElement("div", { className: "card0" }, !c.istice.length && /* @__PURE__ */ React.createElement("div", { className: "info", style: { border: "none" } }, "Niko."), c.istice.map((x) => red(x, "var(--gold)", (x.dana === 0 ? "ističe danas" : "ističe za " + x.dana + (x.dana === 1 ? " dan" : " dana")) + " · " + dT(x.istek)))), /* @__PURE__ */ React.createElement("div", { className: "grp" }, "ISTEKLO (ZADNJIH 60 DANA)"), /* @__PURE__ */ React.createElement("div", { className: "card0" }, !c.istekli.length && /* @__PURE__ */ React.createElement("div", { className: "info", style: { border: "none" } }, "Niko."), c.istekli.map((x) => red(x, "var(--red)", "isteklo " + dT(x.istek)))), /* @__PURE__ */ React.createElement("div", { className: "grp" }, "SVI ČLANOVI (", (d.svi_clanovi || []).length, ")"), /* @__PURE__ */ React.createElement("input", { className: "inp", placeholder: "Traži po imenu ili telefonu…", value: upit, onChange: (e) => setUpit(e.target.value) }), /* @__PURE__ */ React.createElement("div", { className: "card0" }, svi.slice(0, 60).map((x) => /* @__PURE__ */ React.createElement("button", { key: x.member_id, className: "listbtn", onClick: () => setUredi(__spreadValues({}, x)) }, /* @__PURE__ */ React.createElement("span", null, x.ime, /* @__PURE__ */ React.createElement("div", { className: "sit" }, x.telefon || "bez telefona", x.brava_id ? " · čip/šifra: " + x.brava_id : "", x.aktivan ? "" : " · NEAKTIVAN")), /* @__PURE__ */ React.createElement("span", { className: "sit", style: { textAlign: "right" } }, x.istek ? "do " + dT(x.istek) : "", /* @__PURE__ */ React.createElement("br", null), "uredi ›")))), uredi && /* @__PURE__ */ React.createElement(UrediClana, { c: uredi, pin, zatvori: () => setUredi(null), gotovo: () => {
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Aktivnih članarina: ", /* @__PURE__ */ React.createElement("b", { style: { color: "var(--text)" } }, c.aktivnih), ". Članove i telefone možeš mijenjati u tabeli CLANOVI."), /* @__PURE__ */ React.createElement("div", { className: "grp" }, "ISTIČE U NAREDNIH 5 DANA"), /* @__PURE__ */ React.createElement("div", { className: "card0" }, !c.istice.length && /* @__PURE__ */ React.createElement("div", { className: "info", style: { border: "none" } }, "Niko."), c.istice.map((x) => red(x, "var(--gold)", (x.dana === 0 ? "ističe danas" : "ističe za " + x.dana + (x.dana === 1 ? " dan" : " dana")) + " · " + dT(x.istek)))), /* @__PURE__ */ React.createElement("div", { className: "grp" }, "ISTEKLO (ZADNJIH 60 DANA)"), /* @__PURE__ */ React.createElement("div", { className: "card0" }, !c.istekli.length && /* @__PURE__ */ React.createElement("div", { className: "info", style: { border: "none" } }, "Niko."), c.istekli.map((x) => red(x, "var(--red)", "isteklo " + dT(x.istek)))), /* @__PURE__ */ React.createElement("div", { className: "grp" }, "SVI ČLANOVI (", (d.svi_clanovi || []).length, ")"), /* @__PURE__ */ React.createElement("input", { className: "inp", placeholder: "Traži po imenu ili telefonu…", value: upit, onChange: (e) => setUpit(e.target.value) }), /* @__PURE__ */ React.createElement("div", { className: "card0" }, svi.slice(0, 60).map((x) => /* @__PURE__ */ React.createElement("button", { key: x.member_id, className: "listbtn", onClick: () => setUredi(__spreadValues({}, x)) }, /* @__PURE__ */ React.createElement("span", null, x.ime, /* @__PURE__ */ React.createElement("div", { className: "sit" }, x.telefon || "bez telefona", x.trener ? " · 🏋️ " + x.trener + (x.trener_do ? " do " + dT(x.trener_do) : "") : "", x.brava_id ? " · čip: " + x.brava_id : "", x.aktivan ? "" : " · NEAKTIVAN")), /* @__PURE__ */ React.createElement("span", { className: "sit", style: { textAlign: "right" } }, x.istek ? "do " + dT(x.istek) : "", /* @__PURE__ */ React.createElement("br", null), "uredi ›")))), uredi && /* @__PURE__ */ React.createElement(UrediClana, { c: uredi, pin, zatvori: () => setUredi(null), gotovo: () => {
     setUredi(null);
     pokaziToast("✓ Član sačuvan.", "ok");
     osvjezi();
@@ -1304,7 +1394,7 @@ function AdminProizvodi({ d, pin, osvjezi, pokaziToast }) {
   d.proizvodi.forEach((p) => {
     if (kategorije.indexOf(p.kategorija) < 0) kategorije.push(p.kategorija);
   });
-  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Ovdje dodaješ nove stvari i mijenjaš cijene. Proizvod se nikad ne briše, samo isključi (da historija ostane tačna). Radnik promjenu vidi kad ponovo otvori aplikaciju."), /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => setUredi({ product_id: "", naziv: "", kategorija: kategorije[0] || "Ostalo", cijena: "", nabavna: "", minimum: 3, prati_zalihu: true, aktivan: true, clanarina_mjeseci: 0 }) }, "+ Novi proizvod"), Logika.grupisi(d.proizvodi).map((g) => /* @__PURE__ */ React.createElement("div", { key: g.ime }, /* @__PURE__ */ React.createElement("div", { className: "grp" }, g.ime.toUpperCase()), /* @__PURE__ */ React.createElement("div", { className: "card0" }, g.stavke.map((p) => /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Ovdje dodaješ nove stvari i mijenjaš cijene. Proizvod se nikad ne briše, samo isključi (da historija ostane tačna). Radnik promjenu vidi kad ponovo otvori aplikaciju."), /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => setUredi({ product_id: "", naziv: "", kategorija: kategorije[0] || "Ostalo", cijena: "", nabavna: "", minimum: 3, prati_zalihu: true, aktivan: true, clanarina_mjeseci: 0, tip: "roba" }) }, "+ Novi proizvod / ponuda"), Logika.grupisi(d.proizvodi).map((g) => /* @__PURE__ */ React.createElement("div", { key: g.ime }, /* @__PURE__ */ React.createElement("div", { className: "grp" }, g.ime.toUpperCase()), /* @__PURE__ */ React.createElement("div", { className: "card0" }, g.stavke.map((p) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: p.product_id,
@@ -1313,7 +1403,7 @@ function AdminProizvodi({ d, pin, osvjezi, pokaziToast }) {
       onClick: () => setUredi(__spreadProps(__spreadValues({}, p), { cijena: String(p.cijena).replace(".", ","), nabavna: String(p.nabavna).replace(".", ",") })),
       style: p.aktivan ? {} : { opacity: 0.45 }
     },
-    /* @__PURE__ */ React.createElement("span", null, p.naziv, /* @__PURE__ */ React.createElement("div", { className: "sit" }, p.aktivan ? "" : "ISKLJUČEN · ", "nabavna ", km(p.nabavna), p.prati_zalihu ? " · min " + p.minimum : " · bez zalihe")),
+    /* @__PURE__ */ React.createElement("span", null, p.naziv, /* @__PURE__ */ React.createElement("div", { className: "sit" }, p.aktivan ? "" : "ISKLJUČEN · ", { roba: "roba", dnevna: "dnevna karta", clanarina: "mjesečna karta", trener: "trener", usluga: "usluga" }[Logika.tip(p)], " · nabavna ", km(p.nabavna), p.prati_zalihu ? " · min " + p.minimum : "")),
     /* @__PURE__ */ React.createElement("b", { style: { color: "var(--gold)" } }, km(p.cijena), " KM")
   ))))), uredi && /* @__PURE__ */ React.createElement(
     UrediProizvod,
@@ -1336,12 +1426,14 @@ function UrediProizvod({ p, kategorije, pin, zatvori, gotovo }) {
   const [radi, setRadi] = useState(false);
   const [gr, setGr] = useState("");
   const broj = (v) => Number(String(v).replace(",", "."));
-  const clanarina = x.clanarina_mjeseci > 0;
+  const tip = x.tip || Logika.tip(x);
+  const clanarina = tip === "clanarina" || tip === "trener";
+  const VRSTE = [["roba", "Roba (broji se)"], ["dnevna", "Dnevna karta"], ["clanarina", "Mjesečna karta"], ["trener", "Lični trener"], ["usluga", "Ostala usluga"]];
   const sacuvaj = async () => {
     setRadi(true);
     setGr("");
     try {
-      const r = await api("saveProduct", pin, __spreadProps(__spreadValues({}, x), { cijena: broj(x.cijena), nabavna: broj(x.nabavna || 0) }));
+      const r = await api("saveProduct", pin, __spreadProps(__spreadValues({}, x), { tip, cijena: broj(x.cijena), nabavna: broj(x.nabavna || 0), clanarina_mjeseci: Number(x.clanarina_mjeseci) || 0 }));
       gotovo(r.novi);
     } catch (e) {
       setGr(e.message);
@@ -1356,7 +1448,7 @@ function UrediProizvod({ p, kategorije, pin, zatvori, gotovo }) {
   } }, k)), /* @__PURE__ */ React.createElement("button", { className: "chip" + (novaKat ? " on" : ""), onClick: () => {
     setNovaKat(true);
     setX(__spreadProps(__spreadValues({}, x), { kategorija: "" }));
-  } }, "+ nova")), novaKat && /* @__PURE__ */ React.createElement("input", { className: "inp", style: { marginTop: 8 }, placeholder: "Naziv kategorije", value: x.kategorija, onChange: (e) => setX(__spreadProps(__spreadValues({}, x), { kategorija: e.target.value })) }), /* @__PURE__ */ React.createElement("div", { className: "two", style: { marginTop: 12 } }, /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PRODAJNA (KM)"), /* @__PURE__ */ React.createElement("input", { className: "inp", "data-testid": "p-cijena", inputMode: "decimal", value: x.cijena, onChange: (e) => setX(__spreadProps(__spreadValues({}, x), { cijena: decimal(e.target.value) })), placeholder: "0,00" })), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "NABAVNA (KM)"), /* @__PURE__ */ React.createElement("input", { className: "inp", "data-testid": "p-nabavna", inputMode: "decimal", value: x.nabavna, onChange: (e) => setX(__spreadProps(__spreadValues({}, x), { nabavna: decimal(e.target.value) })), placeholder: "0,00" }))), !clanarina && /* @__PURE__ */ React.createElement("button", { className: "chip" + (x.prati_zalihu ? " on" : ""), style: { marginTop: 12, width: "100%" }, onClick: () => setX(__spreadProps(__spreadValues({}, x), { prati_zalihu: !x.prati_zalihu })) }, x.prati_zalihu ? "✓ Broji se na početku i kraju smjene (roba)" : "Ne broji se (usluga)"), x.prati_zalihu && !clanarina && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "UPOZORI KAD PADNE NA (KOM)"), /* @__PURE__ */ React.createElement("input", { className: "inp", inputMode: "numeric", value: x.minimum, onChange: (e) => setX(__spreadProps(__spreadValues({}, x), { minimum: e.target.value.replace(/\D/g, "").slice(0, 4) })) })), /* @__PURE__ */ React.createElement("button", { className: "chip" + (x.aktivan ? " on" : ""), style: { marginTop: 12, width: "100%" }, onClick: () => setX(__spreadProps(__spreadValues({}, x), { aktivan: !x.aktivan })) }, x.aktivan ? "✓ Uključen (radnik ga vidi)" : "Isključen (sakriven radniku)"), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 10 } }, gr), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 12 }, disabled: radi || !x.naziv.trim() || !(broj(x.cijena) > 0) || !String(x.kategorija).trim(), onClick: sacuvaj }, radi ? "Čuvam…" : "Sačuvaj"));
+  } }, "+ nova")), novaKat && /* @__PURE__ */ React.createElement("input", { className: "inp", style: { marginTop: 8 }, placeholder: "Naziv kategorije", value: x.kategorija, onChange: (e) => setX(__spreadProps(__spreadValues({}, x), { kategorija: e.target.value })) }), /* @__PURE__ */ React.createElement("div", { className: "two", style: { marginTop: 12 } }, /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PRODAJNA (KM)"), /* @__PURE__ */ React.createElement("input", { className: "inp", "data-testid": "p-cijena", inputMode: "decimal", value: x.cijena, onChange: (e) => setX(__spreadProps(__spreadValues({}, x), { cijena: decimal(e.target.value) })), placeholder: "0,00" })), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, tip === "trener" ? "IDE TRENERU (KM)" : "NABAVNA (KM)"), /* @__PURE__ */ React.createElement("input", { className: "inp", "data-testid": "p-nabavna", inputMode: "decimal", value: x.nabavna, onChange: (e) => setX(__spreadProps(__spreadValues({}, x), { nabavna: decimal(e.target.value) })), placeholder: "0,00" }))), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 12 } }, "VRSTA"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 } }, VRSTE.map(([k, n]) => /* @__PURE__ */ React.createElement("button", { key: k, className: "chip" + (tip === k ? " on" : ""), onClick: () => setX(__spreadProps(__spreadValues({}, x), { tip: k, prati_zalihu: k === "roba", clanarina_mjeseci: k === "clanarina" || k === "trener" ? x.clanarina_mjeseci || 1 : 0 })) }, n))), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { marginTop: 6 } }, tip === "roba" ? "Broji se na početku i kraju smjene." : tip === "dnevna" ? "Jedan tap = jedna karta, na vrhu ekrana prodaje." : tip === "clanarina" ? "Prodaje se članu; produžava datum važenja karte." : tip === "trener" ? "Dodatak na kartu; bira se trener. Nabavna = koliko ide treneru (ako je ista kao cijena, ne ulazi u profit ni u platu radnika)." : "Jedan tap = jedna prodaja, bez brojanja."), clanarina && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "TRAJE (MJESECI)"), /* @__PURE__ */ React.createElement("input", { className: "inp", inputMode: "numeric", value: x.clanarina_mjeseci, onChange: (e) => setX(__spreadProps(__spreadValues({}, x), { clanarina_mjeseci: e.target.value.replace(/\D/g, "").slice(0, 2) })) })), tip === "roba" && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "UPOZORI KAD PADNE NA (KOM)"), /* @__PURE__ */ React.createElement("input", { className: "inp", inputMode: "numeric", value: x.minimum, onChange: (e) => setX(__spreadProps(__spreadValues({}, x), { minimum: e.target.value.replace(/\D/g, "").slice(0, 4) })) })), /* @__PURE__ */ React.createElement("button", { className: "chip" + (x.aktivan ? " on" : ""), style: { marginTop: 12, width: "100%" }, onClick: () => setX(__spreadProps(__spreadValues({}, x), { aktivan: !x.aktivan })) }, x.aktivan ? "✓ Uključen (radnik ga vidi)" : "Isključen (sakriven radniku)"), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 10 } }, gr), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 12 }, disabled: radi || !x.naziv.trim() || !(broj(x.cijena) > 0) || !String(x.kategorija).trim(), onClick: sacuvaj }, radi ? "Čuvam…" : "Sačuvaj"));
 }
 function AdminVrata({ pin, pokaziToast }) {
   const [post, setPost] = useState(null);
@@ -1442,7 +1534,29 @@ function TuyaForma({ post, pin, gotovo }) {
     }
   } }, radi ? "Provjeravam vezu…" : "Sačuvaj i provjeri vezu"));
 }
-function AdminPostavke({ pin, setPin, pokaziToast }) {
+function AdminPostavke({ d, osvjezi, pin, setPin, pokaziToast }) {
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(AdminListe, { d, pin, osvjezi, pokaziToast }), /* @__PURE__ */ React.createElement(AdminPin, { pin, setPin, pokaziToast }));
+}
+function AdminListe({ d, pin, osvjezi, pokaziToast }) {
+  const [radnici, setRadnici] = useState((d.radnici || []).join(", "));
+  const [treneri, setTreneri] = useState((d.treneri || []).join(", "));
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState("");
+  return /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "RADNICI I TRENERI"), /* @__PURE__ */ React.createElement("div", { className: "sit" }, "Imena odvoji zarezom. Radnici su dugmad na prvom ekranu, a treneri se biraju pri prodaji paketa s trenerom."), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 12 } }, "RADNICI NA ŠANKU"), /* @__PURE__ */ React.createElement("input", { className: "inp", value: radnici, onChange: (e) => setRadnici(e.target.value), placeholder: "Edvin, Kenan" }), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 12 } }, "TRENERI"), /* @__PURE__ */ React.createElement("input", { className: "inp", value: treneri, onChange: (e) => setTreneri(e.target.value), placeholder: "Edin, Kenan" }), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 10 } }, gr), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 12 }, disabled: radi, onClick: async () => {
+    setRadi(true);
+    setGr("");
+    try {
+      await api("saveLists", pin, { radnici, treneri });
+      pokaziToast("✓ Sačuvano. Radnik promjenu vidi kad ponovo otvori aplikaciju.", "ok");
+      osvjezi();
+    } catch (e) {
+      setGr(e.message);
+    } finally {
+      setRadi(false);
+    }
+  } }, "Sačuvaj"));
+}
+function AdminPin({ pin, setPin, pokaziToast }) {
   const [novi, setNovi] = useState("");
   const [opet, setOpet] = useState("");
   const [gr, setGr] = useState("");

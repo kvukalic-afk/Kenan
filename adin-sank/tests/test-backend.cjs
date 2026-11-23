@@ -32,7 +32,7 @@ const ev = (shift, tip, pid, kol = 1, extra = {}) => Object.assign({ event_id: '
 test('setupSpreadsheet je idempotentan i ne briše podatke', () => {
   const g = napraviOkruzenje({ sada: SAT });
   const prvi = g.setupSpreadsheet();
-  assert.match(prvi, /upisano 16 proizvoda/);
+  assert.match(prvi, /upisano 17 proizvoda/);
   assert.equal(g.__ss.getSheetByName('Sheet1'), null, 'prazan Sheet1 uklonjen');
   for (const t of ['PROIZVODI', 'SMJENE', 'DOGADJAJI', 'INVENTURA', 'CLANOVI', 'PREGLED']) assert.ok(g.__ss.getSheetByName(t), t);
   assert.equal(g.__ss.getSpreadsheetTimeZone(), 'Europe/Sarajevo');
@@ -40,13 +40,13 @@ test('setupSpreadsheet je idempotentan i ne briše podatke', () => {
   // vlasnik promijeni cijenu i doda proizvod — drugi setup ne smije ništa pregaziti
   const sh = g.__ss.getSheetByName('PROIZVODI');
   sh.getRange(4, 4).setValue(4.5);
-  sh.getRange(18, 1, 1, 3).setValues([['novi', 'Ostalo', 'Novi proizvod']]);
+  sh.getRange(19, 1, 1, 3).setValues([['novi', 'Ostalo', 'Novi proizvod']]);
   const drugi = g.setupSpreadsheet();
   assert.match(drugi, /Ništa nije mijenjano/);
   const pr = g.__tabela('PROIZVODI');
-  assert.equal(pr.length, 17);
+  assert.equal(pr.length, 18);
   assert.equal(pr.find(p => p.product_id === 'redbull').cijena, 4.5);
-  assert.deepEqual(Object.keys(pr[0]), ['product_id', 'kategorija', 'naziv', 'cijena', 'nabavna_cijena', 'prati_zalihu', 'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci']);
+  assert.deepEqual(Object.keys(pr[0]), ['product_id', 'kategorija', 'naziv', 'cijena', 'nabavna_cijena', 'prati_zalihu', 'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci', 'tip']);
 });
 
 test('setup dodaje kolone koje fale, ne dira postojeće', () => {
@@ -56,10 +56,12 @@ test('setup dodaje kolone koje fale, ne dira postojeće', () => {
   sh.getRange(2, 1, 1, 6).setValues([['voda05', 'Voda', 'Voda 0,5 L', 1, 0.5, true]]);
   g.setupSpreadsheet();
   const pr = g.__tabela('PROIZVODI');
-  assert.equal(pr.length, 1, 'seed se ne ubacuje kad tabela nije prazna');
+  assert.equal(pr.length, 2, 'seed se ne ubacuje kad tabela nije prazna (dodaje se samo novi proizvod Lični trener)');
+  assert.equal(pr[1].product_id, 'trener');
   assert.ok('aktivan' in pr[0] && 'clanarina_mjeseci' in pr[0]);
   const b = ok(g.getBootstrap());
-  assert.equal(b.proizvodi.length, 1, 'prazna kolona aktivan = aktivan');
+  assert.equal(b.proizvodi.length, 2, 'prazna kolona aktivan = aktivan');
+  assert.equal(b.proizvodi.find(p => p.product_id === 'voda05').tip, 'roba', 'tip se pogađa kad kolona tip ne postoji');
 });
 
 test('bootstrap: proizvodi, nema aktivne smjene, neaktivni sakriveni', () => {
@@ -68,7 +70,7 @@ test('bootstrap: proizvodi, nema aktivne smjene, neaktivni sakriveni', () => {
   sh.getRange(3, 7).setValue(false); // voda1 neaktivna
   const b = ok(g.getBootstrap());
   assert.equal(b.aktivna, null);
-  assert.equal(b.proizvodi.length, 15);
+  assert.equal(b.proizvodi.length, 16);
   assert.ok(!b.proizvodi.some(p => p.product_id === 'voda1'));
   assert.deepEqual(b.radnici, ['Kenan', 'Edvin']);
   assert.equal(b.proizvodi.filter(p => p.prati_zalihu).length, 11);
@@ -232,7 +234,7 @@ test('validacija starta i zatvaranja', () => {
   assert.equal(r.code, 'RAZLOG');
   const z = ok(g.closeShift('X', pun, '2,00', 'Greška u kucanju'));
   assert.equal(z.izvjestaj.kasa_razlika, -1);
-  assert.equal(z.izvjestaj.usluge[0].naziv, 'Dnevni trening');
+  assert.equal(z.izvjestaj.usluge[0].naziv, 'Dnevna karta');
   assert.equal(z.izvjestaj.usluge[0].km, 3);
   // sve greške su na bosanskom i bez tehničkog žargona
   assert.ok(!/undefined|null|exception|TypeError/i.test(JSON.stringify(r)));

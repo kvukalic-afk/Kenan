@@ -15,23 +15,29 @@
     --bg:#0F0F11; --card:#191A1D; --card2:#212227; --line:#2C2D33;
     --gold:#E8A33D; --gold2:rgba(232,163,61,.12); --text:#F5F2EC; --dim:#8F8A80;
     --red:#E5544B; --green:#5FB07A; --blue:#6E8FC4;
+    --goldg:linear-gradient(135deg,#F7D58B 0%,#E8A33D 45%,#C9852A 100%);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; background:var(--bg); color:var(--text);
     font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
     -webkit-font-smoothing:antialiased; overscroll-behavior:none; -webkit-text-size-adjust:100%;}
+  body{background:radial-gradient(900px 520px at 50% -180px, rgba(232,163,61,.13), transparent 65%) no-repeat, var(--bg); background-attachment:fixed;}
   #root{max-width:560px; margin:0 auto; min-height:100vh;}
+  .zl{background:var(--goldg); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .splash{min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .hero{display:flex; align-items:center; gap:16px; padding:14px 4px 6px;}
   button{font-family:inherit; cursor:pointer; touch-action:manipulation;}
   input{font-family:inherit;}
   a{color:var(--gold);}
   .head{display:flex; justify-content:space-between; align-items:center; gap:10px;
     padding:calc(12px + env(safe-area-inset-top)) 16px 12px; border-bottom:1px solid var(--line);
-    position:sticky; top:0; background:var(--bg); z-index:20;}
-  .logo{font-size:12.5px; font-weight:700; letter-spacing:1.7px;}
+    position:sticky; top:0; background:rgba(15,15,17,.92); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); z-index:20;}
+  .logo{font-size:12.5px; font-weight:700; letter-spacing:1.9px;}
   .logoSub{font-size:9px; letter-spacing:1.8px; color:var(--dim); margin-top:3px;}
   .wrap{padding:16px 16px 28px; display:flex; flex-direction:column; gap:12px;}
   .h1{font-size:23px; font-weight:700; line-height:1.2;}
-  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px;}
+  .card{background:linear-gradient(180deg,#1C1D21,#17181B); border:1px solid var(--line); border-radius:14px; padding:16px;}
+  .card.racun{border-color:rgba(232,163,61,.45); background:linear-gradient(180deg,rgba(232,163,61,.08),rgba(232,163,61,.02));}
   .card0{background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
   .lab{font-size:10px; font-weight:600; letter-spacing:2px; color:var(--dim); margin-bottom:8px;}
   .grp{font-size:10px; font-weight:700; letter-spacing:2.2px; color:var(--dim); margin:8px 0 6px 2px;}
@@ -44,15 +50,17 @@
   .good{font-size:13.5px; line-height:1.55; color:var(--green); background:rgba(95,176,122,.08);
     border:1px solid rgba(95,176,122,.5); border-radius:10px; padding:13px;}
   .sit{font-size:12px; color:var(--dim); margin-top:2px;}
-  .btn{width:100%; min-height:56px; margin-top:6px; padding:16px; background:var(--gold); border:none;
-    border-radius:12px; color:#141416; font-size:16px; font-weight:700; letter-spacing:.3px;}
-  .btn:disabled{opacity:.35;}
+  .btn{width:100%; min-height:56px; margin-top:6px; padding:16px; background:var(--goldg); border:none;
+    border-radius:13px; color:#141416; font-size:16px; font-weight:700; letter-spacing:.4px;
+    box-shadow:0 8px 22px rgba(232,163,61,.22), inset 0 1px 0 rgba(255,255,255,.35);}
+  .btn:active{transform:scale(.985);}
+  .btn:disabled{opacity:.35; box-shadow:none;}
   .btn.red{background:var(--red); color:#fff;}
   .btn2{width:100%; min-height:50px; padding:13px; background:transparent;
     border:1px solid var(--line); border-radius:11px; color:var(--dim); font-size:14px; font-weight:500;}
   .pick{flex:1; min-width:96px; min-height:64px; padding:14px 10px; background:var(--card);
     border:1.5px solid var(--line); border-radius:12px; color:var(--text); font-size:18px; font-weight:600;}
-  .pick.on{border-color:var(--gold); background:var(--gold2);}
+  .pick.on{border-color:var(--gold); background:var(--gold2); box-shadow:0 0 0 1px rgba(232,163,61,.25) inset;}
   .chip{min-height:48px; padding:10px 14px; background:var(--card); border:1.5px solid var(--line);
     border-radius:11px; color:var(--text); font-size:14px;}
   .chip.on{border-color:var(--gold); background:var(--gold2);}
@@ -83,9 +91,11 @@
   .tile .pr{font-size:13px; color:var(--gold); font-weight:600;}
   .tile .st{font-size:12px; color:var(--dim);}
   .tile .st.low{color:var(--red); font-weight:600;}
-  .tile.clan{border-style:dashed;}
+  .tile.karta{min-height:104px; background:linear-gradient(160deg,#22211E,#18181B); border-color:rgba(232,163,61,.35);}
+  .tile.zlatna{border-color:var(--gold); background:linear-gradient(160deg,rgba(232,163,61,.16),rgba(232,163,61,.03));}
+  .tile .ik{font-size:20px; line-height:1; margin-bottom:2px;}
   .badge{position:absolute; top:-8px; right:-6px; min-width:26px; height:26px;
-    padding:0 7px; border-radius:13px; background:var(--gold); color:#141416;
+    padding:0 7px; border-radius:13px; background:var(--goldg); box-shadow:0 3px 10px rgba(0,0,0,.4); color:#141416;
     font-size:13px; font-weight:700; display:grid; place-items:center;}
   .undo{position:fixed; left:12px; right:12px; bottom:calc(92px + env(safe-area-inset-bottom)); max-width:536px;
     margin:0 auto; display:flex; justify-content:space-between; align-items:center; gap:10px;
@@ -99,7 +109,8 @@
   .dock{position:fixed; bottom:0; left:0; right:0; max-width:560px; margin:0 auto;
     display:flex; justify-content:space-between; align-items:center; gap:12px;
     padding:10px 14px calc(12px + env(safe-area-inset-bottom));
-    background:var(--card); border-top:1px solid var(--line); z-index:25;}
+    background:rgba(25,26,29,.96); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    border-top:1px solid rgba(232,163,61,.25); z-index:25;}
   .dock .n{font-size:25px; font-weight:700; color:var(--gold); line-height:1.15;}
   .dock .u{font-size:12px; font-weight:400; color:var(--dim); margin-left:4px;}
   .dock button{min-height:54px; padding:0 18px; background:transparent; border:1.5px solid var(--red);

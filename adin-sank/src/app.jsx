@@ -156,6 +156,39 @@ var Logika = (function () {
     return l;
   }
 
+  /** Vrsta proizvoda (stari podaci bez kolone tip se pogađaju isto kao na serveru). */
+  function tip(p) {
+    if (p.tip) return p.tip;
+    if (p.prati_zalihu) return 'roba';
+    if (p.clanarina_mjeseci > 0) return /trener|personal/i.test(p.naziv) ? 'trener' : 'clanarina';
+    if (/dnevn/i.test(p.naziv) || p.product_id === 'dnevna') return 'dnevna';
+    return 'usluga';
+  }
+  function podijeli(proizvodi) {
+    var o = { dnevne: [], clanarine: [], treneri: [], roba: [], usluge: [] };
+    (proizvodi || []).forEach(function (p) {
+      var t = tip(p);
+      (t === 'dnevna' ? o.dnevne : t === 'clanarina' ? o.clanarine : t === 'trener' ? o.treneri : t === 'roba' ? o.roba : o.usluge).push(p);
+    });
+    return o;
+  }
+  /** Paket = karta (može i bez) + trener (može i bez). */
+  function paket(karta, trener, trenerIme, clan, danas) {
+    var stavke = [], ukupno = 0;
+    if (karta) {
+      var pk = produzenje(clan && clan.istek, danas, karta.clanarina_mjeseci);
+      stavke.push({ p: karta, tekst: karta.naziv, cijena: karta.cijena, do: pk.istek });
+      ukupno += karta.cijena;
+    }
+    if (trener) {
+      var pt = produzenje(clan && clan.trener_do, danas, trener.clanarina_mjeseci);
+      stavke.push({ p: trener, tekst: trener.naziv + (trenerIme ? ' — ' + trenerIme : ''), cijena: trener.cijena, do: pt.istek });
+      ukupno += trener.cijena;
+    }
+    var spreman = stavke.length > 0 && (!trener || !!trenerIme);
+    return { stavke: stavke, ukupno: Math.round(ukupno * 100) / 100, spreman: spreman };
+  }
+
   function grupisi(lista) {
     var red = [];
     lista.forEach(function (p) {
@@ -195,7 +228,7 @@ var Logika = (function () {
     dodajURed: dodajURed, ukloniIzReda: ukloniIzReda, sljedeciBatch: sljedeciBatch, pauza: pauza,
     spojiDogadjaje: spojiDogadjaje, dozvoliTap: dozvoliTap,
     dodajMjesece: dodajMjesece, produzenje: produzenje, normaliziraj: normaliziraj, traziClanove: traziClanove,
-    grupisi: grupisi, tekstIzvjestaja: tekstIzvjestaja
+    grupisi: grupisi, tekstIzvjestaja: tekstIzvjestaja, tip: tip, podijeli: podijeli, paket: paket
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Logika;
@@ -285,7 +318,7 @@ function App() {
   const ucitaj = useCallback(async () => {
     try {
       const r = await api('getBootstrap');
-      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, radnici: r.radnici || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [] };
+      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, radnici: r.radnici || [], treneri: r.treneri || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [] };
       setPodaci(p);
       ls.set(LS.CACHE, p);
       if (r.aktivna) {
@@ -458,9 +491,12 @@ function App() {
   /* ── render ── */
   const zaglavlje = (
     <div className="head">
-      <div>
-        <div className="logo">FITNESS CLUB ADIN</div>
-        <div className="logoSub">{faza === 'admin' ? 'VLASNIČKI PREGLED' : 'EVIDENCIJA ŠANKA'}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Amblem v={34} />
+        <div>
+        <div className="logo">FITNESS CLUB <span className="zl">ADIN</span></div>
+        <div className="logoSub">{faza === 'admin' ? 'VLASNIČKI PREGLED' : 'RECEPCIJA · ŠANK'}</div>
+        </div>
       </div>
       <Sync stanje={sinh} broj={red.length} />
     </div>
@@ -468,7 +504,9 @@ function App() {
   const toastEl = toast && <div className="toast" style={{ borderColor: toast.vrsta === 'err' ? 'var(--red)' : toast.vrsta === 'ok' ? 'var(--green)' : 'var(--line)' }}
     onClick={() => setToast(null)}>{toast.tekst}</div>;
 
-  if (faza === 'ucitavanje') return <>{zaglavlje}<div className="wrap"><div className="info">Učitavam…</div></div></>;
+  if (faza === 'ucitavanje') return (
+    <div className="splash"><Amblem v={96} /><div className="logo" style={{ fontSize: 15, marginTop: 18 }}>FITNESS CLUB <span className="zl">ADIN</span></div><div className="logoSub" style={{ marginTop: 8 }}>UČITAVAM…</div></div>
+  );
   if (faza === 'greska') return <>{zaglavlje}<div className="wrap"><div className="err">{greska}</div>
     <button className="btn" onClick={() => location.reload()}>Pokušaj ponovo</button></div></>;
 
@@ -483,7 +521,7 @@ function App() {
       {faza === 'pocetna' && <Pocetna proizvodi={podaci.proizvodi} prijedlog={podaci.prijedlog} radnik={radnik}
         greska={greska} radi={radi} nazad={() => { setGreska(''); setFaza('radnik'); }} onStart={zapocni} />}
 
-      {faza === 'smjena' && smjena && <Smjena smjena={smjena} proizvodi={podaci.proizvodi} clanovi={podaci.clanovi}
+      {faza === 'smjena' && smjena && <Smjena smjena={smjena} proizvodi={podaci.proizvodi} clanovi={podaci.clanovi} treneri={podaci.treneri || []}
         dodaj={dodaj} pokaziToast={pokaziToast} setClanovi={c => setPodaci(p => ({ ...p, clanovi: c }))}
         onZavrsi={() => { setGreska(''); setFaza('zavrsna'); window.scrollTo(0, 0); }} />}
 
@@ -496,6 +534,26 @@ function App() {
 
       {faza === 'admin' && <Admin nazad={() => { ucitaj(); setFaza(smjenaRef.current ? 'smjena' : 'radnik'); }} pokaziToast={pokaziToast} />}
     </>
+  );
+}
+
+/* ═══════ BREND: AMBLEM KLUBA ═══════ */
+function Amblem({ v }) {
+  const n = v || 34;
+  return (
+    <svg width={n} height={n} viewBox="0 0 64 64" aria-hidden="true" style={{ flexShrink: 0, display: 'block' }}>
+      <defs>
+        <linearGradient id="adinZlato" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#F7D58B" /><stop offset=".5" stopColor="#E8A33D" /><stop offset="1" stopColor="#B8741F" />
+        </linearGradient>
+      </defs>
+      <circle cx="32" cy="32" r="30" fill="#141417" stroke="url(#adinZlato)" strokeWidth="2.5" />
+      <circle cx="32" cy="32" r="25.5" fill="none" stroke="url(#adinZlato)" strokeOpacity=".35" strokeWidth="1" />
+      <path d="M21 46 L32 16 L43 46" fill="none" stroke="url(#adinZlato)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="13" y="33" width="38" height="3.2" rx="1.6" fill="url(#adinZlato)" />
+      <rect x="10" y="28.5" width="4.5" height="12.2" rx="1.6" fill="url(#adinZlato)" />
+      <rect x="49.5" y="28.5" width="4.5" height="12.2" rx="1.6" fill="url(#adinZlato)" />
+    </svg>
   );
 }
 
@@ -523,7 +581,13 @@ function Radnik({ radnici, izabran, onDalje, onAdmin }) {
 
   return (
     <div className="wrap">
-      <div className="h1" style={{ marginTop: 6 }}>Ko je na smjeni?</div>
+      <div className="hero">
+        <Amblem v={72} />
+        <div>
+          <div className="lab" style={{ marginBottom: 4 }}>STIJENA · CAZIN</div>
+          <div className="h1">Ko je na smjeni?</div>
+        </div>
+      </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         {lista.concat(['Drugi']).map(r => (
           <button key={r} className={'pick' + (izbor === r ? ' on' : '')} onClick={() => setIzbor(r)}>{r}</button>
@@ -600,7 +664,7 @@ function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart })
 }
 
 /* ═══════ 3. AKTIVNA SMJENA ═══════ */
-function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, onZavrsi }) {
+function Smjena({ smjena, proizvodi, clanovi, treneri, dodaj, pokaziToast, setClanovi, onZavrsi }) {
   const [zadnji, setZadnji] = useState(null);  // {p, n}
   const [sheet, setSheet] = useState(null);    // dopuna | ispravka | clan | zavrsi
   const [hit, setHit] = useState(null);
@@ -616,9 +680,12 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
   }, [zadnji]);
 
   const st = Logika.stanjeSmjene(smjena, proizvodi);
-  const obicni = proizvodi.filter(p => !p.clanarina_mjeseci);
-  const clanarine = proizvodi.filter(p => p.clanarina_mjeseci > 0);
-  const brojClanarina = clanarine.reduce((a, p) => a + st.prodano(p.product_id), 0);
+  const dio = Logika.podijeli(proizvodi);
+  const obicni = dio.dnevne.concat(dio.roba, dio.usluge);
+  const clanarine = dio.clanarine;
+  const paketi = dio.clanarine.concat(dio.treneri);
+  const brojClanarina = dio.clanarine.reduce((a, p) => a + st.prodano(p.product_id), 0);
+  const brojTrenera = dio.treneri.reduce((a, p) => a + st.prodano(p.product_id), 0);
 
   const prodaj = (p) => {
     if (!Logika.dozvoliTap(tapovi.current, p.product_id, Date.now(), 150)) return;
@@ -655,8 +722,8 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
     return Math.floor(min / 60) + 'h ' + String(min % 60).padStart(2, '0') + 'm';
   })();
 
-  const grupe = Logika.grupisi(obicni);
-  if (clanarine.length) grupe.push({ ime: clanarine[0].kategorija, stavke: [], clan: true });
+  const grupe = Logika.grupisi(dio.roba);
+  if (dio.usluge.length) grupe.push({ ime: 'Usluge', stavke: dio.usluge });
 
   return (
     <>
@@ -673,6 +740,33 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
             </div>
           </div>
         </div>
+
+        {(dio.dnevne.length > 0 || paketi.length > 0) && (
+          <div>
+            <div className="grp">KARTE I ČLANARINE</div>
+            <div className="grid">
+              {dio.dnevne.map(p => {
+                const kom = st.prodano(p.product_id);
+                return (
+                  <button key={p.product_id} data-tile={p.product_id} className={'tile karta' + (hit === p.product_id ? ' hit' : '')} onClick={() => prodaj(p)}>
+                    {kom > 0 && <span className="badge">{kom}</span>}
+                    <span className="ik">🎫</span>
+                    <span className="nm">{p.naziv}</span>
+                    <span className="bot"><span className="pr">{km(p.cijena)} KM</span><span className="st">1 tap</span></span>
+                  </button>
+                );
+              })}
+              {paketi.length > 0 && (
+                <button className="tile karta zlatna" data-tile="clanarina" onClick={() => setSheet('clan')}>
+                  {brojClanarina + brojTrenera > 0 && <span className="badge">{brojClanarina + brojTrenera}</span>}
+                  <span className="ik">🏋️</span>
+                  <span className="nm">Mjesečna karta{dio.treneri.length ? ' / trener' : ''}</span>
+                  <span className="bot"><span className="pr">{clanarine.map(p => km(p.cijena).replace(',00', '')).join(' · ')}{dio.treneri.length ? ' + ' + dio.treneri.map(p => km(p.cijena).replace(',00', '')).join(' · ') : ''} KM</span></span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {grupe.map(g => (
           <div key={g.ime}>
@@ -694,13 +788,6 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
                   </button>
                 );
               })}
-              {g.clan && (
-                <button className="tile clan" data-tile="clanarina" onClick={() => setSheet('clan')}>
-                  {brojClanarina > 0 && <span className="badge">{brojClanarina}</span>}
-                  <span className="nm">Članarina</span>
-                  <span className="bot"><span className="pr">{clanarine.map(p => km(p.cijena).replace(',00', '')).join(' / ')} KM</span></span>
-                </button>
-              )}
             </div>
           </div>
         ))}
@@ -737,13 +824,23 @@ function Smjena({ smjena, proizvodi, clanovi, dodaj, pokaziToast, setClanovi, on
       {sheet === 'ispravka' && <Ispravka proizvodi={obicni} st={st} zatvori={() => setSheet(null)}
         ponisti={p => { dodaj('UNDO_SALE', p.product_id, 1, 'Ispravka'); vibriraj(10); }} />}
 
-      {sheet === 'clan' && <Clanarina clanarine={clanarine} clanovi={clanovi} zatvori={() => setSheet(null)}
-        potvrdi={(p, clan, noviIstek) => {
-          dodaj('SALE', p.product_id, 1, '', { member_id: clan.member_id, ime: clan.ime, telefon: clan.telefon || '' });
-          const azuriran = { ...clan, vrsta: p.product_id, istek: noviIstek };
+      {sheet === 'clan' && <Clanarina clanarine={dio.clanarine} trenerProizvodi={dio.treneri} treneri={treneri} clanovi={clanovi} zatvori={() => setSheet(null)}
+        potvrdi={(clan, pk, trenerIme) => {
+          const payload = { member_id: clan.member_id, ime: clan.ime, telefon: clan.telefon || '' };
+          const azuriran = { ...clan };
+          pk.stavke.forEach(st0 => {
+            if (Logika.tip(st0.p) === 'trener') {
+              dodaj('SALE', st0.p.product_id, 1, '', { ...payload, trener: trenerIme });
+              azuriran.trener = trenerIme; azuriran.trener_do = st0.do;
+            } else {
+              dodaj('SALE', st0.p.product_id, 1, '', payload);
+              azuriran.vrsta = st0.p.product_id; azuriran.istek = st0.do;
+            }
+          });
+          delete azuriran.novi;
           setClanovi(clanovi.filter(c => c.member_id !== clan.member_id).concat([azuriran]));
           setSheet(null);
-          pokaziToast('✓ Članarina: ' + clan.ime + ', važi do ' + dT(noviIstek), 'ok');
+          pokaziToast('✓ ' + clan.ime + ': naplaćeno ' + km(pk.ukupno) + ' KM' + (azuriran.istek ? ', karta do ' + dT(azuriran.istek) : ''), 'ok');
           vibriraj(15);
         }} />}
 
@@ -829,35 +926,47 @@ function Ispravka({ proizvodi, st, zatvori, ponisti }) {
   );
 }
 
-/* ═══════ ČLANARINA (3 koraka: član → vrsta → naplati) ═══════ */
-function Clanarina({ clanarine, clanovi, zatvori, potvrdi }) {
-  const [korak, setKorak] = useState('clan');  // clan | novi | vrsta
+/* ═══════ ČLANARINA / PAKET (3 koraka: član → karta + trener → naplati) ═══════ */
+function Clanarina({ clanarine, trenerProizvodi, treneri, clanovi, zatvori, potvrdi }) {
+  const [korak, setKorak] = useState('clan');  // clan | novi | paket
   const [upit, setUpit] = useState('');
   const [clan, setClan] = useState(null);
   const [ime, setIme] = useState('');
   const [tel, setTel] = useState('');
-  const [vrsta, setVrsta] = useState(null);
+  const [karta, setKarta] = useState(null);
+  const [trener, setTrener] = useState(null);
+  const [trenerIme, setTrenerIme] = useState('');
   const danas = Logika.danasSarajevo();
   const lista = Logika.traziClanove(clanovi, upit).slice(0, 40);
+  const pk = Logika.paket(karta, trener, trenerIme, clan, danas);
+  const listaTrenera = treneri && treneri.length ? treneri : ['Kenan', 'Edin'];
 
-  const naslov = korak === 'clan' ? 'Članarina — ko plaća?' : korak === 'novi' ? 'Novi član' : 'Članarina — ' + (clan && clan.ime);
+  const izaberi = c => {
+    setClan(c); setTrener(null); setTrenerIme(c.trener || '');
+    setKarta(clanarine.find(p => p.product_id === c.vrsta) || (clanarine.length === 1 ? clanarine[0] : null));
+    setKorak('paket');
+  };
+  const naslov = korak === 'clan' ? 'Mjesečna karta — ko plaća?' : korak === 'novi' ? 'Novi član' : (clan && clan.ime);
+  const stanjeClana = c => {
+    if (!c.istek) return { t: 'nema karte', b: 'var(--dim)' };
+    const dana = Math.round((Date.parse(c.istek) - Date.parse(danas)) / 86400000);
+    return dana < 0 ? { t: 'istekla ' + dT(c.istek), b: 'var(--red)' } : { t: 'do ' + dT(c.istek), b: dana <= 5 ? 'var(--gold)' : 'var(--green)' };
+  };
 
   return (
     <Sheet naslov={naslov} zatvori={zatvori}>
       {korak === 'clan' && (
         <>
-          <input className="inp" placeholder="Traži po imenu…" value={upit} onChange={e => setUpit(e.target.value)} />
+          <input className="inp" placeholder="Traži po imenu ili telefonu…" value={upit} onChange={e => setUpit(e.target.value)} />
           <button className="btn" style={{ marginTop: 10 }} onClick={() => { setIme(upit.trim()); setKorak('novi'); }}>+ Novi član</button>
           <div className="card0" style={{ marginTop: 12 }}>
             {!lista.length && <div className="info" style={{ border: 'none' }}>{upit ? 'Nema takvog člana. Klikni „Novi član".' : 'Još nema upisanih članova.'}</div>}
             {lista.map(c => {
-              const dana = c.istek ? Math.round((Date.parse(c.istek) - Date.parse(danas)) / 86400000) : null;
+              const sc = stanjeClana(c);
               return (
-                <button key={c.member_id} className="listbtn" onClick={() => { setClan(c); setVrsta(null); setKorak('vrsta'); }}>
-                  <span>{c.ime}<div className="sit">{c.telefon}</div></span>
-                  <span className="sit" style={{ color: dana === null ? 'var(--dim)' : dana < 0 ? 'var(--red)' : dana <= 5 ? 'var(--gold)' : 'var(--green)', textAlign: 'right' }}>
-                    {dana === null ? '' : dana < 0 ? 'istekla ' + dT(c.istek) : 'do ' + dT(c.istek)}
-                  </span>
+                <button key={c.member_id} className="listbtn" onClick={() => izaberi(c)}>
+                  <span>{c.ime}<div className="sit">{c.telefon}{c.trener_do && c.trener_do >= danas ? ' · 🏋️ ' + c.trener : ''}</div></span>
+                  <span className="sit" style={{ color: sc.b, textAlign: 'right' }}>{sc.t}</span>
                 </button>
               );
             })}
@@ -871,29 +980,62 @@ function Clanarina({ clanarine, clanovi, zatvori, potvrdi }) {
           <div className="lab" style={{ marginTop: 14 }}>TELEFON</div>
           <input className="inp" value={tel} inputMode="tel" maxLength={40} onChange={e => setTel(e.target.value)} placeholder="06x xxx xxx" />
           <button className="btn" style={{ marginTop: 14 }} disabled={ime.trim().length < 2}
-            onClick={() => { setClan({ member_id: Logika.uid('M'), ime: ime.trim(), telefon: tel.trim(), istek: '', novi: true }); setKorak('vrsta'); }}>Dalje</button>
+            onClick={() => izaberi({ member_id: Logika.uid('M'), ime: ime.trim(), telefon: tel.trim(), istek: '', trener: '', trener_do: '', novi: true })}>Dalje</button>
           <button className="btn2" style={{ marginTop: 10 }} onClick={() => setKorak('clan')}>Nazad</button>
         </>
       )}
-      {korak === 'vrsta' && clan && (
+      {korak === 'paket' && clan && (
         <>
-          {clan.istek && <div className="sit" style={{ marginBottom: 10 }}>Trenutno važi do {dT(clan.istek)}{clan.istek < danas ? ' (istekla)' : ''}</div>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {clanarine.map(p => {
-              const pr = Logika.produzenje(clan.istek, danas, p.clanarina_mjeseci);
-              return (
-                <button key={p.product_id} className={'pick' + (vrsta && vrsta.product_id === p.product_id ? ' on' : '')}
-                  style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  onClick={() => setVrsta(p)}>
-                  <span>{p.naziv}<div className="sit">važiće do {dT(pr.istek)}</div></span>
-                  <span style={{ color: 'var(--gold)' }}>{km(p.cijena)} KM</span>
-                </button>
-              );
-            })}
+          <div className="sit" style={{ marginBottom: 12 }}>
+            {clan.novi ? 'Novi član' : 'Karta: ' + stanjeClana(clan).t}{clan.trener_do ? ' · trener ' + clan.trener + ' do ' + dT(clan.trener_do) : ''}
           </div>
-          <button className="btn" style={{ marginTop: 14 }} disabled={!vrsta}
-            onClick={() => potvrdi(vrsta, clan, Logika.produzenje(clan.istek, danas, vrsta.clanarina_mjeseci).istek)}>
-            {vrsta ? 'NAPLAĆENO ' + km(vrsta.cijena) + ' KM' : 'Izaberi vrstu'}
+          {clanarine.length > 0 && <>
+            <div className="lab">KARTA</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {clanarine.map(p => {
+                const on = karta && karta.product_id === p.product_id;
+                return (
+                  <button key={p.product_id} data-karta={p.product_id} className={'pick' + (on ? ' on' : '')}
+                    style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 60 }}
+                    onClick={() => setKarta(on ? null : p)}>
+                    <span style={{ fontSize: 16 }}>{on ? '✓ ' : ''}{p.naziv}<div className="sit">važiće do {dT(Logika.produzenje(clan.istek, danas, p.clanarina_mjeseci).istek)}</div></span>
+                    <span style={{ color: 'var(--gold)', fontSize: 17 }}>{km(p.cijena)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>}
+          {trenerProizvodi.length > 0 && <>
+            <div className="lab" style={{ marginTop: 16 }}>LIČNI TRENER (DODATNO)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {trenerProizvodi.map(p => {
+                const on = trener && trener.product_id === p.product_id;
+                return (
+                  <button key={p.product_id} data-trener-paket={p.product_id} className={'pick' + (on ? ' on' : '')}
+                    style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 56 }}
+                    onClick={() => setTrener(on ? null : p)}>
+                    <span style={{ fontSize: 16 }}>{on ? '✓ ' : '+ '}{p.naziv}</span>
+                    <span style={{ color: 'var(--gold)', fontSize: 17 }}>{km(p.cijena)}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {trener && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                {listaTrenera.map(t => <button key={t} data-trener={t} className={'chip' + (trenerIme === t ? ' on' : '')} style={{ flex: 1, minWidth: 90 }} onClick={() => setTrenerIme(t)}>{t}</button>)}
+              </div>
+            )}
+          </>}
+          {pk.stavke.length > 0 && (
+            <div className="card racun" style={{ marginTop: 16 }}>
+              {pk.stavke.map((x, i) => <div className="ln" key={i}><span>{x.tekst}<div className="sit">do {dT(x.do)}</div></span><b>{km(x.cijena)} KM</b></div>)}
+              <div className="ln" style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 10 }}>
+                <span style={{ fontWeight: 600 }}>UKUPNO</span><b style={{ color: 'var(--gold)', fontSize: 22 }} data-testid="paket-ukupno">{km(pk.ukupno)} KM</b>
+              </div>
+            </div>
+          )}
+          <button className="btn" style={{ marginTop: 14 }} disabled={!pk.spreman} onClick={() => potvrdi(clan, pk, trener ? trenerIme : '')}>
+            {!pk.stavke.length ? 'Izaberi kartu ili trenera' : trener && !trenerIme ? 'Izaberi trenera' : 'NAPLAĆENO ' + km(pk.ukupno) + ' KM'}
           </button>
           <button className="btn2" style={{ marginTop: 10 }} onClick={() => setKorak(clan.novi ? 'novi' : 'clan')}>Nazad</button>
         </>
@@ -1085,7 +1227,7 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
 
       {izv.usluge && izv.usluge.length > 0 && (
         <div className="card">
-          <div className="lab">USLUGE I ČLANARINE</div>
+          <div className="lab">KARTE, ČLANARINE I USLUGE</div>
           {izv.usluge.map(u => <div className="ln" key={u.product_id}><span>{u.naziv}</span><b>{u.kom} kom · {km(u.km)} KM</b></div>)}
         </div>
       )}
@@ -1147,20 +1289,24 @@ function Admin({ nazad, pokaziToast }) {
   return (
     <div className="wrap">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="h1">Pregled</div>
+        <div>
+          <div className="lab" style={{ marginBottom: 2 }}>DOBRO DOŠLI</div>
+          <div className="h1" style={{ fontSize: 21 }}>{(d && d.vlasnici) || 'Vlasnici'}</div>
+        </div>
         <button className="chip" onClick={() => ucitaj(pin)} disabled={radi}>{radi ? '…' : '↻ Osvježi'}</button>
       </div>
       <div className="tabs">
-        {[['danas', 'Danas'], ['vrata', 'Vrata'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['proizvodi', 'Proizvodi'], ['mjesec', 'Mjesec'], ['postavke', 'Postavke']].map(([k, n]) =>
+        {[['danas', 'Danas'], ['karte', 'Karte'], ['vrata', 'Vrata'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['proizvodi', 'Proizvodi'], ['mjesec', 'Mjesec'], ['postavke', 'Postavke']].map(([k, n]) =>
           <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>)}
       </div>
       {greska && <div className="err">{greska}</div>}
       {d && tab === 'danas' && <AdminDanas d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'zalihe' && <AdminZalihe d={d} />}
+      {d && tab === 'karte' && <AdminKarte d={d} />}
       {d && tab === 'clanovi' && <AdminClanovi d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'proizvodi' && <AdminProizvodi d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'vrata' && <AdminVrata pin={pin} pokaziToast={pokaziToast} />}
-      {d && tab === 'postavke' && <AdminPostavke pin={pin} setPin={p => { setPin(p); try { sessionStorage.setItem('adin_pin', p); } catch (e) { /* */ } }} pokaziToast={pokaziToast} />}
+      {d && tab === 'postavke' && <AdminPostavke d={d} osvjezi={() => ucitaj(pin)} pin={pin} setPin={p => { setPin(p); try { sessionStorage.setItem('adin_pin', p); } catch (e) { /* */ } }} pokaziToast={pokaziToast} />}
       {d && tab === 'smjene' && <AdminSmjene pin={pin} pokaziToast={pokaziToast} />}
       {d && tab === 'mjesec' && <AdminMjesec d={d} />}
       <button className="btn2" style={{ marginTop: 10 }} onClick={() => { try { sessionStorage.removeItem('adin_pin'); } catch (e) { /* */ } nazad(); }}>Izađi iz pregleda</button>
@@ -1227,6 +1373,48 @@ function AdminDanas({ d, pin, osvjezi, pokaziToast }) {
   );
 }
 
+function AdminKarte({ d }) {
+  const k = d.karte;
+  if (!k) return null;
+  const red = (lab, x, dod) => (
+    <div className="ln"><span>{lab}{dod ? <div className="sit">{dod}</div> : null}</span><b>{x.kom} kom · <span style={{ color: 'var(--gold)' }}>{km(x.promet)} KM</span></b></div>
+  );
+  return (
+    <>
+      <div className="two">
+        <Broj lab="AKTIVNIH KARTI" v={k.aktivnih_karti} boja="var(--gold)" sit="članova s važećom kartom" />
+        <Broj lab="S TRENEROM" v={k.sa_trenerom.length} boja="var(--green)" sit={Object.keys(k.po_treneru).map(t => t + ' ' + k.po_treneru[t]).join(' · ') || '—'} />
+      </div>
+      <div className="card">
+        <div className="lab">DANAS</div>
+        {red('🎫 Dnevne karte', k.danas.dnevne)}
+        {red('🏋️ Mjesečne karte', k.danas.mjesecne)}
+        {red('💪 Trener', k.danas.trener)}
+      </div>
+      <div className="card">
+        <div className="lab">OVAJ MJESEC (OD {dT(d.periodi.mjesecOd)})</div>
+        {red('🎫 Dnevne karte', k.mjesec.dnevne)}
+        {red('🏋️ Mjesečne karte', k.mjesec.mjesecne, 'nove: ' + k.mjesec.nove + ' · produžene: ' + k.mjesec.produzene)}
+        {red('💪 Trener', k.mjesec.trener)}
+        <div className="ln" style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 9 }}>
+          <span>Ukupno karte i treneri</span>
+          <b style={{ color: 'var(--gold)' }}>{km(k.mjesec.dnevne.promet + k.mjesec.mjesecne.promet + k.mjesec.trener.promet)} KM</b>
+        </div>
+      </div>
+      <div className="grp">ČLANOVI S TRENEROM</div>
+      <div className="card0">
+        {!k.sa_trenerom.length && <div className="info" style={{ border: 'none' }}>Trenutno niko.</div>}
+        {k.sa_trenerom.map(c => (
+          <div className="row" key={c.member_id} style={{ minHeight: 60 }}>
+            <span style={{ fontSize: 15 }}>{c.ime}<div className="sit">trener <b style={{ color: 'var(--text)' }}>{c.trener}</b> do {dT(c.trener_do)}{c.istek ? ' · karta do ' + dT(c.istek) : ''}</div></span>
+            <Telefon broj={c.telefon} />
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function AdminZalihe({ d }) {
   return (
     <>
@@ -1245,7 +1433,7 @@ function AdminZalihe({ d }) {
 
 function Telefon({ broj }) {
   if (!broj) return null;
-  return <a href={'tel:' + String(broj).replace(/[^\d+]/g, '')} className="chip" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>📞 {broj}</a>;
+  return <a href={'tel:' + String(broj).replace(/[^\d+]/g, '')} className="chip" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap', flexShrink: 0 }}>📞 {broj}</a>;
 }
 
 function AdminClanovi({ d, pin, osvjezi, pokaziToast }) {
@@ -1277,7 +1465,7 @@ function AdminClanovi({ d, pin, osvjezi, pokaziToast }) {
       <div className="card0">
         {svi.slice(0, 60).map(x => (
           <button key={x.member_id} className="listbtn" onClick={() => setUredi({ ...x })}>
-            <span>{x.ime}<div className="sit">{x.telefon || 'bez telefona'}{x.brava_id ? ' · čip/šifra: ' + x.brava_id : ''}{x.aktivan ? '' : ' · NEAKTIVAN'}</div></span>
+            <span>{x.ime}<div className="sit">{x.telefon || 'bez telefona'}{x.trener ? ' · 🏋️ ' + x.trener + (x.trener_do ? ' do ' + dT(x.trener_do) : '') : ''}{x.brava_id ? ' · čip: ' + x.brava_id : ''}{x.aktivan ? '' : ' · NEAKTIVAN'}</div></span>
             <span className="sit" style={{ textAlign: 'right' }}>{x.istek ? 'do ' + dT(x.istek) : ''}<br />uredi ›</span>
           </button>
         ))}
@@ -1324,7 +1512,7 @@ function AdminProizvodi({ d, pin, osvjezi, pokaziToast }) {
   return (
     <>
       <div className="info">Ovdje dodaješ nove stvari i mijenjaš cijene. Proizvod se nikad ne briše, samo isključi (da historija ostane tačna). Radnik promjenu vidi kad ponovo otvori aplikaciju.</div>
-      <button className="btn" onClick={() => setUredi({ product_id: '', naziv: '', kategorija: kategorije[0] || 'Ostalo', cijena: '', nabavna: '', minimum: 3, prati_zalihu: true, aktivan: true, clanarina_mjeseci: 0 })}>+ Novi proizvod</button>
+      <button className="btn" onClick={() => setUredi({ product_id: '', naziv: '', kategorija: kategorije[0] || 'Ostalo', cijena: '', nabavna: '', minimum: 3, prati_zalihu: true, aktivan: true, clanarina_mjeseci: 0, tip: 'roba' })}>+ Novi proizvod / ponuda</button>
       {Logika.grupisi(d.proizvodi).map(g => (
         <div key={g.ime}>
           <div className="grp">{g.ime.toUpperCase()}</div>
@@ -1332,7 +1520,7 @@ function AdminProizvodi({ d, pin, osvjezi, pokaziToast }) {
             {g.stavke.map(p => (
               <button key={p.product_id} className="listbtn" data-proizvod={p.product_id} onClick={() => setUredi({ ...p, cijena: String(p.cijena).replace('.', ','), nabavna: String(p.nabavna).replace('.', ',') })}
                 style={p.aktivan ? {} : { opacity: .45 }}>
-                <span>{p.naziv}<div className="sit">{p.aktivan ? '' : 'ISKLJUČEN · '}nabavna {km(p.nabavna)}{p.prati_zalihu ? ' · min ' + p.minimum : ' · bez zalihe'}</div></span>
+                <span>{p.naziv}<div className="sit">{p.aktivan ? '' : 'ISKLJUČEN · '}{{ roba: 'roba', dnevna: 'dnevna karta', clanarina: 'mjesečna karta', trener: 'trener', usluga: 'usluga' }[Logika.tip(p)]} · nabavna {km(p.nabavna)}{p.prati_zalihu ? ' · min ' + p.minimum : ''}</div></span>
                 <b style={{ color: 'var(--gold)' }}>{km(p.cijena)} KM</b>
               </button>
             ))}
@@ -1351,11 +1539,13 @@ function UrediProizvod({ p, kategorije, pin, zatvori, gotovo }) {
   const [radi, setRadi] = useState(false);
   const [gr, setGr] = useState('');
   const broj = v => Number(String(v).replace(',', '.'));
-  const clanarina = x.clanarina_mjeseci > 0;
+  const tip = x.tip || Logika.tip(x);
+  const clanarina = tip === 'clanarina' || tip === 'trener';
+  const VRSTE = [['roba', 'Roba (broji se)'], ['dnevna', 'Dnevna karta'], ['clanarina', 'Mjesečna karta'], ['trener', 'Lični trener'], ['usluga', 'Ostala usluga']];
   const sacuvaj = async () => {
     setRadi(true); setGr('');
     try {
-      const r = await api('saveProduct', pin, { ...x, cijena: broj(x.cijena), nabavna: broj(x.nabavna || 0) });
+      const r = await api('saveProduct', pin, { ...x, tip, cijena: broj(x.cijena), nabavna: broj(x.nabavna || 0), clanarina_mjeseci: Number(x.clanarina_mjeseci) || 0 });
       gotovo(r.novi);
     } catch (e) { setGr(e.message); } finally { setRadi(false); }
   };
@@ -1373,15 +1563,21 @@ function UrediProizvod({ p, kategorije, pin, zatvori, gotovo }) {
       <div className="two" style={{ marginTop: 12 }}>
         <div style={{ flex: 1 }}><div className="lab">PRODAJNA (KM)</div>
           <input className="inp" data-testid="p-cijena" inputMode="decimal" value={x.cijena} onChange={e => setX({ ...x, cijena: decimal(e.target.value) })} placeholder="0,00" /></div>
-        <div style={{ flex: 1 }}><div className="lab">NABAVNA (KM)</div>
+        <div style={{ flex: 1 }}><div className="lab">{tip === 'trener' ? 'IDE TRENERU (KM)' : 'NABAVNA (KM)'}</div>
           <input className="inp" data-testid="p-nabavna" inputMode="decimal" value={x.nabavna} onChange={e => setX({ ...x, nabavna: decimal(e.target.value) })} placeholder="0,00" /></div>
       </div>
-      {!clanarina && (
-        <button className={'chip' + (x.prati_zalihu ? ' on' : '')} style={{ marginTop: 12, width: '100%' }} onClick={() => setX({ ...x, prati_zalihu: !x.prati_zalihu })}>
-          {x.prati_zalihu ? '✓ Broji se na početku i kraju smjene (roba)' : 'Ne broji se (usluga)'}
-        </button>
+      <div className="lab" style={{ marginTop: 12 }}>VRSTA</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {VRSTE.map(([k, n]) => <button key={k} className={'chip' + (tip === k ? ' on' : '')} onClick={() => setX({ ...x, tip: k, prati_zalihu: k === 'roba', clanarina_mjeseci: (k === 'clanarina' || k === 'trener') ? (x.clanarina_mjeseci || 1) : 0 })}>{n}</button>)}
+      </div>
+      <div className="sit" style={{ marginTop: 6 }}>
+        {tip === 'roba' ? 'Broji se na početku i kraju smjene.' : tip === 'dnevna' ? 'Jedan tap = jedna karta, na vrhu ekrana prodaje.' : tip === 'clanarina' ? 'Prodaje se članu; produžava datum važenja karte.' : tip === 'trener' ? 'Dodatak na kartu; bira se trener. Nabavna = koliko ide treneru (ako je ista kao cijena, ne ulazi u profit ni u platu radnika).' : 'Jedan tap = jedna prodaja, bez brojanja.'}
+      </div>
+      {clanarina && (
+        <div style={{ marginTop: 12 }}><div className="lab">TRAJE (MJESECI)</div>
+          <input className="inp" inputMode="numeric" value={x.clanarina_mjeseci} onChange={e => setX({ ...x, clanarina_mjeseci: e.target.value.replace(/\D/g, '').slice(0, 2) })} /></div>
       )}
-      {x.prati_zalihu && !clanarina && (
+      {tip === 'roba' && (
         <div style={{ marginTop: 12 }}><div className="lab">UPOZORI KAD PADNE NA (KOM)</div>
           <input className="inp" inputMode="numeric" value={x.minimum} onChange={e => setX({ ...x, minimum: e.target.value.replace(/\D/g, '').slice(0, 4) })} /></div>
       )}
@@ -1536,7 +1732,39 @@ function TuyaForma({ post, pin, gotovo }) {
 }
 
 /* ═══════ VLASNIK: POSTAVKE ═══════ */
-function AdminPostavke({ pin, setPin, pokaziToast }) {
+function AdminPostavke({ d, osvjezi, pin, setPin, pokaziToast }) {
+  return (
+    <>
+      <AdminListe d={d} pin={pin} osvjezi={osvjezi} pokaziToast={pokaziToast} />
+      <AdminPin pin={pin} setPin={setPin} pokaziToast={pokaziToast} />
+    </>
+  );
+}
+
+function AdminListe({ d, pin, osvjezi, pokaziToast }) {
+  const [radnici, setRadnici] = useState((d.radnici || []).join(', '));
+  const [treneri, setTreneri] = useState((d.treneri || []).join(', '));
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState('');
+  return (
+    <div className="card">
+      <div className="lab">RADNICI I TRENERI</div>
+      <div className="sit">Imena odvoji zarezom. Radnici su dugmad na prvom ekranu, a treneri se biraju pri prodaji paketa s trenerom.</div>
+      <div className="lab" style={{ marginTop: 12 }}>RADNICI NA ŠANKU</div>
+      <input className="inp" value={radnici} onChange={e => setRadnici(e.target.value)} placeholder="Edvin, Kenan" />
+      <div className="lab" style={{ marginTop: 12 }}>TRENERI</div>
+      <input className="inp" value={treneri} onChange={e => setTreneri(e.target.value)} placeholder="Edin, Kenan" />
+      {gr && <div className="err" style={{ marginTop: 10 }}>{gr}</div>}
+      <button className="btn" style={{ marginTop: 12 }} disabled={radi} onClick={async () => {
+        setRadi(true); setGr('');
+        try { await api('saveLists', pin, { radnici, treneri }); pokaziToast('✓ Sačuvano. Radnik promjenu vidi kad ponovo otvori aplikaciju.', 'ok'); osvjezi(); }
+        catch (e) { setGr(e.message); } finally { setRadi(false); }
+      }}>Sačuvaj</button>
+    </div>
+  );
+}
+
+function AdminPin({ pin, setPin, pokaziToast }) {
   const [novi, setNovi] = useState('');
   const [opet, setOpet] = useState('');
   const [gr, setGr] = useState('');
