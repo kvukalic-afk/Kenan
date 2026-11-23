@@ -22,7 +22,7 @@
 
 | 18 | **Lični trener**: 60 KM mjesečno, po defaultu ide treneru u cijelosti (ne ulazi u profit ni u platu radnika). Treneri na spisku: Kenan, Edin | Vlasnik → Proizvodi / Postavke |
 | 19 | Mjesečna karta i dalje stoji na **30 KM** (i 24/7 na 50) jer cijenu nisi potvrdio. Ako je sada 40, promijeni je u Vlasnik → Proizvodi | Vlasnik → Proizvodi |
-| 20 | Vlasnici u pozdravu: **Edin & Kenan**; radnici na prvom ekranu: Kenan, Edvin | `CONFIG` / Vlasnik → Postavke |
+| 20 | Vlasnici u pozdravu: **Edin & Kenan**; radnici na prvom ekranu: Kenan, Edin | `CONFIG` / Vlasnik → Postavke |
 
 ## Ograničenja koja trebaš znati
 

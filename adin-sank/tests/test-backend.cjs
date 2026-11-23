@@ -72,7 +72,7 @@ test('bootstrap: proizvodi, nema aktivne smjene, neaktivni sakriveni', () => {
   assert.equal(b.aktivna, null);
   assert.equal(b.proizvodi.length, 16);
   assert.ok(!b.proizvodi.some(p => p.product_id === 'voda1'));
-  assert.deepEqual(b.radnici, ['Kenan', 'Edvin']);
+  assert.deepEqual(b.radnici, ['Kenan', 'Edin']);
   assert.equal(b.proizvodi.filter(p => p.prati_zalihu).length, 11);
   assert.equal(b.proizvodi.find(p => p.product_id === 'clan50').clanarina_mjeseci, 1);
 });
@@ -173,7 +173,7 @@ test('SCENARIJ PRIHVATANJA (tačka 7)', () => {
 
 test('UNDO_SALE ostavlja oba reda, neto se računa, ne može se poništiti više nego prodano', () => {
   const g = okruzenje();
-  ok(g.startShift({ shift_id: 'S1', radnik: 'Edvin', pocetna: pocetnoSve(g, { redbull: 5 }) }));
+  ok(g.startShift({ shift_id: 'S1', radnik: 'Edin', pocetna: pocetnoSve(g, { redbull: 5 }) }));
   const r = ok(g.pushEvents('S1', [ev('S1', 'SALE', 'redbull'), ev('S1', 'UNDO_SALE', 'redbull', 1), ev('S1', 'UNDO_SALE', 'redbull', 1)]));
   assert.equal(r.primljeno.length, 2);
   assert.equal(r.odbijeni.length, 1);
@@ -189,12 +189,12 @@ test('UNDO_SALE ostavlja oba reda, neto se računa, ne može se poništiti više
 
 test('nema dvije otvorene smjene: drugi start vraća postojeću', () => {
   const g = okruzenje();
-  ok(g.startShift({ shift_id: 'S-A', radnik: 'Edvin', pocetna: pocetnoSve(g) }));
+  ok(g.startShift({ shift_id: 'S-A', radnik: 'Edin', pocetna: pocetnoSve(g) }));
   ok(g.pushEvents('S-A', [ev('S-A', 'SALE', 'kong')]));
   const drugi = ok(g.startShift({ shift_id: 'S-B', radnik: 'Kenan', pocetna: pocetnoSve(g) }));
   assert.equal(drugi.postojeca, true);
   assert.equal(drugi.smjena.shift_id, 'S-A');
-  assert.equal(drugi.smjena.radnik, 'Edvin');
+  assert.equal(drugi.smjena.radnik, 'Edin');
   assert.equal(drugi.smjena.dogadjaji.length, 1);
   assert.equal(g.__tabela('SMJENE').length, 1);
   // drugi telefon: bootstrap vraća aktivnu smjenu s događajima
@@ -345,7 +345,7 @@ test('vlasnik: PIN, pregled (profit, plata, zalihe, članovi), historija, detalj
 
   // prošla sedmica: ponedjeljak 16.11. smjena s 2 Red Bulla i jednom članarinom 24/7
   g.__postaviSat(new Date('2026-11-12T09:00:00Z'));
-  ok(g.startShift({ shift_id: 'P1', radnik: 'Edvin', pocetna: pocetnoSve(g, { redbull: 10 }) }));
+  ok(g.startShift({ shift_id: 'P1', radnik: 'Edin', pocetna: pocetnoSve(g, { redbull: 10 }) }));
   ok(g.pushEvents('P1', [ev('P1', 'SALE', 'redbull'), ev('P1', 'SALE', 'redbull'), ev('P1', 'SALE', 'clan50', 1, { clan: { member_id: 'M-9', ime: 'Mirza', telefon: '062' } })]));
   ok(g.closeShift('P1', pocetnoSve(g, { redbull: 7 }), '58', 'Ne znam'));
 
@@ -402,14 +402,14 @@ test('vlasnik: PIN, pregled (profit, plata, zalihe, članovi), historija, detalj
 
 test('zaboravljena smjena: upozorenje nakon 14 h, vlasnik zatvara bez izmišljanja brojeva', () => {
   const g = okruzenje();
-  ok(g.startShift({ shift_id: 'Z', radnik: 'Edvin', pocetna: pocetnoSve(g, { kong: 4 }) }));
+  ok(g.startShift({ shift_id: 'Z', radnik: 'Edin', pocetna: pocetnoSve(g, { kong: 4 }) }));
   ok(g.pushEvents('Z', [ev('Z', 'SALE', 'kong')]));
   g.__postaviSat(new Date(SAT.getTime() + 15 * 3600000));
   const a = ok(g.getAdminData('2580'));
   assert.equal(a.otvorena.stara, true);
   assert.equal(a.otvorena.sati, 15);
   assert.equal(g.adminCloseShift('2580', 'Z', '').code, 'NAPOMENA');
-  const z = ok(g.adminCloseShift('2580', 'Z', 'Edvin zaboravio zatvoriti'));
+  const z = ok(g.adminCloseShift('2580', 'Z', 'Edin zaboravio zatvoriti'));
   assert.equal(z.izvjestaj.bez_brojanja, true);
   assert.equal(z.izvjestaj.promet, 2);
   const sm = g.__tabela('SMJENE')[0];

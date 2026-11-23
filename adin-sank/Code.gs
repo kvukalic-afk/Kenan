@@ -8,7 +8,7 @@
 /* ═══════ POSTAVKE — mijenjaj samo ovdje ═══════ */
 var CONFIG = {
   ADMIN_PIN: '2580',                 // početni PIN za vlasnika (poslije se mijenja u aplikaciji: Vlasnik → Postavke)
-  RADNICI: ['Kenan', 'Edvin'],       // velika dugmad na prvom ekranu (+ "Drugi") — mijenja se i u aplikaciji
+  RADNICI: ['Kenan', 'Edin'],       // velika dugmad na prvom ekranu (+ "Drugi") — mijenja se i u aplikaciji
   TRENERI: ['Kenan', 'Edin'],        // ko može biti lični trener — mijenja se i u aplikaciji
   VLASNICI: 'Edin & Kenan',          // pozdrav u vlasničkom pregledu
   TZ: 'Europe/Sarajevo',

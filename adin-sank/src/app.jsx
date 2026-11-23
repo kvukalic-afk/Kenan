@@ -286,7 +286,7 @@ function vibriraj(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } ca
 /* ═══════ APLIKACIJA ═══════ */
 function App() {
   const [faza, setFaza] = useState('ucitavanje');
-  const [podaci, setPodaci] = useState({ proizvodi: [], prijedlog: {}, radnici: ['Kenan', 'Edvin'], razlozi: [], clanovi: [] });
+  const [podaci, setPodaci] = useState({ proizvodi: [], prijedlog: {}, radnici: ['Kenan', 'Edin'], razlozi: [], clanovi: [] });
   const [smjena, setSmjenaS] = useState(null);
   const [radnik, setRadnik] = useState('');
   const [red, setRed] = useState(() => ls.get(LS.RED, []));
@@ -585,7 +585,7 @@ function Sync({ stanje, broj }) {
 
 /* ═══════ 1. KO JE NA SMJENI ═══════ */
 function Radnik({ radnici, izabran, onDalje, onAdmin }) {
-  const lista = radnici && radnici.length ? radnici : ['Kenan', 'Edvin'];
+  const lista = radnici && radnici.length ? radnici : ['Kenan', 'Edin'];
   const [izbor, setIzbor] = useState(izabran && lista.indexOf(izabran) < 0 ? 'Drugi' : (izabran || null));
   const [drugi, setDrugi] = useState(izabran && lista.indexOf(izabran) < 0 ? izabran : '');
   const ime = izbor === 'Drugi' ? drugi.trim() : izbor;
@@ -1832,9 +1832,9 @@ function AdminListe({ d, pin, osvjezi, pokaziToast }) {
       <div className="lab">RADNICI I TRENERI</div>
       <div className="sit">Imena odvoji zarezom. Radnici su dugmad na prvom ekranu, a treneri se biraju pri prodaji paketa s trenerom.</div>
       <div className="lab" style={{ marginTop: 12 }}>RADNICI NA ŠANKU</div>
-      <input className="inp" value={radnici} onChange={e => setRadnici(e.target.value)} placeholder="Edvin, Kenan" />
+      <input className="inp" value={radnici} onChange={e => setRadnici(e.target.value)} placeholder="Kenan, Edin" />
       <div className="lab" style={{ marginTop: 12 }}>TRENERI</div>
-      <input className="inp" value={treneri} onChange={e => setTreneri(e.target.value)} placeholder="Edin, Kenan" />
+      <input className="inp" value={treneri} onChange={e => setTreneri(e.target.value)} placeholder="Kenan, Edin" />
       {gr && <div className="err" style={{ marginTop: 10 }}>{gr}</div>}
       <button className="btn" style={{ marginTop: 12 }} disabled={radi} onClick={async () => {
         setRadi(true); setGr('');

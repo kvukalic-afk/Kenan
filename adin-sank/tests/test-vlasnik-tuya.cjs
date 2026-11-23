@@ -61,7 +61,7 @@ test('vlasnik dodaje i mijenja proizvod iz aplikacije; radnik ga odmah vidi', ()
 
 test('napomene radnika: upisuju se, ne utiču na brojeve, vide se u izvještaju', () => {
   const g = okruzenje();
-  ok(g.startShift({ shift_id: 'N', radnik: 'Edvin', pocetna: pocetno(g, { redbull: 3 }) }));
+  ok(g.startShift({ shift_id: 'N', radnik: 'Edin', pocetna: pocetno(g, { redbull: 3 }) }));
   const r = ok(g.pushEvents('N', [
     { event_id: 'n1', shift_id: 'N', tip: 'NAPOMENA', napomena: 'Frižider curi' },
     { event_id: 'n2', shift_id: 'N', tip: 'NAPOMENA', napomena: '  ' },
@@ -185,7 +185,7 @@ test('PAKET: mjesečna karta 40 + trener 60 — oboje u kasi, član dobija kartu
   assert.deepEqual(b.treneri, ['Kenan', 'Edin']);
   assert.equal(b.proizvodi.find(p => p.product_id === 'trener').tip, 'trener');
   assert.equal(b.proizvodi.find(p => p.product_id === 'dnevna').tip, 'dnevna');
-  ok(g.startShift({ shift_id: 'K', radnik: 'Edvin', pocetna: pocetno(g) }));
+  ok(g.startShift({ shift_id: 'K', radnik: 'Edin', pocetna: pocetno(g) }));
   const clan = { member_id: 'M-P', ime: 'Nermin', telefon: '061', trener: 'Edin' };
   const r = ok(g.pushEvents('K', [
     { event_id: 'k1', shift_id: 'K', tip: 'SALE', product_id: 'clan30', kolicina: 1, clan },
@@ -219,11 +219,11 @@ test('Postavke: vlasnik mijenja spisak radnika i trenera', () => {
   const g = okruzenje();
   assert.equal(g.saveLists('0000', { radnici: ['X'] }).code, 'PIN');
   assert.equal(g.saveLists('2580', { treneri: ' , ' }).code, 'TRENERI');
-  const r = ok(g.saveLists('2580', { radnici: ['Edvin', 'Amra', 'Edvin', ' '], treneri: 'Edin, Kenan, Amar' }));
-  assert.deepEqual(r.radnici, ['Edvin', 'Amra']);
+  const r = ok(g.saveLists('2580', { radnici: ['Edin', 'Amra', 'Edin', ' '], treneri: 'Edin, Kenan, Amar' }));
+  assert.deepEqual(r.radnici, ['Edin', 'Amra']);
   assert.deepEqual(r.treneri, ['Edin', 'Kenan', 'Amar']);
   const b = ok(g.getBootstrap());
-  assert.deepEqual(b.radnici, ['Edvin', 'Amra']);
+  assert.deepEqual(b.radnici, ['Edin', 'Amra']);
   assert.deepEqual(b.treneri, ['Edin', 'Kenan', 'Amar']);
 });
 
@@ -244,19 +244,19 @@ test('saveProduct: tip određuje ponašanje (roba se broji, karta ne)', () => {
 test('radnik dodaje novo piće: odmah se prodaje i broji, vlasnik vidi „dodao", cijene postojećih ne može mijenjati', () => {
   const g = okruzenje();
   // prije smjene (na početnom brojanju)
-  const r0 = ok(g.addProductRadnik({ naziv: 'Bang Energy', kategorija: 'Energy', cijena: '4,00', tip: 'roba', radnik: 'Edvin' }));
+  const r0 = ok(g.addProductRadnik({ naziv: 'Bang Energy', kategorija: 'Energy', cijena: '4,00', tip: 'roba', radnik: 'Edin' }));
   assert.equal(r0.proizvod.product_id, 'bang_energy');
   assert.equal(r0.proizvod.prati_zalihu, true);
   assert.equal(r0.u_smjenu, false);
-  assert.equal(g.addProductRadnik({ naziv: 'red bull', cijena: 9, radnik: 'Edvin' }).code, 'POSTOJI', 'ne može "prepraviti" Red Bull');
+  assert.equal(g.addProductRadnik({ naziv: 'red bull', cijena: 9, radnik: 'Edin' }).code, 'POSTOJI', 'ne može "prepraviti" Red Bull');
   assert.equal(g.addProductRadnik({ naziv: 'X', cijena: 2 }).code, 'NAZIV');
   assert.equal(g.addProductRadnik({ naziv: 'Skupo', cijena: 0 }).code, 'CIJENA');
   ok(g.saveProduct('2580', { product_id: 'kong', naziv: 'Kong', kategorija: 'Energy', cijena: 2, nabavna: 1, tip: 'roba', aktivan: false }));
   assert.match(g.addProductRadnik({ naziv: 'Kong', cijena: 2 }).message, /isključio/);
 
   // usred smjene: novo piće ulazi u inventuru s 0 + dopuna
-  ok(g.startShift({ shift_id: 'R', radnik: 'Edvin', pocetna: pocetno(g) }));
-  const r1 = ok(g.addProductRadnik({ naziv: 'Monster Mango', kategorija: 'Energy', cijena: 4.5, tip: 'roba', radnik: 'Edvin', shift_id: 'R' }));
+  ok(g.startShift({ shift_id: 'R', radnik: 'Edin', pocetna: pocetno(g) }));
+  const r1 = ok(g.addProductRadnik({ naziv: 'Monster Mango', kategorija: 'Energy', cijena: 4.5, tip: 'roba', radnik: 'Edin', shift_id: 'R' }));
   assert.equal(r1.u_smjenu, true);
   ok(g.pushEvents('R', [
     { event_id: 'r1', shift_id: 'R', tip: 'RESTOCK', product_id: 'monster_mango', kolicina: 6 },
@@ -270,7 +270,7 @@ test('radnik dodaje novo piće: odmah se prodaje i broji, vlasnik vidi „dodao"
   assert.deepEqual([mm.pocetno, mm.dopunjeno, mm.prodano_klik, mm.ocekivano, mm.razlika_kom], [0, 6, 1, 5, 0]);
   // vlasnik vidi ko je dodao; kad sačuva (potvrdi), oznaka nestaje
   let a = ok(g.getAdminData('2580'));
-  assert.match(a.proizvodi.find(p => p.product_id === 'monster_mango').dodao, /^Edvin 2026-11-21 16:03/);
+  assert.match(a.proizvodi.find(p => p.product_id === 'monster_mango').dodao, /^Edin 2026-11-21 16:03/);
   ok(g.saveProduct('2580', { product_id: 'monster_mango', naziv: 'Monster Mango', kategorija: 'Energy', cijena: 4.5, nabavna: 2.4, tip: 'roba', aktivan: true }));
   a = ok(g.getAdminData('2580'));
   assert.equal(a.proizvodi.find(p => p.product_id === 'monster_mango').dodao, '');

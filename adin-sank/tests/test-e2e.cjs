@@ -151,7 +151,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
 
     /* ── Druga smjena: sugestija, dupli tap, undo, offline, refresh, drugi telefon ── */
     await page.getByRole('button', { name: 'Gotovo' }).click();
-    await page.getByRole('button', { name: 'Edvin', exact: true }).click();
+    await page.getByRole('button', { name: 'Edin', exact: true }).click();
     await page.getByRole('button', { name: /Dalje/ }).click();
     await page.getByText('prošli put: 12').first().waitFor();
     assert.equal(await page.locator('input[data-pid="redbull"]').inputValue(), '', 'sugestija se ne upisuje automatski');
@@ -192,7 +192,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
 
     // refresh: smjena se vraća
     await page.reload();
-    await page.getByTestId('radnik').filter({ hasText: 'Edvin' }).waitFor();
+    await page.getByTestId('radnik').filter({ hasText: 'Edin' }).waitFor();
     assert.equal((await page.locator('[data-tile="redbull"] .badge').textContent()).trim(), '2');
 
     // radnik usred smjene dodaje novo piće sa 6 komada
@@ -235,7 +235,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     // drugi telefon: odmah na aktivnu smjenu iz Sheeta
     const st2 = { offline: false, pozivi: [] };
     const t2 = await noviTelefon(browser, g, st2);
-    await t2.page.getByTestId('radnik').filter({ hasText: 'Edvin' }).waitFor();
+    await t2.page.getByTestId('radnik').filter({ hasText: 'Edin' }).waitFor();
     assert.match(await t2.page.getByTestId('promet').textContent(), /98,00/);
 
     // telefon 1 offline proda još jedan; u međuvremenu vlasnik (telefon 2) zatvori smjenu bez brojanja

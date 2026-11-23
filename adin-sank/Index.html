@@ -142,7 +142,7 @@
 <body>
 <div id="root"></div>
 <script>
-/* Generisano iz src/app.jsx (2026-11-23 23:08 UTC) — ne uređuj ručno, pokreni npm run build */
+/* Generisano iz src/app.jsx (2026-11-23 23:09 UTC) — ne uređuj ručno, pokreni npm run build */
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
@@ -505,7 +505,7 @@ function vibriraj(ms) {
 }
 function App() {
   const [faza, setFaza] = useState("ucitavanje");
-  const [podaci, setPodaci] = useState({ proizvodi: [], prijedlog: {}, radnici: ["Kenan", "Edvin"], razlozi: [], clanovi: [] });
+  const [podaci, setPodaci] = useState({ proizvodi: [], prijedlog: {}, radnici: ["Kenan", "Edin"], razlozi: [], clanovi: [] });
   const [smjena, setSmjenaS] = useState(null);
   const [radnik, setRadnik] = useState("");
   const [red, setRed] = useState(() => ls.get(LS.RED, []));
@@ -845,7 +845,7 @@ function Sync({ stanje, broj }) {
   return /* @__PURE__ */ React.createElement("div", { className: "sync", "data-testid": "sync" }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: boja } }), /* @__PURE__ */ React.createElement("span", null, "⟳ ", tekst, " sinhronizaciju", stanje === "greska" ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { style: { color: "var(--red)" } }, "nema veze, pokušavam ponovo")) : null));
 }
 function Radnik({ radnici, izabran, onDalje, onAdmin }) {
-  const lista = radnici && radnici.length ? radnici : ["Kenan", "Edvin"];
+  const lista = radnici && radnici.length ? radnici : ["Kenan", "Edin"];
   const [izbor, setIzbor] = useState(izabran && lista.indexOf(izabran) < 0 ? "Drugi" : izabran || null);
   const [drugi, setDrugi] = useState(izabran && lista.indexOf(izabran) < 0 ? izabran : "");
   const ime = izbor === "Drugi" ? drugi.trim() : izbor;
@@ -1618,7 +1618,7 @@ function AdminListe({ d, pin, osvjezi, pokaziToast }) {
   const [treneri, setTreneri] = useState((d.treneri || []).join(", "));
   const [radi, setRadi] = useState(false);
   const [gr, setGr] = useState("");
-  return /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "RADNICI I TRENERI"), /* @__PURE__ */ React.createElement("div", { className: "sit" }, "Imena odvoji zarezom. Radnici su dugmad na prvom ekranu, a treneri se biraju pri prodaji paketa s trenerom."), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 12 } }, "RADNICI NA ŠANKU"), /* @__PURE__ */ React.createElement("input", { className: "inp", value: radnici, onChange: (e) => setRadnici(e.target.value), placeholder: "Edvin, Kenan" }), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 12 } }, "TRENERI"), /* @__PURE__ */ React.createElement("input", { className: "inp", value: treneri, onChange: (e) => setTreneri(e.target.value), placeholder: "Edin, Kenan" }), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 10 } }, gr), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 12 }, disabled: radi, onClick: async () => {
+  return /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "RADNICI I TRENERI"), /* @__PURE__ */ React.createElement("div", { className: "sit" }, "Imena odvoji zarezom. Radnici su dugmad na prvom ekranu, a treneri se biraju pri prodaji paketa s trenerom."), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 12 } }, "RADNICI NA ŠANKU"), /* @__PURE__ */ React.createElement("input", { className: "inp", value: radnici, onChange: (e) => setRadnici(e.target.value), placeholder: "Kenan, Edin" }), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 12 } }, "TRENERI"), /* @__PURE__ */ React.createElement("input", { className: "inp", value: treneri, onChange: (e) => setTreneri(e.target.value), placeholder: "Kenan, Edin" }), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 10 } }, gr), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 12 }, disabled: radi, onClick: async () => {
     setRadi(true);
     setGr("");
     try {
