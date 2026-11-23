@@ -209,7 +209,7 @@ function PinDijalog({ rezim, sacuvanHash, onZatvori }: { rezim: 'postavi' | 'isk
 
   const pinInput = (id: string, labela: string, v: string, set: (s: string) => void) => (
     <Polje labela={labela} id={id}>
-      <input id={id} type="password" inputMode="numeric" autoComplete="off" pattern="\d*" maxLength={6} value={v}
+      <input id={id} type="text" className="pin-polje" inputMode="numeric" autoComplete="off" data-lpignore="true" data-1p-ignore pattern="\d*" maxLength={6} value={v}
         onChange={(e) => { set(e.target.value.replace(/\D/g, '').slice(0, 6)); setGreska(''); }} />
     </Polje>
   );

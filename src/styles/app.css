@@ -605,3 +605,8 @@ section > .naslov-sekcije:first-child { margin-top: 22px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-delay: 0s !important; transition-duration: 0.001ms !important; }
 }
+.reset-pina { display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 300px; text-align: center; }
+.reset-pina .dugme.primarno { background: var(--na-primarnoj); color: var(--primarna); }
+.pin-polje { -webkit-text-security: disc; letter-spacing: 0.3em; font-size: 1.2rem; }
+.novi-pin { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.novi-pin input { text-align: center; color: var(--tekst); }
