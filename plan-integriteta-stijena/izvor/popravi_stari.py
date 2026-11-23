@@ -29,7 +29,7 @@ def _term(o):
 R = _term(R)
 TBL = list(d.tables)  # reference na izvorne tabele prije umetanja novih
 B = '____________'
-BR = {'odluka': '610-1015/2026', 'obavijest': '610-1016/2026', 'program': '610-1017/2026', 'izvjestaj': '610-1018/2026', 'dopis': '610-1019/2026'}
+BR = {'odluka': '610-1015/2026', 'obavijest': '610-1016/2026', 'izvjestaj': '610-1017/2026', 'dopis': '610-1018/2026'}
 norm = lambda s: re.sub(r'\s+', ' ', s or '').strip()
 
 # ───────── pomoćne funkcije
@@ -114,6 +114,8 @@ def mk_table(rows, widths_cm, header=1, size=8, fills=None):
                 np_ = c.add_paragraph(); rr = np_.add_run(ln); rr.font.size = Pt(size)
             for p in c.paragraphs:
                 p.paragraph_format.space_after = Pt(0); p.paragraph_format.space_before = Pt(0)
+                for rr in p.runs:
+                    rr.font.name = 'Times New Roman'; rr._r.get_or_add_rPr().get_or_add_rFonts().set(qn('w:hAnsi'), 'Times New Roman')
             if ri < header: shade(c, 'D9E2F3')
             if fills and (ri, ci) in fills: shade(c, fills[(ri, ci)])
             ci += span
@@ -145,7 +147,8 @@ def new_par_after(anchor_el, text, bold=False, size=None, style='Normal', page_b
     if page_break:
         p.add_run().add_break(WD_BREAK.PAGE)
     r = p.add_run(text); r.bold = bold
-    if size: r.font.size = Pt(size)
+    r.font.name = 'Times New Roman'; r._r.get_or_add_rPr().get_or_add_rFonts().set(qn('w:hAnsi'), 'Times New Roman')
+    r.font.size = Pt(size) if size else Pt(12)
     anchor_el.addnext(p._p)
     return p._p
 
@@ -168,59 +171,61 @@ add_after(p6, '7. Kenan Vukalić, psiholog')
 set_text(find('Agencija za prevenciju korupcije i koordinaciju borbe protiv korupcije u BiH obavezala'),
          'Zakonom o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 24/25) propisana je obaveza svih javnih ustanova čiji je osnivač Unsko-sanski kanton da donesu i provode plan integriteta, u skladu sa Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 11/26) i Strategijom za borbu protiv korupcije Unsko-sanskog kantona 2023.–2027.')
 
-# ───────── 3. Odluka o izradi
-set_text(find('Broj: 610-93/2025'), f"Broj: {BR['odluka']}")
-for p in [p for p in paras() if norm(p.text) == 'Datum: 28.01.2025. godine']:
-    set_text(p, 'Datum: 23.11.2026. godine')
-set_text(find('Na osnovu Strategije za borbu protiv korupcije 2015'),
-         'Na osnovu člana 43. stav (2) Zakona o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 24/25) i Strategije za borbu protiv korupcije Unsko-sanskog kantona 2023.-2027. („Službeni glasnik Unsko-sanskog kantona“, broj 26/23), a u vezi sa realizacijom mjera i aktivnosti predviđenih Akcionim planom za provođenje Strategije za borbu protiv korupcije Unsko-sanskog kantona, direktor JU OŠ „Stijena“ donosi:')
-set_text(find('Za koordinatora radne grupe zadužene za izradu plana integriteta u JU OŠ „Stijena, imenuje se'),
-         'Za koordinatora radne grupe zadužene za izradu plana integriteta u JU OŠ „Stijena“, imenuje se Sabina Žunić, pedagog škole.')
-for old, new in [('1. Edin Pehlić,nastavnik', '1. Edin Pehlić, nastavnik'), ('2. Dženita Hepić,knjigovođa škole', '2. Dženita Hepić, knjigovođa škole'), ('3. Elvira Vatić,nastavnik', '3. Elvira Vatić, nastavnik'), ('4. Dževaira Džehverović,soc.radnik škole', '4. Dževaira Džehverović, soc. radnik škole')]:
-    set_text(find(old), new)
-p5 = find('5. Semira Džakilić,sekretar škole')
-set_text(p5, '5. Semira Džakulić, sekretar škole')
-add_after(p5, '6. Kenan Vukalić, psiholog škole')
-_ag = find('3. Agenciji za prevenciju korupcije i koordinaciju borbe protiv korupcije'); _ag._p.getparent().remove(_ag._p)
-set_text(find('4. Timu Ureda za borbu protiv korupcije Vlade USK'), '3. Uredu za borbu protiv korupcije Unsko-sanskog kantona;')
-set_text([p for p in paras() if norm(p.text) == '5. a/a'][0], '4. a/a')
+replace_in(find('Imajući u vidu naprijed navedeno, direktor škole je donio odluku o izradi Plana integriteta'), 'koja je pristupila izradi plana.', 'koja je pristupila izradi plana. Odlukom o izmjenama i dopunama Odluke o izradi plana integriteta broj\u00a0' + BR['odluka'].replace('-', '\u2011') + ' od 23.11.2026. godine postupak izrade usklađen je sa Zakonom o prevenciji korupcije u Unsko-sanskom kantonu i Uputstvom, a radna grupa dopunjena psihologom škole.')
 
-# ───────── 4. Obavijest
-set_text(find('Broj: 610-94/2025'), f"Broj: {BR['obavijest']}")
-set_text(find('inegriteta JU OŠ „Stijena, dostavlja se'), 'integriteta JU OŠ „Stijena“, dostavlja se:')
-set_text(find('izradila je i usvojila Pravila za izradu i provođenje planova integriteta'),
-         'Vlada Unsko-sanskog kantona, na prijedlog Ureda za borbu protiv korupcije Unsko-sanskog kantona, usvojila je Uputstvo za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu (u daljem tekstu: Uputstvo). U skladu sa Zakonom o prevenciji korupcije u Unsko-sanskom kantonu i navedenim Uputstvom, obaveza naše institucije je da izradi i usvoji plan integriteta.')
-set_text(find('S tim u vezi, informišem vas da sam dana 28.01.2025'),
-         f'S tim u vezi, informišem vas da sam dana 23.11.2026. godine donio Odluku o izradi plana integriteta i imenovanju članova radne grupe za izradu plana integriteta (broj:\u00a0{BR["odluka"].replace("-", "\u2011")}).')
-set_text(find('Ovom odlukom za koordinatora radne grupe imenovan je Sabina Žunić'),
-         'Ovom odlukom za koordinatora radne grupe imenovana je Sabina Žunić, pedagog škole, a za članove radne grupe imenovani su:')
-set_text(find('1. Edina Pehlić,nastavnik'), '1. Edin Pehlić, nastavnik')
-for old, new in [('2. Dženita Hepić,knjigovođa', '2. Dženita Hepić, knjigovođa'), ('3. Elvira Vatić,nastavnik', '3. Elvira Vatić, nastavnik'), ('4. Dževaira Džehverović,soc.radnik škole', '4. Dževaira Džehverović, soc. radnik škole')]:
-    hits = [p for p in paras() if norm(p.text) == old]
-    for h in hits: set_text(h, new)
-p5b = find('5. Semira Džakulić, sekretar škole', nth=1)
-add_after(p5b, '6. Kenan Vukalić, psiholog škole')
-
-# ───────── 5. Program rada
-replace_in(find('ČLANOVI RADNE GRUPE'), 'Semira Džakulić', 'Semira Džakulić, Kenan Vukalić')
-for lab, old in [('DATUM DONOŠENJA ODLUKE', '28.01.2025'), ('DATUM DONOŠENJA PROGRAMA', '30.01.2025'), ('POČETAK PROGRAMA', '28.01.2025'), ('OČEKIVANI ZAVRŠETAK', '28.02.2025')]:
-    p = find(lab)
-    replace_in(p, old, '23.11.2026')
-set_text(find('U skladu sa smjernicama za izradu i provođenje Plana integriteta'),
-         f'U skladu sa Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu, direktor JU OŠ „Stijena“, na prijedlog Radne grupe, imenovane Odlukom direktora o izradi Plana integriteta, broj:\u00a0{BR["odluka"].replace("-", "\u2011")} od 23.11.2026. godine, odobrava')
-T0 = TBL[0]
-for row in T0.rows:
-    seen = set()
-    for c in row.cells:
-        if id(c._tc) in seen: continue
-        seen.add(id(c._tc))
-        t = norm(c.text)
-        if re.fullmatch(r'\d{2}\.\d{2}\.\d{4}\.', t): cell_set(c, '23.11.2026.')
-        elif 'Izrada mjeta' in t: cell_set(c, t.replace('mjeta', 'mjera'), bold=True)
-        elif 'mišljenje Agenciji' in t: cell_set(c, 'Pregled predloženog Plana integriteta i dostavljanje istog na mišljenje Uredu za borbu protiv korupcije Unsko-sanskog kantona')
-        elif t == 'Rok uslovljen mišljenjem Agencije': cell_set(c, 'Nakon pozitivnog mišljenja Ureda')
-set_text(find('Stijena, 31.03.2026'), 'Stijena, 23.11.2026.')
-set_text(find('Broj: 610-95/2025'), f"Broj: {BR['program']}")
+# ───────── 3–5. Izvorni akti (Odluka 610-93/2025, Obavijest 610-94/2025, Program 610-95/2025) ostaju NEPROMIJENJENI.
+# Izmjene se uvode novom Odlukom o izmjenama i dopunama i novom obaviješću, koje se umeću iza Programa rada.
+from docx.enum.text import WD_ALIGN_PARAGRAPH as _AL
+_AMAP = {'L': _AL.LEFT, 'C': _AL.CENTER, 'R': _AL.RIGHT, 'J': _AL.JUSTIFY}
+def write_block(anchor, lines):
+    for text, bold, pb, al in lines:
+        anchor = new_par_after(anchor, text, bold=bold, page_break=pb)
+        _pp = docx.text.paragraph.Paragraph(anchor, None)
+        _pp.alignment = _AMAP[al]
+        _pp.paragraph_format.space_after = Pt(4)
+        if text in ('ODLUKU', 'OBAVIJEST') or (text.startswith('Član ') and len(text) < 9):
+            _pp.paragraph_format.space_before = Pt(6)
+    return anchor
+_N93 = '610‑93/2025'
+_zk0 = find('ZAKONSKI OKVIR I INTERNI PROPISI')._p.getprevious()
+while _zk0 is not None and _zk0.tag == qn('w:p') and not ''.join(t.text or '' for t in _zk0.iter(qn('w:t'))).strip() and _zk0.find('.//' + qn('w:br')) is None and _zk0.find('.//' + qn('w:sectPr')) is None and _zk0.find('.//' + qn('w:drawing')) is None:
+    _rm = _zk0; _zk0 = _zk0.getprevious(); _rm.getparent().remove(_rm)
+_prev_is_break = _zk0.find('.//' + qn('w:br')) is not None
+izm = [
+    (f"Broj: {BR['odluka']}", False, not _prev_is_break, 'L'), ('Datum: 23.11.2026. godine', False, False, 'L'),
+    ('Na osnovu člana 43. st. (2) i (5) Zakona o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 24/25), Uputstva za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 11/26) i Strategije za borbu protiv korupcije Unsko-sanskog kantona 2023.-2027. („Službeni glasnik Unsko-sanskog kantona“, broj 26/23), direktor JU OŠ „Stijena“ donosi:', False, False, 'J'),
+    ('ODLUKU', True, False, 'C'), ('O IZMJENAMA I DOPUNAMA ODLUKE O IZRADI PLANA INTEGRITETA', True, False, 'C'),
+    ('Član 1.', True, False, 'C'),
+    (f'Odluka o izradi plana integriteta JU OŠ „Stijena“ broj: {_N93} od 28.01.2025. godine (u daljem tekstu: Odluka) i postupak izrade plana integriteta usklađuju se sa Zakonom o prevenciji korupcije u Unsko-sanskom kantonu i Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu.', False, False, 'J'),
+    ('Član 2.', True, False, 'C'),
+    ('U članu 2. Odluke, iza tačke 5. dodaje se nova tačka 6. koja glasi: „6. Kenan Vukalić, psiholog škole“.', False, False, 'J'),
+    ('Prezime člana radne grupe navedenog pod tačkom 5. člana 2. Odluke ispravno glasi: Džakulić (Semira Džakulić, sekretar škole).', False, False, 'J'),
+    ('Član 3.', True, False, 'C'),
+    ('Mišljenje o nacrtu plana integriteta traži se od Ureda za borbu protiv korupcije Unsko-sanskog kantona, a plan integriteta usvaja se nakon pribavljenog pozitivnog mišljenja Ureda. U skladu s tim, u Programu rada izrade Plana integriteta (broj: 610‑95/2025), u Fazi 4, aktivnosti dostavljanja nacrta na mišljenje i usvajanja plana integriteta odnose se na Ured za borbu protiv korupcije Unsko-sanskog kantona.', False, False, 'J'),
+    ('Član 4.', True, False, 'C'),
+    ('Radna grupa za izradu plana integriteta dužna je da revidirani prijedlog plana integriteta, usklađen sa Uputstvom, dostavi direktoru škole danom donošenja ove odluke.', False, False, 'J'),
+    ('Član 5.', True, False, 'C'),
+    ('Ostale odredbe Odluke ostaju nepromijenjene. Ova odluka stupa na snagu danom donošenja.', False, False, 'J'),
+    ('DIREKTOR ŠKOLE:', True, False, 'R'), ('___________________', False, False, 'R'), ('/Vatić Mersad/', False, False, 'R'),
+    ('Dostavljeno: 1. Koordinatoru radne grupe; 2. Članovima radne grupe; 3. Uredu za borbu protiv korupcije Unsko-sanskog kantona; 4. a/a', False, False, 'L'),
+]
+oba = [
+    (f"Broj: {BR['obavijest']}", False, True, 'L'), ('Datum: 23.11.2026. godine', False, False, 'L'),
+    ('OBAVIJEST', True, False, 'C'), ('O IZMJENAMA I DOPUNAMA ODLUKE O IZRADI PLANA INTEGRITETA', True, False, 'C'),
+    ('PREDMET: Obavijest uposlenima o nastavku aktivnosti usmjerenih na izradu plana integriteta JU OŠ „Stijena“, dostavlja se:', False, False, 'J'),
+    ('Poštovane kolegice i kolege,', False, False, 'L'),
+    ('Zakonom o prevenciji korupcije u Unsko-sanskom kantonu i Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu, koje je donijela Vlada Unsko-sanskog kantona, uređen je postupak izrade i usvajanja plana integriteta u našem kantonu. S tim u vezi, informišem vas da sam dana 23.11.2026. godine donio Odluku o izmjenama i dopunama Odluke o izradi plana integriteta (broj: ' + BR['odluka'].replace('-', '‑') + '), kojom je postupak izrade plana usklađen s navedenim propisima, a radna grupa dopunjena.', False, False, 'J'),
+    ('Radnu grupu za izradu plana integriteta čine: Sabina Žunić, pedagog škole – koordinator, te članovi Edin Pehlić, nastavnik; Dženita Hepić, knjigovođa; Elvira Vatić, nastavnik; Dževaira Džehverović, soc. radnik; Semira Džakulić, sekretar škole i Kenan Vukalić, psiholog škole.', False, False, 'J'),
+    ('Naglašavam obavezu da su svi uposleni u JU OŠ „Stijena“ dužni da pruže svu pomoć i informacije potrebne za proces izrade i provođenje plana integriteta, te da sarađuju sa radnom grupom.', False, False, 'J'),
+    ('S poštovanjem,', False, False, 'L'),
+    ('D I R E K T O R :', True, False, 'R'), ('___________________', False, False, 'R'), ('/Vatić Mersad/', False, False, 'R'),
+    ('Dostavljeno: oglasna tabla; a/a', False, False, 'L'),
+]
+_zk = find('ZAKONSKI OKVIR I INTERNI PROPISI')
+_anc = _zk._p.getprevious()
+_anc = write_block(_anc, izm)
+_anc = write_block(_anc, oba)
+_zk.paragraph_format.page_break_before = True
 
 # ───────── 6. Zakonski okvir – dodati antikorupcijske propise
 ok = find('Okvirni zakon o osnovnom i srednjem obrazovanju u BiH')
@@ -333,7 +338,7 @@ lines = [
     ('Član 1.', True, False, 'C'),
     ('Ovom odlukom usvaja se Plan integriteta JU OŠ „Stijena“ koji je pripremila radna grupa za izradu plana integriteta.', False, False, 'J'),
     ('Član 2.', True, False, 'C'),
-    ('Stupanjem na snagu ove odluke razrješavaju se dužnosti koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj ' + _ODL + ' od 23.11.2026. godine).', False, False, 'J'),
+    ('Stupanjem na snagu ove odluke razrješavaju se dužnosti koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj 610‑93/2025 od 28.01.2025. godine i Odluka o izmjenama i dopunama broj ' + _ODL + ' od 23.11.2026. godine).', False, False, 'J'),
     ('Član 3.', True, False, 'C'),
     ('(1) Za osobu zaduženu za nadzor nad provođenjem plana integriteta (menadžera integriteta) imenuje se Dževaira Džehverović, soc. radnik.', False, False, 'J'),
     ('(2) Osoba zadužena za nadzor nad provođenjem plana integriteta ima zadatak da prati provođenje Plana integriteta, a posebno dijela koji se odnosi na mjere za poboljšanje integriteta institucije, te davanje prijedloga za njegovo unapređenje.', False, False, 'J'),
@@ -374,6 +379,26 @@ sdt = d.element.body.find(qn('w:sdt'))
 nxt = sdt.getnext()
 while nxt is not None and nxt.tag == qn('w:p') and not ''.join(t.text or '' for t in nxt.iter(qn('w:t'))).strip() and nxt.find('.//' + qn('w:br')) is None and nxt.find('.//' + qn('w:sectPr')) is None:
     rem = nxt; nxt = nxt.getnext(); rem.getparent().remove(rem)
+
+# ───────── samostalni ručni prijelomi stranice → „početak na novoj stranici“ na sljedećem paragrafu (sprječava prazne stranice)
+for el in list(d.element.body.iterchildren()):
+    if el.tag != qn('w:p') or el.find('.//' + qn('w:sectPr')) is not None: continue
+    if ''.join(t.text or '' for t in el.iter(qn('w:t'))).strip(): continue
+    brs = el.findall('.//' + qn('w:br'))
+    if not brs or any(b.get(qn('w:type')) != 'page' for b in brs): continue
+    nxt = el.getnext()
+    while nxt is not None and nxt.tag == qn('w:p') and not ''.join(t.text or '' for t in nxt.iter(qn('w:t'))).strip() and nxt.find('.//' + qn('w:br')) is None and nxt.find('.//' + qn('w:drawing')) is None and nxt.find('.//' + qn('w:sectPr')) is None:
+        rm = nxt; nxt = nxt.getnext(); rm.getparent().remove(rm)
+    if nxt is None or nxt.tag != qn('w:p'): continue
+    docx.text.paragraph.Paragraph(nxt, None).paragraph_format.page_break_before = True
+    el.getparent().remove(el)
+
+# prazni paragrafi neposredno ispred paragrafa koji počinje na novoj stranici nemaju svrhu (mogu stvoriti praznu stranicu)
+for el in list(d.element.body.iterchildren()):
+    if el.tag == qn('w:p') and el.find('.//' + qn('w:pageBreakBefore')) is not None:
+        prv = el.getprevious()
+        while prv is not None and prv.tag == qn('w:p') and not ''.join(t.text or '' for t in prv.iter(qn('w:t'))).strip() and prv.find('.//' + qn('w:br')) is None and prv.find('.//' + qn('w:sectPr')) is None and prv.find('.//' + qn('w:drawing')) is None:
+            rm = prv; prv = prv.getprevious(); rm.getparent().remove(rm)
 
 # ───────── ažuriranje sadržaja pri otvaranju u Wordu
 settings = d.settings.element
