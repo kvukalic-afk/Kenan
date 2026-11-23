@@ -322,21 +322,41 @@ set_text(find('Članovima Radne grupe 5x'), 'Članovima Radne grupe 7x')
 # ───────── 13. Nacrt odluke o usvajanju (Uputstvo: plan i odluka se dostavljaju u nacrtu)
 prilog = find('Prilog 2 Upitnik za samoprocjenu integriteta')
 anchor = prilog._p.getprevious()
+from docx.enum.text import WD_ALIGN_PARAGRAPH as _AL
+_ODL = BR['odluka'].replace('-', '‑')
 lines = [
-    ('NACRT ODLUKE O USVAJANJU I PROVOĐENJU PLANA INTEGRITETA', True, True),
-    (f'Broj: {B}', False, False), (f'Datum: {B}', False, False),
-    (f'Na osnovu člana 43., 46., 47. i 49. Zakona o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 24/25) i Uputstva za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 11/26), a nakon pribavljenog mišljenja Ureda za borbu protiv korupcije Unsko-sanskog kantona broj {B} od {B}, direktor JU OŠ „Stijena“ donosi', False, False),
-    ('ODLUKU o usvajanju i provođenju Plana integriteta JU OŠ „Stijena“', True, False),
-    ('Član 1. Ovom odlukom usvaja se Plan integriteta JU OŠ „Stijena“ koji je pripremila radna grupa za izradu plana integriteta.', False, False),
-    (f'Član 2. Stupanjem na snagu ove odluke razrješavaju se dužnosti koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj\u00a0' + BR['odluka'].replace('-', '\u2011') + ' od 23.11.2026. godine).', False, False),
-    ('Član 3. (1) Za osobu zaduženu za nadzor nad provođenjem plana integriteta (menadžera integriteta) imenuje se Dževaira Džehverović, soc. radnik. (2) Osoba zadužena za nadzor prati provođenje Plana integriteta, a posebno dijela koji se odnosi na mjere za poboljšanje integriteta, te daje prijedloge za njegovo unapređenje. (3) Svi zaposleni dužni su obavijestiti osobu zaduženu za nadzor o situaciji, pojavi ili radnji koje na osnovu razumnog uvjerenja mogu dovesti do narušavanja integriteta institucije i, na njen zahtjev, dostaviti potrebne podatke i informacije. (4) Škola svake druge godine procjenjuje učinkovitost plana integriteta i godišnje, do 31. marta tekuće godine za prethodnu godinu, dostavlja Uredu izvještaj o provođenju plana integriteta.', False, False),
-    ('Član 4. Plan integriteta objavljuje se na web stranici škole i dostavlja Uredu za borbu protiv korupcije Unsko-sanskog kantona u roku od 15 dana od dana donošenja ove odluke. Plan važi četiri godine od dana usvajanja.', False, False),
-    ('Član 5. Ova odluka stupa na snagu danom donošenja.', False, False),
-    ('Direktor škole: ____________________ /Vatić Mersad/', False, False),
-    ('Dostavljeno: Uredu za borbu protiv korupcije USK; osobi zaduženoj za nadzor nad provođenjem Plana integriteta; članovima Radne grupe; a/a.', False, False),
+    # (tekst, bold, prijelom prije, poravnanje: L/C/R/J)
+    ('NACRT', True, True, 'R'),
+    (f'Broj: {B}', False, False, 'L'), (f'Datum: {B}', False, False, 'L'),
+    (f'Na osnovu člana 43., 46., 47. i 49. Zakona o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 24/25) i Uputstva za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 11/26), a nakon pribavljenog mišljenja Ureda za borbu protiv korupcije Unsko-sanskog kantona broj {B} od {B}, direktor JU OŠ „Stijena“ donosi', False, False, 'J'),
+    ('ODLUKU', True, False, 'C'), ('o usvajanju i provođenju Plana integriteta JU OŠ „Stijena“', True, False, 'C'),
+    ('Član 1.', True, False, 'C'),
+    ('Ovom odlukom usvaja se Plan integriteta JU OŠ „Stijena“ koji je pripremila radna grupa za izradu plana integriteta.', False, False, 'J'),
+    ('Član 2.', True, False, 'C'),
+    ('Stupanjem na snagu ove odluke razrješavaju se dužnosti koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj ' + _ODL + ' od 23.11.2026. godine).', False, False, 'J'),
+    ('Član 3.', True, False, 'C'),
+    ('(1) Za osobu zaduženu za nadzor nad provođenjem plana integriteta (menadžera integriteta) imenuje se Dževaira Džehverović, soc. radnik.', False, False, 'J'),
+    ('(2) Osoba zadužena za nadzor nad provođenjem plana integriteta ima zadatak da prati provođenje Plana integriteta, a posebno dijela koji se odnosi na mjere za poboljšanje integriteta institucije, te davanje prijedloga za njegovo unapređenje.', False, False, 'J'),
+    ('(3) Svi uposleni u JU OŠ „Stijena“ dužni su obavijestiti osobu zaduženu za nadzor nad provođenjem plana integriteta o situaciji, pojavi ili radnji koje na osnovu razumnog uvjerenja mogu dovesti do narušavanja integriteta institucije.', False, False, 'J'),
+    ('(4) Uposleni u instituciji treba da, na zahtjev osobe zadužene za nadzor nad provođenjem plana integriteta, dostave potrebne podatke i informacije od značaja za provođenje plana integriteta, a koje nisu u suprotnosti sa važećim propisima.', False, False, 'J'),
+    ('(5) Institucija svake druge godine procjenjuje učinkovitost plana integriteta, u skladu sa Uputstvom za izradu i provođenje plana integriteta. Institucija je dužna godišnje dostaviti Uredu izvještaj o provođenju plana integriteta. Izvještaj će institucija dostaviti Uredu do 31. marta tekuće godine, za prethodnu godinu.', False, False, 'J'),
+    ('Član 4.', True, False, 'C'),
+    ('Plan integriteta objavljuje se na web stranici škole i dostavlja Uredu za borbu protiv korupcije Unsko-sanskog kantona u roku od 15 dana od dana donošenja ove odluke. Plan važi četiri godine od dana usvajanja.', False, False, 'J'),
+    ('Član 5.', True, False, 'C'),
+    ('Ova odluka stupa na snagu danom donošenja.', False, False, 'J'),
+    ('Direktor škole:', False, False, 'R'), ('____________________', False, False, 'R'), ('/Vatić Mersad/', False, False, 'R'),
+    ('Dostavljeno: 1. Uredu za borbu protiv korupcije Unsko-sanskog kantona; 2. Osobi zaduženoj za nadzor nad provođenjem Plana integriteta; 3. Članovima Radne grupe; 4. a/a', False, False, 'L'),
 ]
-for text, bold, pb in lines:
+_AMAP = {'L': _AL.LEFT, 'C': _AL.CENTER, 'R': _AL.RIGHT, 'J': _AL.JUSTIFY}
+for text, bold, pb, al in lines:
     anchor = new_par_after(anchor, text, bold=bold, page_break=pb)
+    _pp = docx.text.paragraph.Paragraph(anchor, None)
+    _pp.alignment = _AMAP[al]
+    _pp.paragraph_format.space_after = Pt(4)
+    if text in ('ODLUKU',) or text.startswith('Član ') and len(text) < 9:
+        _pp.paragraph_format.space_before = Pt(6)
+# Prilog 2 uvijek počinje na novoj stranici
+prilog.paragraph_format.page_break_before = True
 
 # ───────── 14. Dopis Uredu
 set_text(find('Broj: 610-278/2026'), f"Broj: {BR['dopis']}")
