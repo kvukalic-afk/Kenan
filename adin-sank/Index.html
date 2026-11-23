@@ -32,7 +32,7 @@
   .head{display:flex; justify-content:space-between; align-items:center; gap:10px;
     padding:calc(12px + env(safe-area-inset-top)) 16px 12px; border-bottom:1px solid var(--line);
     position:sticky; top:0; background:rgba(15,15,17,.92); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); z-index:20;}
-  .logo{font-size:12.5px; font-weight:700; letter-spacing:1.9px;}
+  .logo{font-size:12.5px; font-weight:700; letter-spacing:1.9px; white-space:nowrap;}
   .logoSub{font-size:9px; letter-spacing:1.8px; color:var(--dim); margin-top:3px;}
   .wrap{padding:16px 16px 28px; display:flex; flex-direction:column; gap:12px;}
   .h1{font-size:23px; font-weight:700; line-height:1.2;}
@@ -105,7 +105,7 @@
     border-radius:9px; color:var(--gold); font-size:13px; font-weight:700; letter-spacing:1px;}
   .toast{position:fixed; left:12px; right:12px; top:calc(70px + env(safe-area-inset-top)); max-width:536px; margin:0 auto;
     padding:13px 16px; border-radius:11px; font-size:14px; z-index:70; background:#2A2B31;
-    border:1px solid var(--line); box-shadow:0 8px 24px rgba(0,0,0,.5);}
+    border:1px solid var(--line); box-shadow:0 8px 24px rgba(0,0,0,.5); pointer-events:none;}
   .dock{position:fixed; bottom:0; left:0; right:0; max-width:560px; margin:0 auto;
     display:flex; justify-content:space-between; align-items:center; gap:12px;
     padding:10px 14px calc(12px + env(safe-area-inset-bottom));
@@ -121,7 +121,7 @@
     border-top:1px solid var(--line); border-radius:18px 18px 0 0;
     padding:16px 16px calc(24px + env(safe-area-inset-bottom));
     max-height:90vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
-  .sync{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--dim); text-align:right;}
+  .sync{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--dim); text-align:right; max-width:46%; line-height:1.3;}
   .dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
   .big{font-size:28px; font-weight:700; line-height:1.15;}
   .two{display:flex; gap:10px;}
@@ -132,6 +132,7 @@
   .tabs button{flex-shrink:0; min-height:44px; padding:0 14px; background:var(--card); border:1px solid var(--line);
     border-radius:10px; color:var(--dim); font-size:13.5px; font-weight:500;}
   .tabs button.on{border-color:var(--gold); color:var(--text); background:var(--gold2);}
+  .btn2.novo{border-style:dashed; border-color:rgba(232,163,61,.45); color:var(--gold);}
   .linkbtn{background:none; border:none; color:var(--dim); font-size:13px; padding:12px; text-decoration:underline;}
   .listbtn{width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px; min-height:56px;
     padding:10px 14px; background:none; border:none; border-bottom:1px solid var(--line); color:var(--text); text-align:left; font-size:15.5px;}
@@ -141,7 +142,7 @@
 <body>
 <div id="root"></div>
 <script>
-/* Generisano iz src/app.jsx (2026-11-23 17:19 UTC) — ne uređuj ručno, pokreni npm run build */
+/* Generisano iz src/app.jsx (2026-11-23 23:08 UTC) — ne uređuj ručno, pokreni npm run build */
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
@@ -679,6 +680,7 @@ function App() {
       const lokalni = redRef.current.filter((e) => e.shift_id === r.smjena.shift_id);
       setSmjena(__spreadProps(__spreadValues({}, r.smjena), { dogadjaji: Logika.spojiDogadjaje(r.smjena.dogadjaji, lokalni) }));
       setFaza("smjena");
+      window.scrollTo(0, 0);
       if (r.postojeca && r.smjena.shift_id !== shift_id) {
         pokaziToast("Smjena je već bila otvorena (" + r.smjena.radnik + ", od " + r.smjena.vrijeme_pocetka + "). Nastavljaš nju.");
       }
@@ -730,13 +732,24 @@ function App() {
       setRadi(false);
     }
   };
+  const noviProizvod = useCallback((r, kol) => {
+    setPodaci((p) => {
+      const n = __spreadProps(__spreadValues({}, p), { proizvodi: r.proizvodi || p.proizvodi });
+      ls.set(LS.CACHE, n);
+      return n;
+    });
+    if (r.u_smjenu && r.proizvod) {
+      setSmjena((s) => s ? __spreadProps(__spreadValues({}, s), { pocetna: __spreadProps(__spreadValues({}, s.pocetna), { [r.proizvod.product_id]: 0 }) }) : s);
+      if (kol > 0) dodaj("RESTOCK", r.proizvod.product_id, kol, "Novi proizvod");
+    }
+    pokaziToast("✓ Dodano: " + r.proizvod.naziv + (kol > 0 ? " (+" + kol + " kom)" : "") + ". Vlasnik će ga vidjeti označenog kao novo.", "ok");
+  }, [setSmjena, dodaj, pokaziToast]);
   const zaglavlje = /* @__PURE__ */ React.createElement("div", { className: "head" }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement(Amblem, { v: 34 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "logo" }, "FITNESS CLUB ", /* @__PURE__ */ React.createElement("span", { className: "zl" }, "ADIN")), /* @__PURE__ */ React.createElement("div", { className: "logoSub" }, faza === "admin" ? "VLASNIČKI PREGLED" : "RECEPCIJA · ŠANK"))), /* @__PURE__ */ React.createElement(Sync, { stanje: sinh, broj: red.length }));
   const toastEl = toast && /* @__PURE__ */ React.createElement(
     "div",
     {
       className: "toast",
-      style: { borderColor: toast.vrsta === "err" ? "var(--red)" : toast.vrsta === "ok" ? "var(--green)" : "var(--line)" },
-      onClick: () => setToast(null)
+      style: { borderColor: toast.vrsta === "err" ? "var(--red)" : toast.vrsta === "ok" ? "var(--green)" : "var(--line)" }
     },
     toast.tekst
   );
@@ -761,6 +774,7 @@ function App() {
       proizvodi: podaci.proizvodi,
       prijedlog: podaci.prijedlog,
       radnik,
+      onNovi: noviProizvod,
       greska,
       radi,
       nazad: () => {
@@ -776,6 +790,7 @@ function App() {
       proizvodi: podaci.proizvodi,
       clanovi: podaci.clanovi,
       treneri: podaci.treneri || [],
+      onNovi: noviProizvod,
       dodaj,
       pokaziToast,
       setClanovi: (c) => setPodaci((p) => __spreadProps(__spreadValues({}, p), { clanovi: c })),
@@ -864,8 +879,9 @@ function Brojac({ pid, naziv, pod, v, set }) {
     }
   ), /* @__PURE__ */ React.createElement("button", { className: "cbtn", "aria-label": "više " + naziv, onClick: () => set(String((n || 0) + 1)) }, "+")));
 }
-function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart }) {
+function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart, onNovi }) {
   const roba = proizvodi.filter((p) => p.prati_zalihu);
+  const [novi, setNovi] = useState(false);
   const [v, setV] = useNacrt("pocetno", {});
   const fali = Logika.nedostaje(roba, v);
   const post = (id, nov) => setV((s) => __spreadProps(__spreadValues({}, s), { [id]: nov }));
@@ -879,7 +895,18 @@ function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart })
       v: v[p.product_id],
       set: (n) => post(p.product_id, n)
     }
-  ))))), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: fali.length > 0 || radi, onClick: () => {
+  ))))), /* @__PURE__ */ React.createElement("button", { className: "btn2 novo", onClick: () => setNovi(true) }, "＋ Ima nešto čega nema na listi? Dodaj novo piće"), novi && /* @__PURE__ */ React.createElement(
+    NoviProizvod,
+    {
+      proizvodi,
+      radnik,
+      zatvori: () => setNovi(false),
+      gotovo: (r, kol) => {
+        setNovi(false);
+        onNovi(r, kol);
+      }
+    }
+  ), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: fali.length > 0 || radi, onClick: () => {
     const o = {};
     roba.forEach((p) => {
       o[p.product_id] = Number(v[p.product_id]);
@@ -887,7 +914,7 @@ function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart })
     onStart(o);
   } }, radi ? "Počinjem…" : fali.length > 0 ? "Još " + fali.length + " za prebrojati" : "ZAPOČNI SMJENU"), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: nazad }, "Nazad"));
 }
-function Smjena({ smjena, proizvodi, clanovi, treneri, dodaj, pokaziToast, setClanovi, onZavrsi }) {
+function Smjena({ smjena, proizvodi, clanovi, treneri, dodaj, pokaziToast, setClanovi, onZavrsi, onNovi }) {
   const [zadnji, setZadnji] = useState(null);
   const [sheet, setSheet] = useState(null);
   const [hit, setHit] = useState(null);
@@ -921,6 +948,7 @@ function Smjena({ smjena, proizvodi, clanovi, treneri, dodaj, pokaziToast, setCl
   };
   const ponisti = () => {
     if (!zadnji) return;
+    if (Date.now() - zadnji.k < 500) return;
     dodaj("UNDO_SALE", zadnji.p.product_id, 1, "Poništeno na šanku");
     vibriraj([8, 40, 8]);
     setZadnji((z) => z && z.n > 1 ? __spreadProps(__spreadValues({}, z), { n: z.n - 1, k: Date.now() }) : null);
@@ -966,10 +994,23 @@ function Smjena({ smjena, proizvodi, clanovi, treneri, dodaj, pokaziToast, setCl
       /* @__PURE__ */ React.createElement("span", { className: "nm" }, p.naziv),
       /* @__PURE__ */ React.createElement("span", { className: "bot" }, /* @__PURE__ */ React.createElement("span", { className: "pr" }, km(p.cijena), " KM"), ost !== null && /* @__PURE__ */ React.createElement("span", { className: "st" + (nisko ? " low" : "") }, "ima ", ost))
     );
-  })))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 14 } }, /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 2 }, onClick: () => setSheet("dopuna") }, "+ DOPUNA ZALIHE"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("ispravka") }, "Ispravka")), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: () => setSheet("napomena") }, "✎ Napomena za vlasnika")), zadnji && /* @__PURE__ */ React.createElement("div", { className: "undo", "data-testid": "undo" }, /* @__PURE__ */ React.createElement("span", null, "✓ ", zadnji.p.naziv, " +1", zadnji.n > 1 ? " (×" + zadnji.n + ")" : ""), /* @__PURE__ */ React.createElement("button", { onClick: ponisti }, "PONIŠTI")), /* @__PURE__ */ React.createElement("div", { className: "dock" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9.5, letterSpacing: 1.6, color: "var(--dim)" } }, st.kom, " KOM · U KASI TREBA BITI"), /* @__PURE__ */ React.createElement("div", { className: "n", "data-testid": "promet" }, km(st.promet), /* @__PURE__ */ React.createElement("span", { className: "u" }, "KM"))), /* @__PURE__ */ React.createElement("button", { onClick: () => setSheet("zavrsi") }, "ZAVRŠI SMJENU")), sheet === "dopuna" && /* @__PURE__ */ React.createElement(
+  })))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 14 } }, /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 2 }, onClick: () => setSheet("dopuna") }, "+ DOPUNA ZALIHE"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("ispravka") }, "Ispravka")), /* @__PURE__ */ React.createElement("button", { className: "btn2 novo", onClick: () => setSheet("novi") }, "＋ Novo piće / proizvod (nema na listi)"), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: () => setSheet("napomena") }, "✎ Napomena za vlasnika")), zadnji && /* @__PURE__ */ React.createElement("div", { className: "undo", "data-testid": "undo" }, /* @__PURE__ */ React.createElement("span", null, "✓ ", zadnji.p.naziv, " +1", zadnji.n > 1 ? " (×" + zadnji.n + ")" : ""), /* @__PURE__ */ React.createElement("button", { onClick: ponisti }, "PONIŠTI")), /* @__PURE__ */ React.createElement("div", { className: "dock" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9.5, letterSpacing: 1.6, color: "var(--dim)" } }, st.kom, " KOM · U KASI TREBA BITI"), /* @__PURE__ */ React.createElement("div", { className: "n", "data-testid": "promet" }, km(st.promet), /* @__PURE__ */ React.createElement("span", { className: "u" }, "KM"))), /* @__PURE__ */ React.createElement("button", { onClick: () => setSheet("zavrsi") }, "ZAVRŠI SMJENU")), sheet === "novi" && /* @__PURE__ */ React.createElement(
+    NoviProizvod,
+    {
+      proizvodi,
+      radnik: smjena.radnik,
+      shiftId: smjena.shift_id,
+      zatvori: () => setSheet(null),
+      gotovo: (r, kol) => {
+        setSheet(null);
+        onNovi(r, kol);
+      }
+    }
+  ), sheet === "dopuna" && /* @__PURE__ */ React.createElement(
     Dopuna,
     {
       proizvodi: proizvodi.filter((p) => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id)),
+      noviProizvod: () => setSheet("novi"),
       zatvori: () => setSheet(null),
       potvrdi: (p, kol) => {
         dodaj("RESTOCK", p.product_id, kol);
@@ -1032,14 +1073,49 @@ function Smjena({ smjena, proizvodi, clanovi, treneri, dodaj, pokaziToast, setCl
     onZavrsi();
   } }, "Da, idem brojati"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setSheet(null) }, "Ne, nastavljam prodaju")));
 }
-function Dopuna({ proizvodi, zatvori, potvrdi }) {
+function NoviProizvod({ proizvodi, radnik, shiftId, zatvori, gotovo }) {
+  const [naziv, setNaziv] = useState("");
+  const [tip, setTip] = useState("roba");
+  const kategorije = [];
+  proizvodi.filter((p) => Logika.tip(p) === "roba").forEach((p) => {
+    if (kategorije.indexOf(p.kategorija) < 0) kategorije.push(p.kategorija);
+  });
+  const [kat, setKat] = useState(kategorije[0] || "Ostalo");
+  const [novaKat, setNovaKat] = useState(false);
+  const [cijena, setCijena] = useState("");
+  const [kol, setKol] = useState("");
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState("");
+  const c = Number(String(cijena).replace(",", "."));
+  const k = Number(kol) || 0;
+  const posalji = async () => {
+    setRadi(true);
+    setGr("");
+    try {
+      const r = await api("addProductRadnik", { naziv: naziv.trim(), kategorija: tip === "usluga" ? "Usluge" : kat, cijena: c, tip, radnik, shift_id: shiftId || "" });
+      gotovo(r, tip === "roba" && shiftId ? k : 0);
+    } catch (e) {
+      setGr(e.mreza ? "Za dodavanje novog proizvoda treba internet. Pokušaj ponovo." : e.message);
+    } finally {
+      setRadi(false);
+    }
+  };
+  return /* @__PURE__ */ React.createElement(Sheet, { naslov: "Novi proizvod", zatvori }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "ŠTA JE?"), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement("button", { className: "chip" + (tip === "roba" ? " on" : ""), style: { flex: 1 }, onClick: () => setTip("roba") }, "🥤 Piće / roba", /* @__PURE__ */ React.createElement("div", { className: "sit" }, "broji se")), /* @__PURE__ */ React.createElement("button", { className: "chip" + (tip === "usluga" ? " on" : ""), style: { flex: 1 }, onClick: () => setTip("usluga") }, "🧾 Usluga", /* @__PURE__ */ React.createElement("div", { className: "sit" }, "ne broji se"))), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 14 } }, "NAZIV"), /* @__PURE__ */ React.createElement("input", { className: "inp", "data-testid": "novi-naziv", autoFocus: true, maxLength: 60, value: naziv, onChange: (e) => setNaziv(e.target.value), placeholder: tip === "roba" ? "npr. Monster Mango" : "npr. Ormarić najam" }), tip === "roba" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 14 } }, "GDJE SPADA"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 } }, kategorije.map((x) => /* @__PURE__ */ React.createElement("button", { key: x, className: "chip" + (!novaKat && kat === x ? " on" : ""), onClick: () => {
+    setNovaKat(false);
+    setKat(x);
+  } }, x)), /* @__PURE__ */ React.createElement("button", { className: "chip" + (novaKat ? " on" : ""), onClick: () => {
+    setNovaKat(true);
+    setKat("");
+  } }, "+ drugo")), novaKat && /* @__PURE__ */ React.createElement("input", { className: "inp", style: { marginTop: 8 }, placeholder: "npr. Grickalice", value: kat, onChange: (e) => setKat(e.target.value) })), /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 14 } }, "CIJENA ZA KUPCA (KM)"), /* @__PURE__ */ React.createElement("input", { className: "inp", "data-testid": "novi-cijena", inputMode: "decimal", value: cijena, placeholder: "0,00", onChange: (e) => setCijena(e.target.value.replace(/[^\d.,]/g, "").slice(0, 7)) }), tip === "roba" && shiftId && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginTop: 14 } }, "KOLIKO KOMADA STAVLJAŠ SADA?"), /* @__PURE__ */ React.createElement("input", { className: "inp", "data-testid": "novi-kol", inputMode: "numeric", value: kol, placeholder: "0", onChange: (e) => setKol(e.target.value.replace(/\D/g, "").slice(0, 4)) })), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { marginTop: 10 } }, "Vlasnik dobija obavještenje i provjerava cijenu. Postojeće proizvode i cijene ovdje ne možeš mijenjati."), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 10 } }, gr), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 12 }, disabled: radi || naziv.trim().length < 2 || !(c > 0) || tip === "roba" && !String(kat).trim(), onClick: posalji }, radi ? "Dodajem…" : "Dodaj" + (tip === "roba" && shiftId && k > 0 ? " (" + k + " kom)" : "")));
+}
+function Dopuna({ proizvodi, zatvori, potvrdi, noviProizvod }) {
   const [p, setP] = useState(null);
   const [kol, setKol] = useState("");
   const n = Number(kol) || 0;
   return /* @__PURE__ */ React.createElement(Sheet, { naslov: p ? "Dopuna — " + p.naziv : "Šta si dopunio?", zatvori }, !p ? /* @__PURE__ */ React.createElement("div", { className: "card0" }, proizvodi.map((x) => /* @__PURE__ */ React.createElement("button", { key: x.product_id, className: "listbtn", "data-dopuna": x.product_id, onClick: () => {
     setP(x);
     setKol("");
-  } }, /* @__PURE__ */ React.createElement("span", null, x.naziv), /* @__PURE__ */ React.createElement("span", { className: "sit" }, "›")))) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center" } }, "Koliko komada si stavio?"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 16, margin: "10px 0 14px" } }, /* @__PURE__ */ React.createElement("button", { className: "cbtn", style: { width: 60, height: 60, borderRadius: "50%" }, onClick: () => setKol(String(Math.max(1, n - 1))) }, "−"), /* @__PURE__ */ React.createElement(
+  } }, /* @__PURE__ */ React.createElement("span", null, x.naziv), /* @__PURE__ */ React.createElement("span", { className: "sit" }, "›"))), /* @__PURE__ */ React.createElement("button", { className: "listbtn", style: { color: "var(--gold)" }, onClick: noviProizvod }, /* @__PURE__ */ React.createElement("span", null, "＋ Novo piće koje nije na listi"), /* @__PURE__ */ React.createElement("span", { className: "sit" }, "›"))) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center" } }, "Koliko komada si stavio?"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 16, margin: "10px 0 14px" } }, /* @__PURE__ */ React.createElement("button", { className: "cbtn", style: { width: 60, height: 60, borderRadius: "50%" }, onClick: () => setKol(String(Math.max(1, n - 1))) }, "−"), /* @__PURE__ */ React.createElement(
     "input",
     {
       className: "cin",
@@ -1343,7 +1419,7 @@ function AdminDanas({ d, pin, osvjezi, pokaziToast }) {
       setRadi(false);
     }
   };
-  return /* @__PURE__ */ React.createElement(React.Fragment, null, o ? /* @__PURE__ */ React.createElement("div", { className: o.stara ? "err" : "card", style: o.stara ? {} : { borderColor: "var(--gold)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { color: o.stara ? "var(--red)" : "var(--gold)" } }, o.stara ? "⚠ SMJENA OTVORENA PREDUGO" : "SMJENA U TOKU"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 17, fontWeight: 600, color: "var(--text)" } }, o.radnik, " · od ", o.od, " (", dT(o.datum), ")"), /* @__PURE__ */ React.createElement("div", { className: "sit" }, o.sati, " h · ", o.kom, " kom · ", km(o.promet), " KM"), o.stara && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, color: "var(--text)", fontSize: 13 } }, "Vjerovatno je zaboravljeno zatvaranje. Najbolje je da radnik sam završi smjenu s brojanjem. Ako to nije moguće, zatvori je ovdje."), !zatvaranje && /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setZatvaranje(true) }, "Zatvori bez brojanja…"), zatvaranje && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("input", { className: "inp", style: { marginTop: 10 }, placeholder: "Napomena (obavezno)", value: nap, onChange: (e) => setNap(e.target.value) }), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 8 } }, gr), /* @__PURE__ */ React.createElement("button", { className: "btn red", disabled: !nap.trim() || radi, onClick: zatvori }, radi ? "Zatvaram…" : "Zatvori smjenu"))) : /* @__PURE__ */ React.createElement("div", { className: "info" }, "Trenutno nema otvorene smjene."), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement(Broj, { lab: "PROMET DANAS", v: km(d.danas.promet), boja: "var(--gold)", sit: d.danas.kom + " kom" }), /* @__PURE__ */ React.createElement(Broj, { lab: "PROFIT DANAS", v: km(d.danas.profit), boja: "var(--green)" })), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement(Broj, { lab: "PROFIT OVE SEDMICE", v: km(d.sedmica.profit), sit: "promet " + km(d.sedmica.promet) + " KM" }), /* @__PURE__ */ React.createElement(Broj, { lab: "ZADNJIH 7 DANA", v: km(d.d7.promet), sit: "promet KM" })), /* @__PURE__ */ React.createElement("div", { className: "card", style: { borderColor: "var(--gold)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PLATA RADNIKA (", Math.round(d.plata.udio * 100), "% SEDMIČNOG PROFITA)"), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Za prošlu sedmicu (", dT(d.periodi.proslaOd), "–", dT(d.periodi.proslaDo), ") — isplata u ponedjeljak"), /* @__PURE__ */ React.createElement("b", { style: { color: "var(--gold)", fontSize: 18 } }, km(d.plata.prosla), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Ova sedmica do sada"), /* @__PURE__ */ React.createElement("b", null, km(d.plata.ova_do_sada), " KM")), /* @__PURE__ */ React.createElement("div", { className: "sit" }, "Profit prošle sedmice: ", km(d.prosla.profit), " KM (promet ", km(d.prosla.promet), " KM)")), (d.clanovi.istice.length > 0 || d.clanovi.istekli.length > 0) && /* @__PURE__ */ React.createElement("div", { className: "warn" }, "Članarine: ", d.clanovi.istice.length, " ističe u narednih 5 dana, ", d.clanovi.istekli.length, ' isteklo. Vidi tab „Članovi".'), d.zalihe.some((z) => z.nisko) && /* @__PURE__ */ React.createElement("div", { className: "warn" }, "Nisko na zalihi: ", d.zalihe.filter((z) => z.nisko).map((z) => z.naziv + " (" + z.kolicina + ")").join(", ")));
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, o ? /* @__PURE__ */ React.createElement("div", { className: o.stara ? "err" : "card", style: o.stara ? {} : { borderColor: "var(--gold)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { color: o.stara ? "var(--red)" : "var(--gold)" } }, o.stara ? "⚠ SMJENA OTVORENA PREDUGO" : "SMJENA U TOKU"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 17, fontWeight: 600, color: "var(--text)" } }, o.radnik, " · od ", o.od, " (", dT(o.datum), ")"), /* @__PURE__ */ React.createElement("div", { className: "sit" }, o.sati, " h · ", o.kom, " kom · ", km(o.promet), " KM"), o.stara && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, color: "var(--text)", fontSize: 13 } }, "Vjerovatno je zaboravljeno zatvaranje. Najbolje je da radnik sam završi smjenu s brojanjem. Ako to nije moguće, zatvori je ovdje."), !zatvaranje && /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setZatvaranje(true) }, "Zatvori bez brojanja…"), zatvaranje && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("input", { className: "inp", style: { marginTop: 10 }, placeholder: "Napomena (obavezno)", value: nap, onChange: (e) => setNap(e.target.value) }), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 8 } }, gr), /* @__PURE__ */ React.createElement("button", { className: "btn red", disabled: !nap.trim() || radi, onClick: zatvori }, radi ? "Zatvaram…" : "Zatvori smjenu"))) : /* @__PURE__ */ React.createElement("div", { className: "info" }, "Trenutno nema otvorene smjene."), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement(Broj, { lab: "PROMET DANAS", v: km(d.danas.promet), boja: "var(--gold)", sit: d.danas.kom + " kom" }), /* @__PURE__ */ React.createElement(Broj, { lab: "PROFIT DANAS", v: km(d.danas.profit), boja: "var(--green)" })), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement(Broj, { lab: "PROFIT OVE SEDMICE", v: km(d.sedmica.profit), sit: "promet " + km(d.sedmica.promet) + " KM" }), /* @__PURE__ */ React.createElement(Broj, { lab: "ZADNJIH 7 DANA", v: km(d.d7.promet), sit: "promet KM" })), /* @__PURE__ */ React.createElement("div", { className: "card", style: { borderColor: "var(--gold)" } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PLATA RADNIKA (", Math.round(d.plata.udio * 100), "% SEDMIČNOG PROFITA)"), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Za prošlu sedmicu (", dT(d.periodi.proslaOd), "–", dT(d.periodi.proslaDo), ") — isplata u ponedjeljak"), /* @__PURE__ */ React.createElement("b", { style: { color: "var(--gold)", fontSize: 18 } }, km(d.plata.prosla), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Ova sedmica do sada"), /* @__PURE__ */ React.createElement("b", null, km(d.plata.ova_do_sada), " KM")), /* @__PURE__ */ React.createElement("div", { className: "sit" }, "Profit prošle sedmice: ", km(d.prosla.profit), " KM (promet ", km(d.prosla.promet), " KM)")), (d.clanovi.istice.length > 0 || d.clanovi.istekli.length > 0) && /* @__PURE__ */ React.createElement("div", { className: "warn" }, "Članarine: ", d.clanovi.istice.length, " ističe u narednih 5 dana, ", d.clanovi.istekli.length, ' isteklo. Vidi tab „Članovi".'), (d.proizvodi || []).some((p) => p.dodao) && /* @__PURE__ */ React.createElement("div", { className: "warn" }, "★ Radnik je dodao novi proizvod: ", (d.proizvodi || []).filter((p) => p.dodao).map((p) => p.naziv).join(", "), '. Provjeri cijenu i upiši nabavnu u tabu „Proizvodi".'), d.zalihe.some((z) => z.nisko) && /* @__PURE__ */ React.createElement("div", { className: "warn" }, "Nisko na zalihi: ", d.zalihe.filter((z) => z.nisko).map((z) => z.naziv + " (" + z.kolicina + ")").join(", ")));
 }
 function AdminKarte({ d }) {
   const k = d.karte;
@@ -1394,16 +1470,16 @@ function AdminProizvodi({ d, pin, osvjezi, pokaziToast }) {
   d.proizvodi.forEach((p) => {
     if (kategorije.indexOf(p.kategorija) < 0) kategorije.push(p.kategorija);
   });
-  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Ovdje dodaješ nove stvari i mijenjaš cijene. Proizvod se nikad ne briše, samo isključi (da historija ostane tačna). Radnik promjenu vidi kad ponovo otvori aplikaciju."), /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => setUredi({ product_id: "", naziv: "", kategorija: kategorije[0] || "Ostalo", cijena: "", nabavna: "", minimum: 3, prati_zalihu: true, aktivan: true, clanarina_mjeseci: 0, tip: "roba" }) }, "+ Novi proizvod / ponuda"), Logika.grupisi(d.proizvodi).map((g) => /* @__PURE__ */ React.createElement("div", { key: g.ime }, /* @__PURE__ */ React.createElement("div", { className: "grp" }, g.ime.toUpperCase()), /* @__PURE__ */ React.createElement("div", { className: "card0" }, g.stavke.map((p) => /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, d.proizvodi.some((p) => p.dodao) && /* @__PURE__ */ React.createElement("div", { className: "warn" }, "★ Radnik je dodao ", d.proizvodi.filter((p) => p.dodao).length, " ", d.proizvodi.filter((p) => p.dodao).length === 1 ? "novi proizvod" : "nova proizvoda", ". Otvori ga, provjeri cijenu i upiši nabavnu."), /* @__PURE__ */ React.createElement("div", { className: "info" }, "Ovdje dodaješ nove stvari i mijenjaš cijene. Proizvod se nikad ne briše, samo isključi (da historija ostane tačna). Radnik promjenu vidi kad ponovo otvori aplikaciju."), /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => setUredi({ product_id: "", naziv: "", kategorija: kategorije[0] || "Ostalo", cijena: "", nabavna: "", minimum: 3, prati_zalihu: true, aktivan: true, clanarina_mjeseci: 0, tip: "roba" }) }, "+ Novi proizvod / ponuda"), Logika.grupisi(d.proizvodi).map((g) => /* @__PURE__ */ React.createElement("div", { key: g.ime }, /* @__PURE__ */ React.createElement("div", { className: "grp" }, g.ime.toUpperCase()), /* @__PURE__ */ React.createElement("div", { className: "card0" }, g.stavke.map((p) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: p.product_id,
       className: "listbtn",
       "data-proizvod": p.product_id,
       onClick: () => setUredi(__spreadProps(__spreadValues({}, p), { cijena: String(p.cijena).replace(".", ","), nabavna: String(p.nabavna).replace(".", ",") })),
-      style: p.aktivan ? {} : { opacity: 0.45 }
+      style: p.aktivan ? p.dodao ? { background: "rgba(232,163,61,.08)" } : {} : { opacity: 0.45 }
     },
-    /* @__PURE__ */ React.createElement("span", null, p.naziv, /* @__PURE__ */ React.createElement("div", { className: "sit" }, p.aktivan ? "" : "ISKLJUČEN · ", { roba: "roba", dnevna: "dnevna karta", clanarina: "mjesečna karta", trener: "trener", usluga: "usluga" }[Logika.tip(p)], " · nabavna ", km(p.nabavna), p.prati_zalihu ? " · min " + p.minimum : "")),
+    /* @__PURE__ */ React.createElement("span", null, p.naziv, p.dodao && /* @__PURE__ */ React.createElement("div", { className: "sit", style: { color: "var(--gold)" } }, "★ NOVO — dodao ", p.dodao, ". Provjeri cijenu, upiši nabavnu i sačuvaj."), /* @__PURE__ */ React.createElement("div", { className: "sit" }, p.aktivan ? "" : "ISKLJUČEN · ", { roba: "roba", dnevna: "dnevna karta", clanarina: "mjesečna karta", trener: "trener", usluga: "usluga" }[Logika.tip(p)], " · nabavna ", km(p.nabavna), p.prati_zalihu ? " · min " + p.minimum : "")),
     /* @__PURE__ */ React.createElement("b", { style: { color: "var(--gold)" } }, km(p.cijena), " KM")
   ))))), uredi && /* @__PURE__ */ React.createElement(
     UrediProizvod,

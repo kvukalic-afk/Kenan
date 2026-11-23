@@ -240,3 +240,38 @@ test('saveProduct: tip određuje ponašanje (roba se broji, karta ne)', () => {
   ok(g.saveProduct('2580', { product_id: god.product_id, naziv: 'Godišnja karta', kategorija: 'Članarine', cijena: 350, tip: 'clanarina', clanarina_mjeseci: 12 }));
   assert.equal(ok(g.getBootstrap()).proizvodi.find(p => p.naziv === 'Godišnja karta').clanarina_mjeseci, 12);
 });
+
+test('radnik dodaje novo piće: odmah se prodaje i broji, vlasnik vidi „dodao", cijene postojećih ne može mijenjati', () => {
+  const g = okruzenje();
+  // prije smjene (na početnom brojanju)
+  const r0 = ok(g.addProductRadnik({ naziv: 'Bang Energy', kategorija: 'Energy', cijena: '4,00', tip: 'roba', radnik: 'Edvin' }));
+  assert.equal(r0.proizvod.product_id, 'bang_energy');
+  assert.equal(r0.proizvod.prati_zalihu, true);
+  assert.equal(r0.u_smjenu, false);
+  assert.equal(g.addProductRadnik({ naziv: 'red bull', cijena: 9, radnik: 'Edvin' }).code, 'POSTOJI', 'ne može "prepraviti" Red Bull');
+  assert.equal(g.addProductRadnik({ naziv: 'X', cijena: 2 }).code, 'NAZIV');
+  assert.equal(g.addProductRadnik({ naziv: 'Skupo', cijena: 0 }).code, 'CIJENA');
+  ok(g.saveProduct('2580', { product_id: 'kong', naziv: 'Kong', kategorija: 'Energy', cijena: 2, nabavna: 1, tip: 'roba', aktivan: false }));
+  assert.match(g.addProductRadnik({ naziv: 'Kong', cijena: 2 }).message, /isključio/);
+
+  // usred smjene: novo piće ulazi u inventuru s 0 + dopuna
+  ok(g.startShift({ shift_id: 'R', radnik: 'Edvin', pocetna: pocetno(g) }));
+  const r1 = ok(g.addProductRadnik({ naziv: 'Monster Mango', kategorija: 'Energy', cijena: 4.5, tip: 'roba', radnik: 'Edvin', shift_id: 'R' }));
+  assert.equal(r1.u_smjenu, true);
+  ok(g.pushEvents('R', [
+    { event_id: 'r1', shift_id: 'R', tip: 'RESTOCK', product_id: 'monster_mango', kolicina: 6 },
+    { event_id: 'r2', shift_id: 'R', tip: 'SALE', product_id: 'monster_mango', kolicina: 1 }
+  ]));
+  const brojanje = pocetno(g);
+  assert.equal(brojanje.monster_mango, 0, 'novo piće se traži i u završnom brojanju');
+  brojanje.monster_mango = 5;
+  const z = ok(g.closeShift('R', brojanje, '4.5', ''));
+  const mm = z.izvjestaj.stavke.find(s => s.product_id === 'monster_mango');
+  assert.deepEqual([mm.pocetno, mm.dopunjeno, mm.prodano_klik, mm.ocekivano, mm.razlika_kom], [0, 6, 1, 5, 0]);
+  // vlasnik vidi ko je dodao; kad sačuva (potvrdi), oznaka nestaje
+  let a = ok(g.getAdminData('2580'));
+  assert.match(a.proizvodi.find(p => p.product_id === 'monster_mango').dodao, /^Edvin 2026-11-21 16:03/);
+  ok(g.saveProduct('2580', { product_id: 'monster_mango', naziv: 'Monster Mango', kategorija: 'Energy', cijena: 4.5, nabavna: 2.4, tip: 'roba', aktivan: true }));
+  a = ok(g.getAdminData('2580'));
+  assert.equal(a.proizvodi.find(p => p.product_id === 'monster_mango').dodao, '');
+});

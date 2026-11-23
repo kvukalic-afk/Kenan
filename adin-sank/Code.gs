@@ -27,7 +27,7 @@ var TAB = {
 
 var KOLONE = {
   PROIZVODI: ['product_id', 'kategorija', 'naziv', 'cijena', 'nabavna_cijena', 'prati_zalihu',
-    'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci', 'tip'],
+    'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci', 'tip', 'dodao'],
   SMJENE: ['shift_id', 'datum', 'radnik', 'vrijeme_pocetka', 'vrijeme_kraja', 'status',
     'ukupno_prodano_klikovima', 'ukupno_prodano_po_inventuri', 'promet', 'kasa_ocekivano',
     'kasa_stvarno', 'kasa_razlika', 'kasa_razlog', 'broj_razlika', 'vrijednost_razlike',
@@ -76,7 +76,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '3';   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
+var VERZIJA_SEME = '4';   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
  *  WEB APLIKACIJA
@@ -371,7 +371,8 @@ function proizvodi_(sviUkljucujuciNeaktivne) {
       aktivan: s_(r.aktivan) === '' ? true : bool_(r.aktivan),
       redoslijed: s_(r.redoslijed) === '' ? 9999 : num_(r.redoslijed),
       minimum: num_(r.minimum),
-      clanarina_mjeseci: Math.max(0, Math.round(num_(r.clanarina_mjeseci)))
+      clanarina_mjeseci: Math.max(0, Math.round(num_(r.clanarina_mjeseci))),
+      dodao: s_(r.dodao)
     };
   });
   lista.forEach(function (p, i) { p.tip = tipProizvoda_(t.redovi.filter(function (r) { return s_(r.product_id); })[i], p); });
@@ -1427,7 +1428,7 @@ function getAdminData(pin) {
         return {
           product_id: p.product_id, kategorija: p.kategorija, naziv: p.naziv, cijena: p.cijena, nabavna: p.nabavna,
           prati_zalihu: p.prati_zalihu, aktivan: p.aktivan, minimum: p.minimum, redoslijed: p.redoslijed,
-          clanarina_mjeseci: p.clanarina_mjeseci, tip: p.tip
+          clanarina_mjeseci: p.clanarina_mjeseci, tip: p.tip, dodao: p.dodao
         };
       }),
       karte: karte,
@@ -1481,6 +1482,7 @@ function saveProduct(pin, p) {
       var tip = s_(p.tip).toLowerCase();
       if (TIPOVI_PROIZVODA.indexOf(tip) < 0) tip = izmjene.prati_zalihu ? 'roba' : (izmjene.clanarina_mjeseci > 0 ? 'clanarina' : 'usluga');
       izmjene.tip = tip;
+      izmjene.dodao = ''; // vlasnik je pregledao/potvrdio proizvod
       if (tip === 'roba') izmjene.prati_zalihu = true;
       else izmjene.prati_zalihu = false;
       if (tip === 'clanarina' || tip === 'trener') izmjene.clanarina_mjeseci = izmjene.clanarina_mjeseci || 1;
@@ -1529,5 +1531,63 @@ function saveLists(pin, liste) {
       svojstva_().setProperty('TRENERI', JSON.stringify(tr));
     }
     return { radnici: radnici_(), treneri: treneri_() };
+  });
+}
+
+/**
+ * Radnik dodaje NOVO piće ili uslugu (npr. stigao novi proizvod usred smjene).
+ * Ne može mijenjati postojeće proizvode, cijene, karte ni trenere — to radi samo vlasnik (PIN).
+ * Ako je smjena u toku i proizvod se broji, ulazi u inventuru te smjene s početnim stanjem 0
+ * (komadi koje stavlja upisuju se kao DOPUNA, pa se na kraju normalno prebroje).
+ */
+function addProductRadnik(podaci) {
+  return api_(function () {
+    var p = podaci || {};
+    var naziv = s_(p.naziv).replace(/\s+/g, ' ').slice(0, 60);
+    if (naziv.length < 2) throw greska_('NAZIV', 'Upiši naziv.');
+    var cijena = num_(p.cijena);
+    if (!(cijena > 0) || cijena > 200) throw greska_('CIJENA', 'Upiši cijenu (veću od 0).');
+    var tip = s_(p.tip) === 'usluga' ? 'usluga' : 'roba';
+    var radnik = s_(p.radnik).slice(0, 40) || 'radnik';
+    return zakljucano_(function () {
+      var t = tabela_(TAB.PROIZVODI);
+      var isti = null, maxRed = 0, postojeci = {};
+      t.redovi.forEach(function (r) {
+        postojeci[s_(r.product_id)] = true;
+        maxRed = Math.max(maxRed, num_(r.redoslijed));
+        if (normaliziraj_(r.naziv) === normaliziraj_(naziv)) isti = r;
+      });
+      if (isti) {
+        var aktivan = s_(isti.aktivan) === '' ? true : bool_(isti.aktivan);
+        throw greska_('POSTOJI', aktivan ? '„' + s_(isti.naziv) + '" već postoji na listi.' : '„' + s_(isti.naziv) + '" postoji, ali ga je vlasnik isključio. Javi vlasniku.');
+      }
+      var id = slug_(naziv), k = id, i = 2;
+      while (postojeci[k]) k = id + '_' + (i++);
+      var t0 = sada_();
+      var novi = {
+        product_id: k, kategorija: s_(p.kategorija).slice(0, 30) || (tip === 'usluga' ? 'Usluge' : 'Ostalo'), naziv: naziv,
+        cijena: r2_(cijena), nabavna_cijena: 0, prati_zalihu: tip === 'roba', aktivan: true, redoslijed: maxRed + 10,
+        minimum: tip === 'roba' ? 3 : 0, clanarina_mjeseci: 0, tip: tip,
+        dodao: radnik + ' ' + t0.datum + ' ' + t0.vrijeme
+      };
+      dodajRedove_(t, [novi]);
+      try { checkboxeProizvoda_(t.sh); } catch (e) { /* */ }
+
+      var uSmjenu = false;
+      var sid = s_(p.shift_id);
+      if (sid && tip === 'roba') {
+        var sm = null;
+        tabela_(TAB.SMJENE).redovi.forEach(function (r) { if (s_(r.shift_id) === sid) sm = r; });
+        if (sm && s_(sm.status) === 'OPEN') {
+          dodajRedove_(tabela_(TAB.INVENTURA), [{
+            shift_id: sid, datum: datum_(sm.datum), radnik: s_(sm.radnik), product_id: k, proizvod: naziv, pocetno_stanje: 0
+          }]);
+          uSmjenu = true;
+        }
+      }
+      var proizvod = null;
+      proizvodi_().forEach(function (x) { if (x.product_id === k) proizvod = javniProizvod_(x); });
+      return { proizvod: proizvod, u_smjenu: uSmjenu, proizvodi: proizvodi_().map(javniProizvod_) };
+    });
   });
 }

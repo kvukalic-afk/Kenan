@@ -155,6 +155,12 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByRole('button', { name: /Dalje/ }).click();
     await page.getByText('prošli put: 12').first().waitFor();
     assert.equal(await page.locator('input[data-pid="redbull"]').inputValue(), '', 'sugestija se ne upisuje automatski');
+    // radnik dodaje novo piće na početnom brojanju
+    await page.getByRole('button', { name: /Dodaj novo piće/ }).click();
+    await page.getByTestId('novi-naziv').fill('Bang');
+    await page.getByTestId('novi-cijena').fill('4');
+    await page.getByRole('button', { name: 'Dodaj', exact: true }).click();
+    await page.locator('input[data-pid="bang"]').waitFor();
     await upisiBrojanje(page, { redbull: 12, voda05: 12, kong: 6 });
     await page.getByRole('button', { name: 'ZAPOČNI SMJENU' }).click();
     await page.locator('[data-tile="kong"]').waitFor();
@@ -163,7 +169,8 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.locator('[data-tile="kong"]').dblclick();
     await pauza(250);
     assert.equal((await page.locator('[data-tile="kong"] .badge').textContent()).trim(), '1');
-    // poništi
+    // poništi (traka ne reaguje u prvih 0,5 s — zaštita od slučajnog tapa)
+    await pauza(400);
     await page.getByRole('button', { name: 'PONIŠTI' }).click();
     assert.equal(await page.locator('[data-tile="kong"] .badge').count(), 0);
     await cekajSync(page);
@@ -187,6 +194,17 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.reload();
     await page.getByTestId('radnik').filter({ hasText: 'Edvin' }).waitFor();
     assert.equal((await page.locator('[data-tile="redbull"] .badge').textContent()).trim(), '2');
+
+    // radnik usred smjene dodaje novo piće sa 6 komada
+    await page.getByRole('button', { name: /Novo piće \/ proizvod/ }).click();
+    await page.getByTestId('novi-naziv').fill('Monster Mango');
+    await page.getByTestId('novi-cijena').fill('4,50');
+    await page.getByTestId('novi-kol').fill('6');
+    await page.getByRole('button', { name: 'Dodaj (6 kom)' }).click();
+    await page.locator('[data-tile="monster_mango"]').filter({ hasText: 'ima 6' }).waitFor();
+    await cekajSync(page);
+    assert.ok(g.__tabela('INVENTURA').some(r => r.product_id === 'monster_mango' && r.pocetno_stanje === 0));
+    await page.screenshot({ path: path.join(SLIKE, '6d-novi-proizvod.png') });
 
     // paket: mjesečna karta + lični trener (Edin), novi član
     await page.locator('[data-tile="clanarina"]').click();
@@ -264,7 +282,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByTestId('p-naziv').fill('Monster');
     await page.getByTestId('p-cijena').fill('4,50');
     await page.getByTestId('p-nabavna').fill('2,60');
-    await page.getByRole('button', { name: 'Sačuvaj' }).click();
+    await page.getByRole('button', { name: 'Sačuvaj', exact: true }).click();
     await page.locator('[data-proizvod="monster"]').waitFor();
     assert.equal(g.__tabela('PROIZVODI').find(p => p.product_id === 'monster').cijena, 4.5);
 

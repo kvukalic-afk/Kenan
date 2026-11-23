@@ -46,7 +46,7 @@ test('setupSpreadsheet je idempotentan i ne briše podatke', () => {
   const pr = g.__tabela('PROIZVODI');
   assert.equal(pr.length, 18);
   assert.equal(pr.find(p => p.product_id === 'redbull').cijena, 4.5);
-  assert.deepEqual(Object.keys(pr[0]), ['product_id', 'kategorija', 'naziv', 'cijena', 'nabavna_cijena', 'prati_zalihu', 'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci', 'tip']);
+  assert.deepEqual(Object.keys(pr[0]), ['product_id', 'kategorija', 'naziv', 'cijena', 'nabavna_cijena', 'prati_zalihu', 'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci', 'tip', 'dodao']);
 });
 
 test('setup dodaje kolone koje fale, ne dira postojeće', () => {
