@@ -2,7 +2,7 @@
 const fs = require('fs'); const path = require('path');
 const L = require('./lib'); const { d, C, P, center, left, H2, table, note, spacer } = L;
 const OUT = path.join(__dirname, '..', 'Uputa_za_sekretara_i_direktora.docx');
-const box = (rows, w) => table(w, rows, { size: 18 });
+const box = (rows, w, h = 1) => table(w, rows, { size: 18, header: h });
 const ch = [
   center('JU OŠ „STIJENA“ – PLAN INTEGRITETA', { bold: true, size: 24, color: C.navy, after: 40 }),
   center('Šta uraditi prije slanja Uredu za borbu protiv korupcije USK', { bold: true, size: 26, color: C.navy, after: 160 }),
@@ -24,12 +24,12 @@ const ch = [
   P('Brojevi stranica odnose se na PDF verziju; u Wordu mogu odstupati za jednu stranicu.', { size: 17, italics: true, color: C.grey, before: 40 }),
   H2('Preporuka (zakonska obaveza, nezavisno od plana)'),
   box([['1.', 'Donijeti Rješenje o određivanju ovlaštenog lica za prijem prijava korupcije – Semira Džakulić, sekretar (član 18. Zakona o prevenciji korupcije u USK).', '☐'],
-    ['2.', 'Donijeti Pravilnik o postupku internog prijavljivanja korupcije (član 22. Zakona). Zakonski rok je istekao; Kenan Vukalić može pripremiti nacrt.', '☐']], [600, 8338, 700]),
+    ['2.', 'Donijeti Pravilnik o postupku internog prijavljivanja korupcije (član 22. Zakona). Zakonski rok je istekao; Kenan Vukalić može pripremiti nacrt.', '☐']], [600, 8338, 700], 0),
   H2('Kad stigne mišljenje Ureda'),
   box([['1.', 'Javiti Kenanu Vukaliću – upisuje se broj mišljenja i datum usvajanja; ako Ured traži dopune, ugrađuju se u plan.', '☐'],
     ['2.', 'Direktor potpisuje Odluku o usvajanju (str. 47) s djelovodnim brojem.', '☐'],
     ['3.', 'U roku od 15 dana: objaviti plan na web stranici škole i dostaviti ga Uredu zajedno s Odlukom o usvajanju.', '☐'],
-    ['4.', 'Svake godine do 31. marta: izvještaj Uredu o provođenju plana (priprema Dževaira Džehverović, potpisuje direktor).', '☐']], [600, 8338, 700]),
+    ['4.', 'Svake godine do 31. marta: izvještaj Uredu o provođenju plana (priprema Dževaira Džehverović, potpisuje direktor).', '☐']], [600, 8338, 700], 0),
   spacer(4),
   note('Ako Ured postavi pitanje', ['- Anketa: u izvještaju piše 72 ispitanika, a procenti odgovaraju broju od 37 – rezultati su preneseni iz originalne obrade bez izmjena.', '- Broj izvršilaca: katalog radnih mjesta daje zbir 60,52, a odluka ministra 67,52 – oba podatka su iz ranije dokumentacije škole.'], { size: 17 }),
 ];
