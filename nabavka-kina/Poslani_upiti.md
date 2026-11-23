@@ -40,3 +40,24 @@ PDF u prilogu: `RFQ_HELVERA_premium_box_v2_EN.pdf`. Poslano na 15 adresa:
 - **Arsenov (Novi Sad):** odbili.
 - **Alibaba (zahtjev za ponudu):** Starshine 0,52 $, Xiamen Yuhong 0,50 $, Fuzhou Xixi Yingu 0,09 $ (standardne kutije, MOQ 100)
 - **MJC Pack i Fine Packing:** MOQ 100 po dizajnu. Zato smo prešli na jedan dizajn.
+
+## 23.11.2026: budžet 250 $ i europske firme (jedna jednostavna sklopiva kutija, 100 kom)
+**Upit o budžetu (max 250 $ ukupno, samo kutija, bez naljepnica i pečata) poslan na:** Yucai, Fine Packing, MJC Pack, Meikei, Hanlong.
+**Nisu dobili upit o budžetu** (korisnik zaustavio slanje): Yison, Hengxinmao, Vial Packaging, Hjtc.
+
+**Novi upit (EN/SR), 100 kom, 72x52x25,5 mm sklopiva kutija, max 250 EUR s dostavom u BiH:**
+| Firma | Zemlja | Email |
+|---|---|---|
+| BePrint | Bugarska | support@beprint.bg, info@beprint.bg |
+| Kontrast Digital (Varna) | Bugarska | sales@contrastdigital.bg |
+| no KACHI | Srbija | office@no-kachi.rs |
+| zpapieru.pl | Poljska | wyceny@zpapieru.pl |
+| KAdruk | Poljska | info@kadruk.com.pl i kadruk@kadruk.com.pl (nije potvrđeno koji je tačan) |
+
+## Primljene ponude (Kina, 23.11.)
+- **Yucai:** tvrda kutija 100 kom 380 $, naljepnice 160 kom 110 $, pečati 130 kom 130 $ (bez dostave)
+- **Fine Packing:** tvrda kutija 680 $ (100 kom), sklopiva kutija + plastični uložak 180 $ (100 kom), 240 $ (300 kom). Uzorak 200 $.
+- **Weiyi:** odbili.
+
+## Rezerva (nije kontaktirano)
+Montcarton (ME) montcarton@t-com.me · ID Print (BG) office@idprint.bg · OpenPrint (PL) kontakt@openprint.pl · Foldruk (PL) wyceny@foldruk.pl · Prolix (HR) tel. +385 1 3470 435 · Kanpak (HR, samo štampa na gotovim kutijama) info@kanpak.hr
