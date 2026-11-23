@@ -11,7 +11,7 @@ const ch = [
     ['1.', 'U djelovodnik upisati četiri nova akta s datumom 23.11.2026.: Odluka o izmjenama i dopunama Odluke o izradi plana integriteta 610-1015/2026, Obavijest zaposlenima 610-1016/2026, Konačni izvještaj radne grupe 610-1017/2026, Dopis Uredu 610-1018/2026. Ako su brojevi zauzeti, javiti Kenanu Vukaliću – mijenjaju se u dokumentu.', '☐'],
     ['2.', 'Stari akti (Odluka 610-93/2025, Obavijest 610-94/2025, Program 610-95/2025) ostaju kakvi jesu – ne upisuju se ponovo.', '☐'],
     ['3.', 'Isprintati dva primjerka plana (jedan za Ured, jedan za arhivu) i dati direktoru na potpis.', '☐'],
-    ['4.', 'Novu obavijest zaposlenima (str. 11) istaći na oglasnu tablu.', '☐'],
+    ['4.', 'Novu obavijest zaposlenima (str. 11) istaći na oglasnu tablu. Na str. 46 (Konačni izvještaj) prikupiti potpise svih sedam članova radne grupe.', '☐'],
     ['5.', 'Poslati Uredu: dopis (str. 52) na vrh, ispod njega potpisan plan. Adresa: Ured za borbu protiv korupcije USK, Bihaćkih branilaca 2, 77000 Bihać (lično na protokol ili preporučeno poštom). Po potrebi i PDF elektronskom poštom (info@antikorupcijausk.ba) – prethodno provjeriti na 037/305-500.', '☐'],
     ['6.', 'Kopiju plana dati članovima radne grupe; jedan primjerak arhivirati.', '☐']], [600, 8338, 700]),
   H2('Direktor'),

@@ -380,6 +380,65 @@ nxt = sdt.getnext()
 while nxt is not None and nxt.tag == qn('w:p') and not ''.join(t.text or '' for t in nxt.iter(qn('w:t'))).strip() and nxt.find('.//' + qn('w:br')) is None and nxt.find('.//' + qn('w:sectPr')) is None:
     rem = nxt; nxt = nxt.getnext(); rem.getparent().remove(rem)
 
+# ───────── 15. Usklađivanje opisnih ocjena radne grupe sa registrom rizika i rezultatima ankete (anketa se ne dira)
+def cell_with(tbl, sub):
+    for r in tbl.rows:
+        for c in r.cells:
+            if sub in norm(c.text): return c
+    raise AssertionError('NEMA ĆELIJE: ' + sub)
+T2 = TBL[2]
+_asp = [
+    ('Nisu uočene rizične aktivnosti, odnosno radna mjesta podložna', 'Većina zaposlenih (91,89%) svoja radna mjesta ne smatra podložnim koruptivnom djelovanju (podmićivanje, iznuda, favorizovanje, utaja/pronevjera), ali 64,86% zaposlenih nije upoznato s načinom anonimnog prijavljivanja kršenja integriteta. Postoji potreba za: uvođenjem dodatnih otvorenih komunikacionih kanala, edukacijom zaposlenih o etici i integritetu, te upoznavanjem sa posljedicama i uzrocima korupcije i aktivnim učešćem u njenoj prevenciji, povećanjem djelotvornosti unutrašnje kontrole i mehanizma odgovornosti.', 'Umjerena osjetljivost'),
+    ('odnosno svi zaposleni su upoznati sa opisom svog radnog mjesta', 'Nisu uočeni značajniji problemi: zaposleni su upoznati sa opisom svog radnog mjesta (97,30%), radni procesi obavljaju se u skladu sa datim ovlaštenjima, a nadređeni je dostupan za konsultacije. Teme integriteta ne razmatraju se redovno na poslovnim sastancima (16,22% nikada).', 'Slaba osjetljivost'),
+    ('odnosno većina zaposlenih nije bila suočena sa pitanjima', 'Većina zaposlenih nije bila suočena sa pitanjima u kojima bi njihove profesionalne odluke mogle ostaviti posljedice po privatni život. Zaposleni koji su bili u takvoj situaciji (13,51%) nisu pitanje prepustili drugome niti uključili saradnika ili nadređenog, što ukazuje na potrebu uređenja postupka izuzeća i prijave sukoba interesa.', 'Umjerena osjetljivost'),
+    ('odnosno svi kontakti su precizirani u skladu sa utvrđenim poslovima', 'Kontakti sa osobama izvan škole (45,95% zaposlenih) odvijaju se u okviru utvrđenih poslova; nadređeni u većini slučajeva nije upoznat sa vrstom i prirodom tih kontakata.', 'Slaba osjetljivost'),
+    ('odnosno većina zaposlenih smatra da se posao obavlja kvalitetno', 'Nisu uočeni značajniji problemi: većina zaposlenih smatra da se posao obavlja kvalitetno i profesionalno.', 'Slaba osjetljivost'),
+    ('U školi nisu uočeni mogući problemi i potencijalni rizici. Upravljanje sredstvima', 'Upravljanje sredstvima i stvarima koje pripadaju instituciji propisano je podzakonskim i internim propisima i ostvaruje se kroz odobrena budžetska sredstva sa tačno utvrđenim načinom njihove potrošnje. Dio zaposlenih nije upoznat sa internim propisima o javnim nabavkama (40,54%) i procedurama u slučaju prevare ili krađe (72,97%).', 'Umjerena osjetljivost'),
+]
+for sub, new, status in _asp:
+    row = [r for r in T2.rows if any(sub in norm(c.text) for c in r.cells)][0]
+    cells = []
+    for c in row.cells:
+        if c._tc not in [x._tc for x in cells]: cells.append(c)
+    cell_set(cells[1], new)
+    cell_set(cells[3], status)
+set_text(find('Prema ocjeni radne grupe zakonski okvir za funkcionisanje škole je određen u potpunosti'),
+         'Prema ocjeni radne grupe zakonski okvir za funkcionisanje škole je uspostavljen. U odnosu na Zakon o prevenciji korupcije u Unsko-sanskom kantonu potrebno je donijeti pravilnik o postupku internog prijavljivanja korupcije i rješenje o ovlaštenom licu, urediti postupak prijave i upravljanja sukobom interesa i donijeti kodeks ponašanja zaposlenih, što je obuhvaćeno mjerama ovog plana.')
+set_text(find('Svi poslovni procesi se izvršavaju u skladu sa važećim zakonskim i podzakonskim aktima'),
+         'Poslovni procesi se izvršavaju u skladu sa važećim zakonskim i podzakonskim aktima. Kod pojedinih procesa (zapošljavanje, javne nabavke, finansijsko i blagajničko poslovanje, vođenje evidencija, ocjenjivanje učenika, prijavljivanje nepravilnosti) identifikovani su rizici, koji su procijenjeni i obuhvaćeni mjerama za upravljanje rizicima.')
+set_text(find('Svi poslovni procesi odvijaju se u skladu sa zakonskim i podzakonskim propisima'), 'Poslovni procesi u pravilu se odvijaju u skladu sa zakonskim i podzakonskim propisima,')
+
+# ───────── 16. Konačni izvještaj potpisuje radna grupa (Uputstvo: radna grupa podnosi izvještaj rukovodiocu)
+_kb = find(f"Broj: {BR['izvjestaj']}")
+_a = _kb._p.getprevious()
+_a = new_par_after(_a, 'Radna grupa za izradu Plana integriteta:', bold=True)
+for nm in ['Sabina Žunić, koordinator', 'Edin Pehlić, član', 'Dženita Hepić, član', 'Elvira Vatić, član', 'Dževaira Džehverović, član', 'Semira Džakulić, član', 'Kenan Vukalić, član']:
+    _a = new_par_after(_a, f'{nm}  ______________________')
+    docx.text.paragraph.Paragraph(_a, None).paragraph_format.space_after = Pt(2)
+docx.text.paragraph.Paragraph(_a, None).paragraph_format.space_after = Pt(12)
+
+# ───────── 17. Font u izvornim tabelama malo smanjen radi čitljivosti i manjeg prelamanja
+def tbl_font(tbl, size, head=None):
+    for r in tbl.rows:
+        for c in r.cells:
+            for p_ in c.paragraphs:
+                for rr in p_.runs:
+                    cur = rr.font.size.pt if rr.font.size else None
+                    rr.font.size = Pt(head if (head and cur and cur >= 14) else size)
+tbl_font(TBL[0], 11, head=12)
+for k in (1, 2, 3, 4):
+    tbl_font(TBL[k], 10)
+tbl_font(TBL[8], 11)
+
+# ───────── 18. Zaglavlja izvornih tabela: ponavljanje na novoj stranici i bez prelamanja reda zaglavlja
+for k in (0, 1, 2, 3, 4, 6, 8):
+    tr = TBL[k].rows[0]._tr
+    trPr = tr.get_or_add_trPr()
+    for tag in ('w:cantSplit', 'w:tblHeader'):
+        if trPr.find(qn(tag)) is None:
+            e = OxmlElement(tag); e.set(qn('w:val'), 'true'); trPr.append(e)
+find('Izvještaj o integritetu – Analiza ranjivih aktivnosti').paragraph_format.page_break_before = True
+
 # ───────── samostalni ručni prijelomi stranice → „početak na novoj stranici“ na sljedećem paragrafu (sprječava prazne stranice)
 for el in list(d.element.body.iterchildren()):
     if el.tag != qn('w:p') or el.find('.//' + qn('w:sectPr')) is not None: continue
