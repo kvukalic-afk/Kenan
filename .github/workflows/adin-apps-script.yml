@@ -1,0 +1,59 @@
+name: Adin šank — automatska objava na Apps Script
+
+# Svaka promjena u folderu adin-sank/ se testira i, ako su testovi prošli,
+# sama objavi na ISTI link web aplikacije (Deploy → nova verzija).
+on:
+  push:
+    branches: [main, claude/adin-sank-evidencija-63bndh]
+    paths: ['adin-sank/**', '.github/workflows/adin-apps-script.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: adin-apps-script
+  cancel-in-progress: false
+
+jobs:
+  objavi:
+    runs-on: ubuntu-latest
+    env:
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+      DEPLOYMENT_ID: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID }}
+    defaults:
+      run:
+        working-directory: adin-sank
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Testovi (objava se radi samo ako svi prođu)
+        run: npm test
+      - name: Provjera tajnih postavki
+        id: tajne
+        working-directory: .
+        run: |
+          if [ -z "$CLASPRC_JSON" ] || [ -z "$SCRIPT_ID" ] || [ -z "$DEPLOYMENT_ID" ]; then
+            echo "::notice::Automatska objava još nije podešena (fale tajne CLASPRC_JSON / APPS_SCRIPT_ID / APPS_SCRIPT_DEPLOYMENT_ID). Preskačem."
+            echo "spremno=ne" >> "$GITHUB_OUTPUT"
+          else
+            echo "spremno=da" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Pripremi fajlove za Apps Script
+        if: steps.tajne.outputs.spremno == 'da'
+        run: |
+          mkdir -p objava
+          cp Code.gs Tuya.gs Index.html appsscript.json objava/
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > objava/.clasp.json
+          printf '%s' "$CLASPRC_JSON" > ~/.clasprc.json
+      - name: Pošalji kod i objavi novu verziju (isti link)
+        if: steps.tajne.outputs.spremno == 'da'
+        working-directory: adin-sank/objava
+        run: |
+          npx --yes @google/clasp@2.4.2 push --force
+          npx --yes @google/clasp@2.4.2 deploy --deploymentId "$DEPLOYMENT_ID" --description "auto ${GITHUB_SHA::7}"
+      - name: Obriši pristupne podatke
+        if: always()
+        working-directory: .
+        run: rm -f ~/.clasprc.json

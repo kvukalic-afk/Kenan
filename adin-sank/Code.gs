@@ -76,6 +76,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
+var VERZIJA_SEME = '3';   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
  *  WEB APLIKACIJA
@@ -828,8 +829,19 @@ function izvjestaj_(red, proizvodi, pocetna, dogadjaji, brojanje) {
 /* ═══════════════════════════════════════════════════════════════
  *  JAVNI API — RADNIK
  * ═══════════════════════════════════════════════════════════════ */
+/** Nakon ažuriranja koda: tabele se same nadograde (nove kolone/proizvodi), bez ručnog setupSpreadsheet. */
+function nadogradiAkoTreba_() {
+  if (svojstva_().getProperty('VERZIJA_SEME') === VERZIJA_SEME) return;
+  zakljucano_(function () {
+    if (svojstva_().getProperty('VERZIJA_SEME') === VERZIJA_SEME) return;
+    osigurajTabele_(true);
+    svojstva_().setProperty('VERZIJA_SEME', VERZIJA_SEME);
+  });
+}
+
 function getBootstrap() {
   return api_(function () {
+    nadogradiAkoTreba_();
     var proizvodi = proizvodi_();
     var sm = tabela_(TAB.SMJENE);
     var tInv = tabela_(TAB.INVENTURA);

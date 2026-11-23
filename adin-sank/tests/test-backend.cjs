@@ -447,3 +447,19 @@ test('doGet servira Index s viewport meta tagom', () => {
   const g = napraviOkruzenje();
   assert.ok(g.doGet());
 });
+
+test('nova verzija koda sama nadogradi tabele (bez ručnog setupSpreadsheet)', () => {
+  const g = napraviOkruzenje({ sada: SAT });
+  // stari Sheet: PROIZVODI bez kolona tip/minimum, bez proizvoda "trener", bez tabele ULAZI
+  const sh = g.__ss.insertSheet('PROIZVODI');
+  sh.getRange(1, 1, 1, 6).setValues([['product_id', 'kategorija', 'naziv', 'cijena', 'nabavna_cijena', 'prati_zalihu']]);
+  sh.getRange(2, 1, 1, 6).setValues([['redbull', 'Energy', 'Red Bull', 4, 2.3, true]]);
+  const b = ok(g.getBootstrap());
+  assert.ok(g.__ss.getSheetByName('ULAZI'));
+  assert.ok(b.proizvodi.some(p => p.product_id === 'trener'));
+  assert.equal(g.__props.VERZIJA_SEME, g.VERZIJA_SEME);
+  const n = g.__stats.lockovi;
+  ok(g.getBootstrap());
+  assert.equal(g.__stats.lockovi, n, 'drugi put se ne radi ništa');
+  assert.equal(g.__tabela('PROIZVODI').find(p => p.product_id === 'redbull').cijena, 4, 'podaci netaknuti');
+});
