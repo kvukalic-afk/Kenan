@@ -45,14 +45,18 @@ jobs:
         run: |
           mkdir -p objava
           cp Code.gs Tuya.gs Index.html appsscript.json objava/
-          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > objava/.clasp.json
+          # tajne zalijepljene iz browsera često imaju razmak/novi red na kraju — očisti ih
+          SID=$(printf '%s' "$SCRIPT_ID" | tr -d '[:space:]')
+          printf '{"scriptId":"%s","rootDir":"."}' "$SID" > objava/.clasp.json
+          node -e "JSON.parse(require('fs').readFileSync('objava/.clasp.json','utf8'))" || { echo "::error::APPS_SCRIPT_ID nije ispravan"; exit 1; }
           printf '%s' "$CLASPRC_JSON" > ~/.clasprc.json
       - name: Pošalji kod i objavi novu verziju (isti link)
         if: steps.tajne.outputs.spremno == 'da'
         working-directory: adin-sank/objava
         run: |
+          DID=$(printf '%s' "$DEPLOYMENT_ID" | tr -d '[:space:]')
           npx --yes @google/clasp@2.4.2 push --force
-          npx --yes @google/clasp@2.4.2 deploy --deploymentId "$DEPLOYMENT_ID" --description "auto ${GITHUB_SHA::7}"
+          npx --yes @google/clasp@2.4.2 deploy --deploymentId "$DID" --description "auto ${GITHUB_SHA::7}"
       - name: Obriši pristupne podatke
         if: always()
         working-directory: .
