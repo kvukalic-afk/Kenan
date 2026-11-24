@@ -31,12 +31,12 @@ var KOLONE = {
   SMJENE: ['shift_id', 'datum', 'radnik', 'vrijeme_pocetka', 'vrijeme_kraja', 'status',
     'ukupno_prodano_klikovima', 'ukupno_prodano_po_inventuri', 'promet', 'kasa_ocekivano',
     'kasa_stvarno', 'kasa_razlika', 'kasa_razlog', 'broj_razlika', 'vrijednost_razlike',
-    'created_at', 'updated_at'],
+    'created_at', 'updated_at', 'kasa_pocetna', 'uzeto_iz_kase', 'potrosnja_nabavna'],
   DOGADJAJI: ['event_id', 'shift_id', 'datum', 'timestamp', 'radnik', 'tip_dogadjaja',
-    'product_id', 'proizvod', 'kolicina', 'cijena', 'ukupno', 'napomena'],
+    'product_id', 'proizvod', 'kolicina', 'cijena', 'ukupno', 'napomena', 'osoba'],
   INVENTURA: ['shift_id', 'datum', 'radnik', 'product_id', 'proizvod', 'pocetno_stanje',
     'dopunjeno', 'evidentirano_prodano', 'ocekivano_zavrsno', 'stvarno_zavrsno',
-    'prodano_po_inventuri', 'razlika_kom', 'razlika_KM'],
+    'prodano_po_inventuri', 'razlika_kom', 'razlika_KM', 'potroseno'],
   CLANOVI: ['member_id', 'ime', 'telefon', 'vrsta', 'pocetak', 'istek', 'zadnje_produzenje',
     'napomena', 'aktivan', 'brava_id', 'trener', 'trener_do'],
   ULAZI: ['izvor_id', 'datum', 'vrijeme', 'nacin', 'korisnik_brave', 'ime', 'member_id', 'clanarina', 'napomena'],
@@ -75,10 +75,10 @@ var SEED_PROIZVODI = [
   ['trener', 'Trener', 'Lični trener (mjesečno)', 60.00, 60.00, false, true, 170, 0, 1, 'trener']
 ];
 
-var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA'];
+var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '5';
+var VERZIJA_SEME = '6';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -419,7 +419,7 @@ function sazetakDogadjaja_(dogadjaji, cijene) {
     var pid = s_(e.product_id);
     var tip = s_(e.tip_dogadjaja || e.tip);
     var q = num_(e.kolicina);
-    if (!s[pid]) s[pid] = { prodano: 0, dopunjeno: 0, korekcija: 0, promet: 0 };
+    if (!s[pid]) s[pid] = { prodano: 0, dopunjeno: 0, korekcija: 0, promet: 0, potroseno: 0 };
     var x = s[pid];
     if (tip === 'SALE' || tip === 'UNDO_SALE') {
       if (tip === 'UNDO_SALE') q = -Math.abs(q);
@@ -431,6 +431,8 @@ function sazetakDogadjaja_(dogadjaji, cijene) {
       x.dopunjeno += q;
     } else if (tip === 'ADJUSTMENT') {
       x.korekcija += q;
+    } else if (tip === 'POTROSNJA') {
+      x.potroseno += q;
     }
   });
   return s;
@@ -444,11 +446,12 @@ function sazetakDogadjaja_(dogadjaji, cijene) {
  *   razlika_KM           = razlika_kom × cijena
  * (ADJUSTMENT se računa kao dio "dopunjeno".)
  */
+/* Potrošnja osoblja/vlasnika se oduzima od očekivanog: ocekivano = pocetno + dopunjeno − prodano − potrošeno. */
 function obracunSmjene_(proizvodi, pocetna, dogadjaji, brojanje) {
   var cijene = {};
   proizvodi.forEach(function (p) { cijene[p.product_id] = p.cijena; });
   var s = sazetakDogadjaja_(dogadjaji, cijene);
-  var nula = { prodano: 0, dopunjeno: 0, korekcija: 0, promet: 0 };
+  var nula = { prodano: 0, dopunjeno: 0, korekcija: 0, promet: 0, potroseno: 0 };
   var poId = {};
   proizvodi.forEach(function (p) { poId[p.product_id] = p; });
 
@@ -464,15 +467,16 @@ function obracunSmjene_(proizvodi, pocetna, dogadjaji, brojanje) {
     var x = s[pid] || nula;
     var poc = Math.round(num_(pocetna[pid]));
     var dop = x.dopunjeno + x.korekcija;
-    var ocek = poc + dop - x.prodano;
+    var pot = x.potroseno || 0;
+    var ocek = poc + dop - x.prodano - pot;
     var imaBroj = brojanje && brojanje[pid] !== undefined && brojanje[pid] !== null && brojanje[pid] !== '';
     var stv = imaBroj ? Math.round(num_(brojanje[pid])) : null;
     var raz = stv === null ? null : stv - ocek;
     return {
       product_id: pid, naziv: p.naziv, cijena: p.cijena,
-      pocetno: poc, dopunjeno: dop, prodano_klik: x.prodano, ocekivano: ocek,
+      pocetno: poc, dopunjeno: dop, prodano_klik: x.prodano, potroseno: pot, ocekivano: ocek,
       stvarno: stv,
-      prodano_inventura: stv === null ? null : poc + dop - stv,
+      prodano_inventura: stv === null ? null : poc + dop - pot - stv,
       razlika_kom: raz,
       razlika_km: raz === null ? null : r2_(raz * p.cijena)
     };
@@ -498,6 +502,28 @@ function obracunSmjene_(proizvodi, pocetna, dogadjaji, brojanje) {
 
   var promet = 0, kom = 0;
   Object.keys(s).forEach(function (pid) { promet += s[pid].promet; kom += s[pid].prodano; });
+
+  // potrošnja osoblja/vlasnika (po osobi) i novac uzet iz kase
+  var potMapa = {}, uzeto = 0, izlazi = [];
+  (dogadjaji || []).forEach(function (e) {
+    var tip = s_(e.tip_dogadjaja || e.tip);
+    if (tip === 'POTROSNJA') {
+      var o = s_(e.osoba) || '—', pid = s_(e.product_id), p = poId[pid] || { naziv: pid, nabavna: 0, cijena: 0, prati_zalihu: true };
+      var k = o + '|' + pid;
+      if (!potMapa[k]) potMapa[k] = { osoba: o, product_id: pid, naziv: p.naziv, kom: 0, nabavna: 0, prodajna: 0 };
+      var q = num_(e.kolicina);
+      potMapa[k].kom += q;
+      potMapa[k].nabavna += q * trosak_(p);
+      potMapa[k].prodajna += q * (p.cijena || 0);
+    } else if (tip === 'KASA_IZLAZ') {
+      var iznos = Math.abs(num_(e.cijena !== undefined && e.cijena !== '' ? e.cijena : e.iznos));
+      uzeto += iznos;
+      izlazi.push({ vrijeme: vrijeme_(e.timestamp), osoba: s_(e.osoba), iznos: r2_(iznos), napomena: s_(e.napomena) });
+    }
+  });
+  var potrosnja = Object.keys(potMapa).map(function (k) { var x = potMapa[k]; x.nabavna = r2_(x.nabavna); x.prodajna = r2_(x.prodajna); return x; })
+    .filter(function (x) { return x.kom !== 0; })
+    .sort(function (a, b) { return a.osoba < b.osoba ? -1 : a.osoba > b.osoba ? 1 : 0; });
   var problemi = stavke.filter(function (st) { return st.razlika_kom !== null && st.razlika_kom !== 0; });
   var poInv = 0, sveIzbrojano = stavke.length > 0;
   stavke.forEach(function (st) { if (st.prodano_inventura === null) sveIzbrojano = false; else poInv += st.prodano_inventura; });
@@ -510,8 +536,17 @@ function obracunSmjene_(proizvodi, pocetna, dogadjaji, brojanje) {
     prodano_po_inventuri: sveIzbrojano ? poInv : null,
     broj_razlika: problemi.length,
     vrijednost_razlike: r2_(problemi.reduce(function (a, st) { return a + st.razlika_km; }, 0)),
-    upozorenja: upozorenja
+    upozorenja: upozorenja,
+    potrosnja: potrosnja,
+    potrosnja_nabavna: r2_(potrosnja.reduce(function (a, x) { return a + x.nabavna; }, 0)),
+    uzeto_iz_kase: r2_(uzeto),
+    kasa_izlazi: izlazi
   };
+}
+
+/** U kasi treba biti = početna gotovina + promet − novac uzet iz kase. */
+function kasaTreba_(kasaPocetna, ob) {
+  return r2_(num_(kasaPocetna) + ob.promet - ob.uzeto_iz_kase);
 }
 
 /** Provjera brojanja: svaki proizvod mora imati cijeli broj ≥ 0 (i nula se upisuje). */
@@ -783,7 +818,8 @@ function dogadjajiSmjene_(shiftId, tDog) {
   return t.redovi.filter(function (r) { return s_(r.shift_id) === shiftId; }).map(function (r) {
     return {
       event_id: s_(r.event_id), shift_id: shiftId, tip: s_(r.tip_dogadjaja), product_id: s_(r.product_id),
-      kolicina: num_(r.kolicina), ukupno: num_(r.ukupno), timestamp: s_(r.timestamp), napomena: s_(r.napomena)
+      kolicina: num_(r.kolicina), ukupno: num_(r.ukupno), cijena: num_(r.cijena), timestamp: s_(r.timestamp), napomena: s_(r.napomena),
+      osoba: s_(r.osoba)
     };
   });
 }
@@ -804,7 +840,7 @@ function smjenaJavno_(r, tInv, tDog) {
   var id = s_(r.shift_id);
   return {
     shift_id: id, radnik: s_(r.radnik), datum: datum_(r.datum), vrijeme_pocetka: vrijeme_(r.vrijeme_pocetka),
-    pocetak_ts: s_(r.created_at), status: s_(r.status),
+    pocetak_ts: s_(r.created_at), status: s_(r.status), kasa_pocetna: r2_(num_(r.kasa_pocetna)),
     pocetna: pocetnaSmjene_(id, tInv).pocetna,
     dogadjaji: dogadjajiSmjene_(id, tDog)
   };
@@ -830,7 +866,10 @@ function izvjestaj_(red, proizvodi, pocetna, dogadjaji, brojanje) {
     trajanje_min: (a !== null && b !== null) ? Math.max(0, b - a) : null,
     status: s_(red.status),
     prodano_kom: ob.prodano_kom, prodano_po_inventuri: ob.prodano_po_inventuri, promet: ob.promet,
-    kasa_ocekivano: ob.promet,
+    kasa_pocetna: r2_(num_(red.kasa_pocetna)),
+    uzeto_iz_kase: ob.uzeto_iz_kase, kasa_izlazi: ob.kasa_izlazi,
+    kasa_ocekivano: kasaTreba_(red.kasa_pocetna, ob),
+    potrosnja: ob.potrosnja, potrosnja_nabavna: ob.potrosnja_nabavna,
     kasa_stvarno: s_(red.kasa_stvarno) === '' ? null : r2_(num_(red.kasa_stvarno)),
     kasa_razlika: s_(red.kasa_razlika) === '' ? null : r2_(num_(red.kasa_razlika)),
     kasa_razlog: s_(red.kasa_razlog),
@@ -903,10 +942,16 @@ function startShift(podaci) {
 
       var roba = proizvodi_().filter(function (x) { return x.prati_zalihu; });
       var pocetna = provjeriBrojanje_(roba, p.pocetna, 'početno');
+      var kasaPocetna = 0;
+      if (p.kasa_pocetna !== undefined && p.kasa_pocetna !== null && s_(p.kasa_pocetna) !== '') {
+        kasaPocetna = Number(s_(p.kasa_pocetna).replace(/\s/g, '').replace(',', '.'));
+        if (!isFinite(kasaPocetna) || kasaPocetna < 0 || kasaPocetna > 100000) throw greska_('KASA', 'Upiši koliko je gotovine u kasi na početku (0 ili više).');
+        kasaPocetna = r2_(kasaPocetna);
+      }
       var t = sada_();
       dodajRedove_(sm, [{
         shift_id: shiftId, datum: t.datum, radnik: radnik, vrijeme_pocetka: t.vrijeme, vrijeme_kraja: '',
-        status: 'OPEN', created_at: t.ts, updated_at: t.ts
+        status: 'OPEN', created_at: t.ts, updated_at: t.ts, kasa_pocetna: kasaPocetna
       }]);
       dodajRedove_(tabela_(TAB.INVENTURA), roba.map(function (x) {
         return {
@@ -918,7 +963,7 @@ function startShift(podaci) {
         postojeca: false,
         smjena: {
           shift_id: shiftId, radnik: radnik, datum: t.datum, vrijeme_pocetka: t.vrijeme, pocetak_ts: t.ts,
-          status: 'OPEN', pocetna: pocetna, dogadjaji: []
+          status: 'OPEN', pocetna: pocetna, dogadjaji: [], kasa_pocetna: kasaPocetna
         }
       };
     });
@@ -947,12 +992,17 @@ function obradiDogadjaje_(shiftId, events) {
   var sviProizvodi = {};
   proizvodi_(true).forEach(function (p) { sviProizvodi[p.product_id] = p; });
 
-  var trebaNeto = events.some(function (e) { return s_(e.tip) === 'UNDO_SALE'; });
-  var tDog = null, neto = {};
+  var trebaNeto = events.some(function (e) { return s_(e.tip) === 'UNDO_SALE' || (s_(e.tip) === 'POTROSNJA' && Number(e.kolicina) < 0); });
+  var tDog = null, neto = {}, netoPot = {};
   if (trebaNeto) {
     tDog = tabela_(TAB.DOGADJAJI);
     tDog.redovi.forEach(function (r) {
       var tip = s_(r.tip_dogadjaja);
+      if (tip === 'POTROSNJA') {
+        var kp0 = s_(r.shift_id) + '|' + s_(r.product_id) + '|' + s_(r.osoba);
+        netoPot[kp0] = (netoPot[kp0] || 0) + num_(r.kolicina);
+        return;
+      }
       if (tip !== 'SALE' && tip !== 'UNDO_SALE') return;
       var k = s_(r.shift_id) + '|' + s_(r.product_id);
       neto[k] = (neto[k] || 0) + num_(r.kolicina);
@@ -987,13 +1037,27 @@ function obradiDogadjaje_(shiftId, events) {
       izlaz.primljeno.push(id);
       return;
     }
+    if (tip === 'KASA_IZLAZ') {
+      var iznos = Number(s_(e.iznos).replace(',', '.'));
+      var ko = s_(e.osoba).slice(0, 40);
+      if (!isFinite(iznos) || iznos <= 0 || iznos > 100000) { odbij(id, 'IZNOS', 'Neispravan iznos.'); return; }
+      if (!ko) { odbij(id, 'OSOBA', 'Upiši ko je uzeo novac.'); return; }
+      postoji[id] = true;
+      noviRedovi.push({
+        event_id: id, shift_id: sid, datum: t.datum, timestamp: t.ts, radnik: s_(sm.radnik),
+        tip_dogadjaja: 'KASA_IZLAZ', product_id: '', proizvod: 'Uzeto iz kase', kolicina: 0, cijena: r2_(iznos), ukupno: 0,
+        napomena: s_(e.napomena).slice(0, 200), osoba: ko
+      });
+      izlaz.primljeno.push(id);
+      return;
+    }
     var p = sviProizvodi[s_(e.product_id)];
     if (!p) { odbij(id, 'NEMA_PROIZVODA', 'Proizvod ne postoji.'); return; }
     var q = Number(e.kolicina);
     if (!isFinite(q) || Math.floor(q) !== q || q === 0) { odbij(id, 'KOLICINA', 'Neispravna količina.'); return; }
 
     var napomena = s_(e.napomena).slice(0, 200);
-    var ukupno = 0;
+    var ukupno = 0, osoba = '';
     var kljuc = sid + '|' + p.product_id;
 
     if (tip === 'SALE') {
@@ -1018,6 +1082,14 @@ function obradiDogadjaje_(shiftId, events) {
     } else if (tip === 'ADJUSTMENT') {
       if (!p.prati_zalihu) { odbij(id, 'NE_PRATI_ZALIHU', 'Za ovaj proizvod se ne vodi zaliha.'); return; }
       if (Math.abs(q) > 1000) { odbij(id, 'KOLICINA', 'Neispravna količina.'); return; }
+    } else if (tip === 'POTROSNJA') {
+      if (!p.prati_zalihu) { odbij(id, 'NE_PRATI_ZALIHU', 'Potrošnja se bilježi samo za robu.'); return; }
+      osoba = s_(e.osoba).slice(0, 40);
+      if (!osoba) { odbij(id, 'OSOBA', 'Izaberi ko je potrošio.'); return; }
+      if (Math.abs(q) > 50) { odbij(id, 'KOLICINA', 'Neispravna količina.'); return; }
+      var kp = sid + '|' + p.product_id + '|' + osoba;
+      if (q < 0 && (netoPot[kp] || 0) + q < 0) { odbij(id, 'NEMA_STA_PONISTITI', 'Nema te potrošnje za poništiti.'); return; }
+      netoPot[kp] = (netoPot[kp] || 0) + q;
     }
 
     var klijentMs = Number(e.klijent_ms);
@@ -1031,7 +1103,7 @@ function obradiDogadjaje_(shiftId, events) {
     noviRedovi.push({
       event_id: id, shift_id: sid, datum: t.datum, timestamp: t.ts, radnik: s_(sm.radnik),
       tip_dogadjaja: tip, product_id: p.product_id, proizvod: p.naziv, kolicina: q, cijena: p.cijena,
-      ukupno: ukupno, napomena: napomena
+      ukupno: ukupno, napomena: napomena, osoba: osoba
     });
     izlaz.primljeno.push(id);
   });
@@ -1140,7 +1212,8 @@ function closeShift(shiftId, brojanje, kasaStvarno, razlog) {
       kasa = r2_(kasa);
 
       var ob = obracunSmjene_(proizvodi, ps.pocetna, dog, broj);
-      var kasaRazlika = r2_(kasa - ob.promet);
+      var kasaOcek = kasaTreba_(red.kasa_pocetna, ob);
+      var kasaRazlika = r2_(kasa - kasaOcek);
       var razlogTxt = s_(razlog).slice(0, 200);
       if ((kasaRazlika !== 0 || ob.broj_razlika > 0) && !razlogTxt) {
         throw greska_('RAZLOG', 'Nešto se ne poklapa. Izaberi razlog.');
@@ -1156,13 +1229,14 @@ function closeShift(shiftId, brojanje, kasaStvarno, razlog) {
         azurirajRed_(tInv, r, {
           dopunjeno: st.dopunjeno, evidentirano_prodano: st.prodano_klik, ocekivano_zavrsno: st.ocekivano,
           stvarno_zavrsno: st.stvarno, prodano_po_inventuri: st.prodano_inventura,
-          razlika_kom: st.razlika_kom, razlika_KM: st.razlika_km
+          razlika_kom: st.razlika_kom, razlika_KM: st.razlika_km, potroseno: st.potroseno
         });
       });
       azurirajRed_(sm, red, {
         vrijeme_kraja: t.vrijeme, status: 'CLOSED',
         ukupno_prodano_klikovima: ob.prodano_kom, ukupno_prodano_po_inventuri: ob.prodano_po_inventuri,
-        promet: ob.promet, kasa_ocekivano: ob.promet, kasa_stvarno: kasa, kasa_razlika: kasaRazlika,
+        promet: ob.promet, kasa_ocekivano: kasaOcek, kasa_stvarno: kasa, kasa_razlika: kasaRazlika,
+        uzeto_iz_kase: ob.uzeto_iz_kase, potrosnja_nabavna: ob.potrosnja_nabavna,
         kasa_razlog: (kasaRazlika !== 0 || ob.broj_razlika > 0) ? razlogTxt : '',
         broj_razlika: ob.broj_razlika, vrijednost_razlike: ob.vrijednost_razlike, updated_at: t.ts
       });
@@ -1310,7 +1384,8 @@ function adminCloseShift(pin, shiftId, napomena) {
       var t = sada_();
       azurirajRed_(sm, red, {
         vrijeme_kraja: t.vrijeme, status: 'CLOSED', ukupno_prodano_klikovima: ob.prodano_kom,
-        promet: ob.promet, kasa_ocekivano: ob.promet,
+        promet: ob.promet, kasa_ocekivano: kasaTreba_(red.kasa_pocetna, ob),
+        uzeto_iz_kase: ob.uzeto_iz_kase, potrosnja_nabavna: ob.potrosnja_nabavna,
         kasa_razlog: 'Zatvorio vlasnik bez brojanja: ' + nap, updated_at: t.ts
       });
       return { izvjestaj: izvjestaj_(red, proizvodi, ps.pocetna, dog, null) };
@@ -1337,8 +1412,28 @@ function getAdminData(pin) {
     var kartePrazno = function () { return { dnevne: prazno(), mjesecne: prazno(), trener: prazno() }; };
     var karte = { danas: kartePrazno(), mjesec: kartePrazno() };
     karte.mjesec.nove = 0; karte.mjesec.produzene = 0;
+    var osoblje = { danas: {}, mjesec: {} };
+    var dodajOsobi = function (grupa, osoba, polje, vrijednost, stavka) {
+      var o = osoblje[grupa][osoba] || (osoblje[grupa][osoba] = { osoba: osoba, kom: 0, nabavna: 0, uzeto: 0, stavke: {} });
+      o[polje] += vrijednost;
+      if (stavka) o.stavke[stavka.naziv] = (o.stavke[stavka.naziv] || 0) + stavka.kom;
+    };
     tDog.redovi.forEach(function (r) {
       var tip = s_(r.tip_dogadjaja);
+      if (tip === 'POTROSNJA' || tip === 'KASA_IZLAZ') {
+        var dd = datum_(r.datum), os = s_(r.osoba) || '—';
+        var grupe = [];
+        if (dd === per.danas) grupe.push('danas');
+        if (dd >= per.mjesecOd && dd <= per.danas) grupe.push('mjesec');
+        grupe.forEach(function (gr) {
+          if (tip === 'KASA_IZLAZ') { dodajOsobi(gr, os, 'uzeto', num_(r.cijena)); return; }
+          var pp = poId[s_(r.product_id)] || { nabavna: 0, prati_zalihu: true, naziv: s_(r.proizvod) };
+          var qq = num_(r.kolicina);
+          dodajOsobi(gr, os, 'kom', qq, { naziv: pp.naziv || s_(r.proizvod), kom: qq });
+          dodajOsobi(gr, os, 'nabavna', qq * trosak_(pp));
+        });
+        return;
+      }
       if (tip !== 'SALE' && tip !== 'UNDO_SALE') return;
       var d = datum_(r.datum), pid = s_(r.product_id);
       var p = poId[pid] || { nabavna: 0, prati_zalihu: false, naziv: s_(r.proizvod) };
@@ -1399,7 +1494,8 @@ function getAdminData(pin) {
       otv = {
         shift_id: sid, radnik: s_(otvorena.radnik), datum: datum_(otvorena.datum),
         od: vrijeme_(otvorena.vrijeme_pocetka), sati: Math.round(sati * 10) / 10,
-        stara: sati >= CONFIG.STARA_SMJENA_SATI, promet: ob.promet, kom: ob.prodano_kom
+        stara: sati >= CONFIG.STARA_SMJENA_SATI, promet: ob.promet, kom: ob.prodano_kom,
+        kasa_pocetna: r2_(num_(otvorena.kasa_pocetna)), uzeto_iz_kase: ob.uzeto_iz_kase, kasa_treba: kasaTreba_(otvorena.kasa_pocetna, ob)
       };
       var ocek = {};
       ob.stavke.forEach(function (st) { ocek[st.product_id] = st.ocekivano; });
@@ -1450,6 +1546,16 @@ function getAdminData(pin) {
         };
       }),
       karte: karte,
+      osoblje: ['danas', 'mjesec'].reduce(function (acc, gr) {
+        acc[gr] = Object.keys(osoblje[gr]).map(function (k) {
+          var o = osoblje[gr][k];
+          return {
+            osoba: o.osoba, kom: o.kom, nabavna: r2_(o.nabavna), uzeto: r2_(o.uzeto),
+            stavke: Object.keys(o.stavke).filter(function (n) { return o.stavke[n]; }).map(function (n) { return { naziv: n, kom: o.stavke[n] }; })
+          };
+        }).sort(function (a, b) { return b.nabavna + b.uzeto - a.nabavna - a.uzeto; });
+        return acc;
+      }, {}),
       raspored: raspored_(),
       treneri: treneri_(),
       radnici: radnici_(),

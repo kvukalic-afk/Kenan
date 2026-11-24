@@ -44,12 +44,12 @@ var Logika = (function () {
 
   /** Stanje aktivne smjene iz događaja: prodano, dopunjeno, očekivano, promet. */
   function stanjeSmjene(smjena, proizvodi) {
-    var cijene = {}, po = {};
+    var cijene = {}, po = {}, potOsobe = {}, uzeto = 0;
     (proizvodi || []).forEach(function (p) { cijene[p.product_id] = p.cijena; });
     var promet = 0, kom = 0;
     ((smjena && smjena.dogadjaji) || []).forEach(function (e) {
       var pid = e.product_id, q = Number(e.kolicina) || 0;
-      if (!po[pid]) po[pid] = { prodano: 0, dopunjeno: 0 };
+      if (!po[pid]) po[pid] = { prodano: 0, dopunjeno: 0, potroseno: 0 };
       if (e.tip === 'SALE' || e.tip === 'UNDO_SALE') {
         if (e.tip === 'UNDO_SALE') q = -Math.abs(q);
         po[pid].prodano += q;
@@ -59,20 +59,34 @@ var Logika = (function () {
         promet += uk;
       } else if (e.tip === 'RESTOCK' || e.tip === 'ADJUSTMENT') {
         po[pid].dopunjeno += q;
+      } else if (e.tip === 'POTROSNJA') {
+        po[pid].potroseno += q;
+        var ko = e.osoba || '—';
+        potOsobe[ko] = potOsobe[ko] || {};
+        potOsobe[ko][pid] = (potOsobe[ko][pid] || 0) + q;
+      } else if (e.tip === 'KASA_IZLAZ') {
+        uzeto += Math.abs(Number(e.iznos !== undefined ? e.iznos : e.cijena) || 0);
       }
     });
     var pocetna = (smjena && smjena.pocetna) || {};
     var ocekivano = {};
     Object.keys(pocetna).forEach(function (pid) {
-      var x = po[pid] || { prodano: 0, dopunjeno: 0 };
-      ocekivano[pid] = (Number(pocetna[pid]) || 0) + x.dopunjeno - x.prodano;
+      var x = po[pid] || { prodano: 0, dopunjeno: 0, potroseno: 0 };
+      ocekivano[pid] = (Number(pocetna[pid]) || 0) + x.dopunjeno - x.prodano - x.potroseno;
     });
+    promet = Math.round(promet * 100) / 100;
+    uzeto = Math.round(uzeto * 100) / 100;
     return {
       prodano: function (pid) { return po[pid] ? po[pid].prodano : 0; },
       dopunjeno: function (pid) { return po[pid] ? po[pid].dopunjeno : 0; },
+      potroseno: function (pid) { return po[pid] ? po[pid].potroseno : 0; },
+      potrosnjaOsobe: potOsobe,
       ocekivano: ocekivano,
-      promet: Math.round(promet * 100) / 100,
-      kom: kom
+      promet: promet,
+      kom: kom,
+      uzeto: uzeto,
+      kasaPocetna: Number(smjena && smjena.kasa_pocetna) || 0,
+      kasaTreba: Math.round(((Number(smjena && smjena.kasa_pocetna) || 0) + promet - uzeto) * 100) / 100
     };
   }
 
@@ -87,10 +101,11 @@ var Logika = (function () {
     });
     var kasaBroj = Number(String(kasa === undefined || kasa === null ? '' : kasa).replace(/\s/g, '').replace(',', '.'));
     var imaKasu = String(kasa === undefined || kasa === null ? '' : kasa).trim() !== '' && isFinite(kasaBroj) && kasaBroj >= 0;
-    var kasaRazlika = imaKasu ? Math.round((kasaBroj - st.promet) * 100) / 100 : null;
+    var kasaRazlika = imaKasu ? Math.round((kasaBroj - st.kasaTreba) * 100) / 100 : null;
     return {
       razlikeRobe: razlike.length,
-      kasaOcekivano: st.promet,
+      kasaOcekivano: st.kasaTreba,
+      kasaPocetna: st.kasaPocetna, promet: st.promet, uzeto: st.uzeto,
       kasaRazlika: kasaRazlika,
       trebaRazlog: razlike.length > 0 || (kasaRazlika !== null && kasaRazlika !== 0)
     };
@@ -228,6 +243,9 @@ var Logika = (function () {
     L.push('FITNESS CLUB ADIN — smjena');
     L.push(izv.radnik + ', ' + dT(izv.datum) + ' ' + izv.pocetak + '–' + izv.kraj + (izv.trajanje_min !== null && izv.trajanje_min !== undefined ? ' (' + trajanje(izv.trajanje_min) + ')' : ''));
     L.push('Prodano: ' + izv.prodano_kom + ' kom · Promet: ' + km(izv.promet) + ' KM');
+    if (izv.kasa_pocetna || izv.uzeto_iz_kase) {
+      L.push('Kasa: početno ' + km(izv.kasa_pocetna || 0) + ' + promet ' + km(izv.promet) + (izv.uzeto_iz_kase ? ' − uzeto ' + km(izv.uzeto_iz_kase) : '') + ' = treba ' + km(izv.kasa_ocekivano) + ' KM');
+    }
     if (izv.kasa_stvarno !== null && izv.kasa_stvarno !== undefined) {
       L.push('Kasa: ' + km(izv.kasa_stvarno) + ' KM' + (izv.kasa_razlika ? ' (razlika ' + (izv.kasa_razlika > 0 ? '+' : '') + km(izv.kasa_razlika) + ' KM)' : ' ✓'));
     }
@@ -240,6 +258,8 @@ var Logika = (function () {
     });
     if (izv.kasa_razlog) L.push('Razlog: ' + izv.kasa_razlog);
     (izv.usluge || []).forEach(function (u) { L.push(u.naziv + ': ' + u.kom + ' × = ' + km(u.km) + ' KM'); });
+    (izv.potrosnja || []).forEach(function (x) { L.push('Potrošnja ' + x.osoba + ': ' + x.kom + '× ' + x.naziv); });
+    (izv.kasa_izlazi || []).forEach(function (x) { L.push('Uzeto iz kase: ' + x.osoba + ' ' + km(x.iznos) + ' KM' + (x.napomena ? ' (' + x.napomena + ')' : '')); });
     (izv.napomene || []).forEach(function (n) { L.push('Napomena ' + n.vrijeme + ': ' + n.tekst); });
     return L.join('\n');
   }
@@ -395,6 +415,8 @@ function App() {
       const ocisceni = batch.events.map(e => {
         const o = { event_id: e.event_id, shift_id: e.shift_id, tip: e.tip, product_id: e.product_id, kolicina: e.kolicina, napomena: e.napomena || '', klijent_ms: e.klijent_ms };
         if (e.clan) o.clan = e.clan;
+        if (e.osoba) o.osoba = e.osoba;
+        if (e.iznos !== undefined) o.iznos = e.iznos;
         return o;
       });
       const rez = await api('pushEvents', batch.shift_id, ocisceni);
@@ -454,13 +476,13 @@ function App() {
   }, [posalji]);
 
   /* ── akcije ── */
-  const zapocni = async (pocetna) => {
+  const zapocni = async (pocetna, kasaPocetna) => {
     const st = ls.get(LS.START, null);
     const shift_id = (st && st.radnik === radnik) ? st.shift_id : Logika.uid('S');
     ls.set(LS.START, { shift_id, radnik });
     setRadi(true); setGreska('');
     try {
-      const r = await api('startShift', { shift_id, radnik, pocetna });
+      const r = await api('startShift', { shift_id, radnik, pocetna, kasa_pocetna: kasaPocetna });
       ls.del(LS.START);
       obrisiNacrte();
       const lokalni = redRef.current.filter(e => e.shift_id === r.smjena.shift_id);
@@ -475,7 +497,7 @@ function App() {
     } finally { setRadi(false); }
   };
 
-  const dodaj = useCallback((tip, product_id, kolicina, napomena, clan) => {
+  const dodaj = useCallback((tip, product_id, kolicina, napomena, clan, dodatno) => {
     const s = smjenaRef.current;
     if (!s) return null;
     const e = {
@@ -484,6 +506,7 @@ function App() {
       napomena: napomena || '', klijent_ms: Date.now()
     };
     if (clan) e.clan = clan;
+    if (dodatno) Object.assign(e, dodatno);
     // prvo lokalno (red + ekran), pa slanje u pozadini
     spremiRed(Logika.dodajURed(redRef.current, e));
     setSmjena(x => x ? { ...x, dogadjaji: x.dogadjaji.concat([e]) } : x);
@@ -555,7 +578,7 @@ function App() {
       {faza === 'pocetna' && <Pocetna proizvodi={podaci.proizvodi} prijedlog={podaci.prijedlog} radnik={radnik} onNovi={noviProizvod}
         greska={greska} radi={radi} nazad={() => { setGreska(''); setFaza('radnik'); }} onStart={zapocni} />}
 
-      {faza === 'smjena' && smjena && <Smjena smjena={smjena} raspored={podaci.raspored || []} proizvodi={podaci.proizvodi} clanovi={podaci.clanovi} treneri={podaci.treneri || []} onNovi={noviProizvod}
+      {faza === 'smjena' && smjena && <Smjena smjena={smjena} radnici={podaci.radnici || []} raspored={podaci.raspored || []} proizvodi={podaci.proizvodi} clanovi={podaci.clanovi} treneri={podaci.treneri || []} onNovi={noviProizvod}
         dodaj={dodaj} pokaziToast={pokaziToast} setClanovi={c => setPodaci(p => ({ ...p, clanovi: c }))}
         onZavrsi={() => { setGreska(''); setFaza('zavrsna'); window.scrollTo(0, 0); }} />}
 
@@ -695,6 +718,8 @@ function Brojac({ pid, naziv, pod, v, set }) {
 function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart, onNovi }) {
   const roba = proizvodi.filter(p => p.prati_zalihu);
   const [novi, setNovi] = useState(false);
+  const [kasa, setKasa] = useNacrt('kasa_pocetna', '');
+  const kasaOk = String(kasa).trim() !== '' && isFinite(Number(String(kasa).replace(',', '.')));
   const [v, setV] = useNacrt('pocetno', {});
   const fali = Logika.nedostaje(roba, v);
   const post = (id, nov) => setV(s => ({ ...s, [id]: nov }));
@@ -720,11 +745,21 @@ function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart, o
       <button className="btn2 novo" onClick={() => setNovi(true)}>＋ Ima nešto čega nema na listi? Dodaj novo piće</button>
       {novi && <NoviProizvod proizvodi={proizvodi} radnik={radnik} zatvori={() => setNovi(false)}
         gotovo={(r, kol) => { setNovi(false); onNovi(r, kol); }} />}
+      <div className="grp">💶 GOTOVINA U KASI NA POČETKU</div>
+      <div className={'card kasa-card' + (kasaOk ? '' : ' prazno')}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input className="inp" data-testid="kasa-pocetna" inputMode="decimal" value={kasa} placeholder="0,00"
+            style={{ fontSize: 26, fontWeight: 700, textAlign: 'center', minHeight: 62 }}
+            onChange={e => setKasa(e.target.value.replace(/[^\d.,]/g, '').slice(0, 9))} />
+          <span style={{ fontSize: 17, color: 'var(--dim)' }}>KM</span>
+        </div>
+        <div className="sit" style={{ marginTop: 8 }}>Prebroji sav novac u kasi (i kusur). Ako je prazna, upiši 0.</div>
+      </div>
       {greska && <div className="err">{greska}</div>}
-      <button className="btn" disabled={fali.length > 0 || radi} onClick={() => {
-        const o = {}; roba.forEach(p => { o[p.product_id] = Number(v[p.product_id]); }); onStart(o);
+      <button className="btn" disabled={fali.length > 0 || !kasaOk || radi} onClick={() => {
+        const o = {}; roba.forEach(p => { o[p.product_id] = Number(v[p.product_id]); }); onStart(o, String(kasa).replace(',', '.'));
       }}>
-        {radi ? 'Počinjem…' : fali.length > 0 ? 'Još ' + fali.length + ' za prebrojati' : 'ZAPOČNI SMJENU'}
+        {radi ? 'Počinjem…' : fali.length > 0 ? 'Još ' + fali.length + ' za prebrojati' : !kasaOk ? 'Upiši gotovinu u kasi' : 'ZAPOČNI SMJENU'}
       </button>
       <button className="btn2" onClick={nazad}>Nazad</button>
     </div>
@@ -732,7 +767,9 @@ function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart, o
 }
 
 /* ═══════ 3. AKTIVNA SMJENA ═══════ */
-function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, dodaj, pokaziToast, setClanovi, onZavrsi, onNovi }) {
+function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj, pokaziToast, setClanovi, onZavrsi, onNovi }) {
+  const osobe = [];
+  (radnici || []).concat(treneri || [], [smjena.radnik]).forEach(o => { if (o && osobe.indexOf(o) < 0) osobe.push(o); });
   const [zadnji, setZadnji] = useState(null);  // {p, n}
   const [sheet, setSheet] = useState(null);    // dopuna | ispravka | clan | zavrsi
   const [hit, setHit] = useState(null);
@@ -761,7 +798,7 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, dodaj, pokaziTo
     setZadnji(z => (z && z.p.product_id === p.product_id) ? { p, n: z.n + 1, k: Date.now() } : { p, n: 1, k: Date.now() });
     setHit(p.product_id);
     clearTimeout(hitTimer.current);
-    hitTimer.current = setTimeout(() => setHit(null), 140);
+    hitTimer.current = setTimeout(() => setHit(null), 320);
     vibriraj(12);
   };
 
@@ -851,7 +888,7 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, dodaj, pokaziTo
                 return (
                   <button key={p.product_id} data-tile={p.product_id}
                     className={'tile' + (hit === p.product_id ? ' hit' : '')} onClick={() => prodaj(p)}>
-                    {kom > 0 && <span className="badge">{kom}</span>}
+                    {kom > 0 && <span className="badge" key={kom}>{kom}</span>}
                     <span className="nm">{p.naziv}</span>
                     <span className="bot">
                       <span className="pr">{km(p.cijena)} KM</span>
@@ -868,6 +905,10 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, dodaj, pokaziTo
           <button className="btn2" style={{ flex: 2 }} onClick={() => setSheet('dopuna')}>+ DOPUNA ZALIHE</button>
           <button className="btn2" style={{ flex: 1 }} onClick={() => setSheet('ispravka')}>Ispravka</button>
         </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn2" style={{ flex: 1 }} onClick={() => setSheet('potrosnja')}>☕ Potrošnja osoblja</button>
+          <button className="btn2" style={{ flex: 1 }} onClick={() => setSheet('uzeto')}>💶 Uzeto iz kase</button>
+        </div>
         <button className="btn2 novo" onClick={() => setSheet('novi')}>＋ Novo piće / proizvod (nema na listi)</button>
         <button className="btn2" onClick={() => setSheet('napomena')}>✎ Napomena za vlasnika</button>
       </div>
@@ -881,11 +922,22 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, dodaj, pokaziTo
 
       <div className="dock">
         <div>
-          <div style={{ fontSize: 9.5, letterSpacing: 1.6, color: 'var(--dim)' }}>{st.kom} KOM · U KASI TREBA BITI</div>
-          <div className="n" data-testid="promet">{km(st.promet)}<span className="u">KM</span></div>
+          <div style={{ fontSize: 9.5, letterSpacing: 1.6, color: 'var(--dim)' }}>U KASI TREBA BITI</div>
+          <div className="n" data-testid="promet"><AnimBroj v={st.kasaTreba} /><span className="u">KM</span></div>
+          <div style={{ fontSize: 10.5, color: 'var(--dim)' }}>promet {km(st.promet)} · {st.kom} kom{st.uzeto ? ' · uzeto ' + km(st.uzeto) : ''}</div>
         </div>
         <button onClick={() => setSheet('zavrsi')}>ZAVRŠI SMJENU</button>
       </div>
+
+      {sheet === 'potrosnja' && <Potrosnja roba={proizvodi.filter(p => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id))}
+        osobe={osobe} st={st} zatvori={() => setSheet(null)}
+        zapisi={(osoba, p, q) => { dodaj('POTROSNJA', p.product_id, q, '', null, { osoba }); vibriraj(10); }} />}
+
+      {sheet === 'uzeto' && <UzetoIzKase osobe={osobe} kasaTreba={st.kasaTreba} zatvori={() => setSheet(null)}
+        zapisi={(osoba, iznos, napomena) => {
+          dodaj('KASA_IZLAZ', '', 0, napomena, null, { osoba, iznos });
+          setSheet(null); pokaziToast('✓ Zapisano: ' + osoba + ' uzeo ' + km(iznos) + ' KM iz kase.', 'ok');
+        }} />}
 
       {sheet === 'novi' && <NoviProizvod proizvodi={proizvodi} radnik={smjena.radnik} shiftId={smjena.shift_id}
         zatvori={() => setSheet(null)} gotovo={(r, kol) => { setSheet(null); onNovi(r, kol); }} />}
@@ -929,6 +981,102 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, dodaj, pokaziTo
         </Sheet>
       )}
     </>
+  );
+}
+
+/** Potrošnja osoblja/vlasnika: ko → tap na proizvod = 1 kom (ne ide u kasu, skida se sa zalihe). */
+function Potrosnja({ roba, osobe, st, zatvori, zapisi }) {
+  const [osoba, setOsoba] = useState(osobe[0] || '');
+  const [hit, setHit] = useState(null);
+  const moje = (st.potrosnjaOsobe && st.potrosnjaOsobe[osoba]) || {};
+  const ukupno = Object.keys(moje).reduce((a, k) => a + moje[k], 0);
+  const tap = (p, q) => {
+    zapisi(osoba, p, q);
+    setHit(p.product_id + q); setTimeout(() => setHit(null), 300);
+  };
+  return (
+    <Sheet naslov="☕ Potrošnja osoblja / vlasnika" zatvori={zatvori}>
+      <div className="sit" style={{ marginBottom: 10 }}>Ono što neko od vas popije ili uzme (protein, piće…) bez plaćanja. Ne ide u kasu, ali se skida sa zalihe — tako na kraju sve štima.</div>
+      <div className="lab">KO?</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+        {osobe.map(o => <button key={o} data-osoba={o} className={'chip' + (osoba === o ? ' on' : '')} style={{ minWidth: 80 }} onClick={() => setOsoba(o)}>{o}</button>)}
+      </div>
+      <div className="lab">TAPNI ŠTA JE UZEO (1 TAP = 1 KOM)</div>
+      <div className="grid">
+        {roba.map(p => {
+          const n = moje[p.product_id] || 0;
+          return (
+            <button key={p.product_id} data-potrosnja={p.product_id} className={'tile mala' + (hit === p.product_id + 1 ? ' hit' : '')} disabled={!osoba} onClick={() => tap(p, 1)}>
+              {n > 0 && <span className="badge" key={n}>{n}</span>}
+              <span className="nm">{p.naziv}</span>
+              <span className="bot"><span className="st">ima {st.ocekivano[p.product_id]}</span>
+                {n > 0 && <span className="minus" role="button" onClick={e => { e.stopPropagation(); tap(p, -1); }}>−1</span>}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="card" style={{ marginTop: 12 }}>
+        <div className="ln"><span>{osoba || '—'} u ovoj smjeni</span><b style={{ color: 'var(--gold)' }}>{ukupno} kom</b></div>
+      </div>
+      <button className="btn" style={{ marginTop: 10 }} onClick={zatvori}>Gotovo</button>
+    </Sheet>
+  );
+}
+
+/** Novac uzet iz kase (vlasnik uzeo, plaćen račun…) — da se kasa na kraju poklopi. */
+function UzetoIzKase({ osobe, kasaTreba, zatvori, zapisi }) {
+  const [osoba, setOsoba] = useState(osobe[0] || '');
+  const [iznos, setIznos] = useState('');
+  const [nap, setNap] = useState('');
+  const n = Number(String(iznos).replace(',', '.'));
+  return (
+    <Sheet naslov="💶 Uzeto iz kase" zatvori={zatvori}>
+      <div className="sit" style={{ marginBottom: 10 }}>Upiši svaki put kad neko uzme novac iz kase (vlasnik, plaćanje dostavljaču…). U kasi sada treba biti {km(kasaTreba)} KM.</div>
+      <div className="lab">KOLIKO (KM)</div>
+      <input className="inp" data-testid="uzeto-iznos" inputMode="decimal" autoFocus value={iznos} placeholder="0,00" style={{ fontSize: 26, fontWeight: 700, textAlign: 'center' }}
+        onChange={e => setIznos(e.target.value.replace(/[^\d.,]/g, '').slice(0, 9))} />
+      <div className="lab" style={{ marginTop: 12 }}>KO JE UZEO</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {osobe.map(o => <button key={o} className={'chip' + (osoba === o ? ' on' : '')} style={{ minWidth: 80 }} onClick={() => setOsoba(o)}>{o}</button>)}
+      </div>
+      <div className="lab" style={{ marginTop: 12 }}>ZAŠTO (NIJE OBAVEZNO)</div>
+      <input className="inp" value={nap} maxLength={120} placeholder="npr. plaćena dostava pića" onChange={e => setNap(e.target.value)} />
+      <button className="btn" style={{ marginTop: 14 }} disabled={!(n > 0) || !osoba} onClick={() => zapisi(osoba, String(n), nap.trim())}>
+        {n > 0 ? 'Zapiši: ' + osoba + ' uzeo ' + km(n) + ' KM' : 'Upiši iznos'}
+      </button>
+    </Sheet>
+  );
+}
+
+/** Broj koji "teče" do nove vrijednosti (animacija). */
+function AnimBroj({ v }) {
+  const [prikaz, setPrikaz] = useState(v);
+  const od = useRef(v);
+  useEffect(() => {
+    const start = od.current, cilj = v;
+    if (start === cilj) return;
+    let raf, t0 = null;
+    const korak = t => {
+      if (t0 === null) t0 = t;
+      const k = Math.min(1, (t - t0) / 380);
+      const e = 1 - Math.pow(1 - k, 3);
+      setPrikaz(start + (cilj - start) * e);
+      if (k < 1) raf = requestAnimationFrame(korak); else od.current = cilj;
+    };
+    raf = requestAnimationFrame(korak);
+    return () => { cancelAnimationFrame(raf); od.current = cilj; setPrikaz(cilj); };
+  }, [v]);
+  return <span className="animbroj">{km(prikaz)}</span>;
+}
+
+/** Animirana kvačica (sve se poklapa). */
+function Kvacica({ v }) {
+  const n = v || 64;
+  return (
+    <svg className="kvacica" width={n} height={n} viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="29" fill="none" stroke="var(--green)" strokeWidth="3" />
+      <path d="M19 33 L28 42 L46 23" fill="none" stroke="var(--green)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -1233,6 +1381,11 @@ function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGo
       {provjereno && kasaOk && (
         <>
           <div className="card">
+            {(pr.kasaPocetna > 0 || pr.uzeto > 0) && <>
+              <div className="ln"><span>Na početku smjene</span><b>{km(pr.kasaPocetna)} KM</b></div>
+              <div className="ln"><span>+ Promet</span><b>{km(pr.promet)} KM</b></div>
+              {pr.uzeto > 0 && <div className="ln"><span>− Uzeto iz kase</span><b>{km(pr.uzeto)} KM</b></div>}
+            </>}
             <div className="ln"><span>Treba biti u kasi</span><b>{km(pr.kasaOcekivano)} KM</b></div>
             <div className="ln"><span>Upisao si</span><b>{km(Number(String(kasa).replace(',', '.')))} KM</b></div>
             <div className="ln" style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 9 }}>
@@ -1279,6 +1432,7 @@ function DetaljRazlike({ s }) {
       <div className="ln"><span>Početno</span><b>{s.pocetno}</b></div>
       <div className="ln"><span>Dopunjeno</span><b>{s.dopunjeno}</b></div>
       <div className="ln"><span>Prodano (klikovi)</span><b>{s.prodano_klik}</b></div>
+      {s.potroseno ? <div className="ln"><span>Potrošilo osoblje</span><b>{s.potroseno}</b></div> : null}
       <div className="ln"><span>Očekivano završno</span><b>{s.ocekivano}</b></div>
       <div className="ln"><span>Stvarno završno</span><b>{s.stvarno}</b></div>
       <div className="ln"><span>Prodano po inventuri</span><b>{s.prodano_inventura}</b></div>
@@ -1317,6 +1471,9 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
 
   return (
     <div className="wrap" style={{ paddingBottom: 32 }}>
+      {!uAdminu && !izv.bez_brojanja && problemi.length === 0 && !izv.kasa_razlika && (
+        <div className="savrseno"><Kvacica v={72} /><div style={{ fontSize: 19, fontWeight: 700, marginTop: 10 }}>Sve se poklapa!</div><div className="sit">Roba i kasa su tačni. Odlična smjena 👏</div></div>
+      )}
       <div className="card" style={{ borderColor: izv.status === 'OPEN' ? 'var(--gold)' : 'var(--green)' }}>
         <div className="lab" style={{ color: izv.status === 'OPEN' ? 'var(--gold)' : 'var(--green)' }}>{izv.status === 'OPEN' ? 'SMJENA U TOKU' : 'SMJENA ZAVRŠENA'}</div>
         <div style={{ fontSize: 21, fontWeight: 600 }}>{izv.radnik}</div>
@@ -1330,13 +1487,18 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
         </div>
         <div className="box">
           <div className="lab">PROMET</div>
-          <div className="big" style={{ color: 'var(--gold)' }} data-testid="izv-promet">{km(izv.promet)}<span style={{ fontSize: 12, color: 'var(--dim)', marginLeft: 4 }}>KM</span></div>
+          <div className="big" style={{ color: 'var(--gold)' }} data-testid="izv-promet"><AnimBroj v={izv.promet} /><span style={{ fontSize: 12, color: 'var(--dim)', marginLeft: 4 }}>KM</span></div>
         </div>
       </div>
 
       {izv.kasa_stvarno !== null && izv.kasa_stvarno !== undefined && (
         <div className="card" style={{ borderColor: izv.kasa_razlika ? 'var(--red)' : 'var(--line)' }}>
           <div className="lab">KASA</div>
+          {(izv.kasa_pocetna > 0 || izv.uzeto_iz_kase > 0) && <>
+            <div className="ln"><span>Na početku</span><b>{km(izv.kasa_pocetna)} KM</b></div>
+            <div className="ln"><span>+ Promet</span><b>{km(izv.promet)} KM</b></div>
+            {izv.uzeto_iz_kase > 0 && <div className="ln"><span>− Uzeto iz kase</span><b>{km(izv.uzeto_iz_kase)} KM</b></div>}
+          </>}
           <div className="ln"><span>Treba biti</span><b>{km(izv.kasa_ocekivano)} KM</b></div>
           <div className="ln"><span>U kasi</span><b>{km(izv.kasa_stvarno)} KM</b></div>
           <div className="ln"><span>Razlika</span><b data-testid="kasa-razlika" style={{ color: izv.kasa_razlika ? 'var(--red)' : 'var(--green)' }}>{izv.kasa_razlika ? km(izv.kasa_razlika) + ' KM' : '✓ 0,00 KM'}</b></div>
@@ -1363,6 +1525,14 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
         <div className="card">
           <div className="lab">KARTE, ČLANARINE I USLUGE</div>
           {izv.usluge.map(u => <div className="ln" key={u.product_id}><span>{u.naziv}</span><b>{u.kom} kom · {km(u.km)} KM</b></div>)}
+        </div>
+      )}
+
+      {((izv.potrosnja || []).length > 0 || (izv.kasa_izlazi || []).length > 0) && (
+        <div className="card">
+          <div className="lab">OSOBLJE I VLASNICI</div>
+          {(izv.potrosnja || []).map((x, i) => <div className="ln" key={'p' + i}><span>☕ {x.osoba} — {x.naziv}</span><b>{x.kom} kom <span className="sit">({km(x.nabavna)} KM nab.)</span></b></div>)}
+          {(izv.kasa_izlazi || []).map((x, i) => <div className="ln" key={'k' + i}><span>💶 {x.osoba} uzeo iz kase{x.napomena ? ' — ' + x.napomena : ''}<div className="sit">{x.vrijeme}</div></span><b>{km(x.iznos)} KM</b></div>)}
         </div>
       )}
 
@@ -1476,7 +1646,8 @@ function AdminDanas({ d, pin, osvjezi, pokaziToast }) {
         <div className={o.stara ? 'err' : 'card'} style={o.stara ? {} : { borderColor: 'var(--gold)' }}>
           <div className="lab" style={{ color: o.stara ? 'var(--red)' : 'var(--gold)' }}>{o.stara ? '⚠ SMJENA OTVORENA PREDUGO' : 'SMJENA U TOKU'}</div>
           <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>{o.radnik} · od {o.od} ({dT(o.datum)})</div>
-          <div className="sit">{o.sati} h · {o.kom} kom · {km(o.promet)} KM</div>
+          <div className="sit">{o.sati} h · {o.kom} kom · promet {km(o.promet)} KM</div>
+          {o.kasa_treba !== undefined && <div style={{ marginTop: 6, color: 'var(--text)', fontSize: 14 }}>💶 U kasi sada treba biti <b style={{ color: 'var(--gold)' }}>{km(o.kasa_treba)} KM</b> <span className="sit">(početno {km(o.kasa_pocetna)}{o.uzeto_iz_kase ? ', uzeto ' + km(o.uzeto_iz_kase) : ''})</span></div>}
           {o.stara && <div style={{ marginTop: 8, color: 'var(--text)', fontSize: 13 }}>Vjerovatno je zaboravljeno zatvaranje. Najbolje je da radnik sam završi smjenu s brojanjem. Ako to nije moguće, zatvori je ovdje.</div>}
           {!zatvaranje && <button className="btn2" style={{ marginTop: 10 }} onClick={() => setZatvaranje(true)}>Zatvori bez brojanja…</button>}
           {zatvaranje && <>
@@ -1503,9 +1674,35 @@ function AdminDanas({ d, pin, osvjezi, pokaziToast }) {
       {(d.clanovi.istice.length > 0 || d.clanovi.istekli.length > 0) && (
         <div className="warn">Članarine: {d.clanovi.istice.length} ističe u narednih 5 dana, {d.clanovi.istekli.length} isteklo. Vidi tab „Članovi".</div>
       )}
+      <AdminOsoblje d={d} />
       {(d.proizvodi || []).some(p => p.dodao) && <div className="warn">★ Radnik je dodao novi proizvod: {(d.proizvodi || []).filter(p => p.dodao).map(p => p.naziv).join(', ')}. Provjeri cijenu i upiši nabavnu u tabu „Proizvodi".</div>}
       {d.zalihe.some(z => z.nisko) && <div className="warn">Nisko na zalihi: {d.zalihe.filter(z => z.nisko).map(z => z.naziv + ' (' + z.kolicina + ')').join(', ')}</div>}
     </>
+  );
+}
+
+function AdminOsoblje({ d }) {
+  const [gr, setGr] = useState('danas');
+  const lista = (d.osoblje && d.osoblje[gr]) || [];
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="lab" style={{ marginBottom: 0 }}>☕ POTROŠNJA I 💶 UZETO — OSOBLJE / VLASNICI</div>
+      </div>
+      <div className="tabs" style={{ margin: '10px 0 6px' }}>
+        <button className={gr === 'danas' ? 'on' : ''} onClick={() => setGr('danas')}>Danas</button>
+        <button className={gr === 'mjesec' ? 'on' : ''} onClick={() => setGr('mjesec')}>Ovaj mjesec</button>
+      </div>
+      {!lista.length && <div className="sit">Ništa zabilježeno.</div>}
+      {lista.map(o => (
+        <div key={o.osoba} style={{ padding: '8px 0', borderTop: '1px solid rgba(255,255,255,.06)' }}>
+          <div className="ln" style={{ padding: 0 }}><span style={{ fontWeight: 600 }}>{o.osoba}</span>
+            <b>{o.kom ? o.kom + ' kom · ' + km(o.nabavna) + ' KM' : ''}{o.kom && o.uzeto ? ' · ' : ''}{o.uzeto ? 'uzeo ' + km(o.uzeto) + ' KM' : ''}</b></div>
+          {o.stavke.length > 0 && <div className="sit">{o.stavke.map(x => x.kom + '× ' + x.naziv).join(', ')}</div>}
+        </div>
+      ))}
+      <div className="sit" style={{ marginTop: 6 }}>Potrošnja je po nabavnoj cijeni (+3% prevoz). Ne ulazi u kasu ni u promet.</div>
+    </div>
   );
 }
 

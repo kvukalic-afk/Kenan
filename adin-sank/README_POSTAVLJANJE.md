@@ -103,6 +103,13 @@ Najlakše u aplikaciji: **Vlasnik › → Proizvodi** (+ Novi proizvod, klik na 
 - Uređuje se u **Vlasnik → Raspored**: "+ Novi termin" ili klik na postojeći → osobe, vrijeme, trener, dani i za **svaki dan** šta se trenira.
 - Podaci su u tabu **TRENINZI** u Sheetu (jedan red = jedan termin u jednom danu).
 
+## 10c. Kasa, potrošnja osoblja i uzeto iz kase
+
+- Na početku smjene radnik upiše **gotovinu u kasi**. Na kraju: **u kasi treba biti = početno + promet − uzeto iz kase**.
+- **☕ Potrošnja osoblja**: ko je šta popio/uzeo (npr. Edin 1× Protein). Ne ide u kasu ni promet, ali se skida sa zalihe — pa robe ne "fali".
+- **💶 Uzeto iz kase**: ko je uzeo koliko novca i zašto.
+- Vlasnik → **Danas**: kartica "Potrošnja i uzeto" po osobi, danas i ovaj mjesec (vrijednost po nabavnoj cijeni).
+
 ## 11. Provjera da sve radi (5 minuta)
 
 Uradi ovo jednom nakon postavljanja (poslije možeš obrisati redove testa iz SMJENE/DOGADJAJI/INVENTURA):

@@ -306,3 +306,48 @@ test('raspored treninga: primjer Enes (ned–čet 19h), uređivanje po danima, b
   g.setupSpreadsheet();
   assert.ok(!ok(g.getBootstrap()).raspored.some(x => x.termin_id === 'T-enes'));
 });
+
+test('kasa na početku + potrošnja osoblja + uzeto iz kase: tačan obračun kase i zalihe', () => {
+  const g = okruzenje();
+  assert.equal(g.startShift({ shift_id: 'X', radnik: 'Edin', pocetna: pocetno(g), kasa_pocetna: '-5' }).code, 'KASA');
+  const s = ok(g.startShift({ shift_id: 'K1', radnik: 'Edin', pocetna: pocetno(g, { protein: 10, redbull: 6 }), kasa_pocetna: '50,00' }));
+  assert.equal(s.smjena.kasa_pocetna, 50);
+  const r = ok(g.pushEvents('K1', [
+    { event_id: 'a1', shift_id: 'K1', tip: 'SALE', product_id: 'redbull', kolicina: 1 },                 // +4 KM
+    { event_id: 'a2', shift_id: 'K1', tip: 'POTROSNJA', product_id: 'protein', kolicina: 2, osoba: 'Edin' },
+    { event_id: 'a3', shift_id: 'K1', tip: 'POTROSNJA', product_id: 'redbull', kolicina: 1, osoba: 'Kenan' },
+    { event_id: 'a4', shift_id: 'K1', tip: 'POTROSNJA', product_id: 'protein', kolicina: -1, osoba: 'Edin' }, // ispravka
+    { event_id: 'a5', shift_id: 'K1', tip: 'POTROSNJA', product_id: 'protein', kolicina: -5, osoba: 'Edin' }, // više nego što ima
+    { event_id: 'a6', shift_id: 'K1', tip: 'POTROSNJA', product_id: 'protein', kolicina: 1 },                 // bez osobe
+    { event_id: 'a7', shift_id: 'K1', tip: 'POTROSNJA', product_id: 'dnevna', kolicina: 1, osoba: 'Edin' },   // nije roba
+    { event_id: 'a8', shift_id: 'K1', tip: 'KASA_IZLAZ', iznos: '20', osoba: 'Kenan', napomena: 'za struju' },
+    { event_id: 'a9', shift_id: 'K1', tip: 'KASA_IZLAZ', iznos: '0', osoba: 'Kenan' }
+  ]));
+  assert.deepEqual(r.primljeno, ['a1', 'a2', 'a3', 'a4', 'a8']);
+  assert.deepEqual(r.odbijeni.map(o => o.code), ['NEMA_STA_PONISTITI', 'OSOBA', 'NE_PRATI_ZALIHU', 'IZNOS']);
+  // protein: 10 − 1 (Edin neto) = 9 ; red bull: 6 − 1 prodan − 1 Kenan = 4 ; kasa: 50 + 4 − 20 = 34
+  const z = ok(g.closeShift('K1', pocetno(g, { protein: 9, redbull: 4 }), '34', ''));
+  const iz = z.izvjestaj;
+  assert.equal(iz.broj_razlika, 0, 'potrošnja nije manjak');
+  assert.equal(iz.kasa_pocetna, 50);
+  assert.equal(iz.uzeto_iz_kase, 20);
+  assert.equal(iz.kasa_ocekivano, 34);
+  assert.equal(iz.kasa_razlika, 0);
+  assert.equal(iz.promet, 4, 'potrošnja i uzeto ne utiču na promet');
+  assert.deepEqual(iz.potrosnja.map(x => x.osoba + ':' + x.naziv + ':' + x.kom), ['Edin:Protein:1', 'Kenan:Red Bull:1']);
+  assert.equal(iz.potrosnja[0].nabavna, 2.37); // 2,30 × 1,03
+  assert.equal(iz.kasa_izlazi[0].napomena, 'za struju');
+  const pr = iz.stavke.find(x => x.product_id === 'protein');
+  assert.deepEqual([pr.potroseno, pr.ocekivano, pr.prodano_inventura], [1, 9, 0]);
+  const sm = g.__tabela('SMJENE')[0];
+  assert.deepEqual([sm.kasa_pocetna, sm.kasa_ocekivano, sm.uzeto_iz_kase], [50, 34, 20]);
+  assert.equal(g.__tabela('INVENTURA').find(x => x.product_id === 'protein').potroseno, 1);
+  // vlasnik vidi ko je koliko potrošio / uzeo
+  const a = ok(g.getAdminData('2580'));
+  const edin = a.osoblje.mjesec.find(o => o.osoba === 'Edin');
+  const kenan = a.osoblje.mjesec.find(o => o.osoba === 'Kenan');
+  assert.equal(edin.kom, 1);
+  assert.deepEqual(edin.stavke, [{ naziv: 'Protein', kom: 1 }]);
+  assert.equal(kenan.uzeto, 20);
+  assert.equal(kenan.nabavna, 2.37);
+});

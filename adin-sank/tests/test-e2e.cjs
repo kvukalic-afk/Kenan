@@ -96,6 +96,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     assert.equal(await dugme.isDisabled(), true);
     await upisiBrojanje(page, { redbull: 10, voda05: 15 });
     await page.screenshot({ path: path.join(SLIKE, '2-pocetna.png'), fullPage: false });
+    await page.getByTestId('kasa-pocetna').fill('0');
     await page.getByRole('button', { name: 'ZAPOČNI SMJENU' }).click();
 
     /* ── 3. Prodaja ── */
@@ -103,7 +104,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await tap(page, 'redbull', 2);
     await tap(page, 'voda05', 3);
     assert.match(await page.getByTestId('undo').textContent(), /Voda 0,5 L \+1 \(×3\)/);
-    assert.match(await page.getByTestId('promet').textContent(), /11,00/);
+    await page.getByTestId('promet').filter({ hasText: '11,00' }).waitFor();
     await page.screenshot({ path: path.join(SLIKE, '3-smjena.png') });
 
     // Dopuna Red Bull +5
@@ -135,7 +136,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
 
     /* ── 5. Izvještaj ── */
     await page.getByTestId('izv-promet').waitFor();
-    assert.match(await page.getByTestId('izv-promet').textContent(), /11,00/);
+    await page.getByTestId('izv-promet').filter({ hasText: '11,00' }).waitFor();
     assert.match(await page.getByTestId('poklapa').textContent(), /11 proizvoda se poklapa/);
     assert.match(await page.getByTestId('razlike').textContent(), /1 proizvod ima razliku · −4,00 KM/);
     assert.match(await page.getByTestId('razlika-redbull').textContent(), /-1 kom · −4,00 KM/);
@@ -162,6 +163,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByRole('button', { name: 'Dodaj', exact: true }).click();
     await page.locator('input[data-pid="bang"]').waitFor();
     await upisiBrojanje(page, { redbull: 12, voda05: 12, kong: 6 });
+    await page.getByTestId('kasa-pocetna').fill('0');
     await page.getByRole('button', { name: 'ZAPOČNI SMJENU' }).click();
     await page.locator('[data-tile="kong"]').waitFor();
 
@@ -182,7 +184,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await tap(page, 'redbull', 2);
     await page.getByTestId('sync').filter({ hasText: /2 čekaju/ }).waitFor({ timeout: 8000 });
     await page.getByTestId('sync').filter({ hasText: /nema veze/ }).waitFor({ timeout: 8000 });
-    assert.match(await page.getByTestId('promet').textContent(), /8,00/);
+    await page.getByTestId('promet').filter({ hasText: '8,00' }).waitFor();
     await page.screenshot({ path: path.join(SLIKE, '6-offline.png') });
     const prije = g.__tabela('DOGADJAJI').length;
     st1.offline = false;
@@ -236,7 +238,21 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     const st2 = { offline: false, pozivi: [] };
     const t2 = await noviTelefon(browser, g, st2);
     await t2.page.getByTestId('radnik').filter({ hasText: 'Edin' }).waitFor();
-    assert.match(await t2.page.getByTestId('promet').textContent(), /98,00/);
+    await t2.page.getByTestId('promet').filter({ hasText: '98,00' }).waitFor();
+
+    // potrošnja osoblja: Edin uzme Red Bull (ne ide u kasu), Kenan uzme 10 KM iz kase
+    await page.getByRole('button', { name: '☕ Potrošnja osoblja' }).click();
+    await page.locator('[data-osoba="Edin"]').click();
+    await page.locator('[data-potrosnja="redbull"]').click();
+    await page.getByRole('button', { name: 'Gotovo', exact: true }).click();
+    await page.getByRole('button', { name: '💶 Uzeto iz kase' }).click();
+    await page.getByTestId('uzeto-iznos').fill('10');
+    await page.getByRole('button', { name: /Zapiši: Kenan uzeo 10,00 KM/ }).click();
+    await page.getByTestId('promet').filter({ hasText: '88,00' }).waitFor();
+    await cekajSync(page);
+    const dd = g.__tabela('DOGADJAJI');
+    assert.ok(dd.some(d => d.tip_dogadjaja === 'POTROSNJA' && d.osoba === 'Edin' && d.product_id === 'redbull'));
+    assert.ok(dd.some(d => d.tip_dogadjaja === 'KASA_IZLAZ' && d.osoba === 'Kenan' && d.cijena === 10));
 
     // telefon 1 offline proda još jedan; u međuvremenu vlasnik (telefon 2) zatvori smjenu bez brojanja
     st1.offline = true;

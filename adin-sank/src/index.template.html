@@ -141,6 +141,44 @@
   .listbtn{width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px; min-height:56px;
     padding:10px 14px; background:none; border:none; border-bottom:1px solid var(--line); color:var(--text); text-align:left; font-size:15.5px;}
   .listbtn:last-child{border-bottom:none;}
+
+  /* ── animacije ── */
+  @keyframes ulaz{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+  @keyframes fade{from{opacity:0} to{opacity:1}}
+  @keyframes gore{from{transform:translateY(100%)} to{transform:none}}
+  @keyframes dole{from{opacity:0; transform:translateY(-14px)} to{opacity:1; transform:none}}
+  @keyframes skok{0%{transform:scale(1)} 35%{transform:scale(.93)} 70%{transform:scale(1.03)} 100%{transform:scale(1)}}
+  @keyframes val{from{opacity:.55; transform:translate(-50%,-50%) scale(0)} to{opacity:0; transform:translate(-50%,-50%) scale(2.6)}}
+  @keyframes bump{0%{transform:scale(.4)} 60%{transform:scale(1.3)} 100%{transform:scale(1)}}
+  @keyframes crtaj{from{stroke-dashoffset:var(--d)} to{stroke-dashoffset:0}}
+  @keyframes sjaj{0%,100%{box-shadow:0 0 0 0 rgba(95,176,122,0)} 50%{box-shadow:0 0 28px 2px rgba(95,176,122,.35)}}
+  @keyframes puls{0%,100%{transform:scale(1); opacity:1} 50%{transform:scale(1.06); opacity:.85}}
+  .wrap{animation:ulaz .34s cubic-bezier(.2,.8,.2,1) both;}
+  .grid > *{animation:ulaz .38s cubic-bezier(.2,.8,.2,1) both;}
+  .grid > *:nth-child(2){animation-delay:.03s} .grid > *:nth-child(3){animation-delay:.06s} .grid > *:nth-child(4){animation-delay:.09s}
+  .grid > *:nth-child(5){animation-delay:.12s} .grid > *:nth-child(6){animation-delay:.15s} .grid > *:nth-child(n+7){animation-delay:.18s}
+  .ovl{animation:fade .2s ease both;}
+  .sheet{animation:gore .32s cubic-bezier(.2,.9,.25,1) both;}
+  .undo{animation:ulaz .25s ease both;}
+  .toast{animation:dole .28s cubic-bezier(.2,.8,.2,1) both;}
+  .tile{overflow:visible;}
+  .tile.hit{animation:skok .32s ease;}
+  .tile.hit::after{content:''; position:absolute; left:50%; top:50%; width:90px; height:90px; border-radius:50%;
+    background:radial-gradient(circle, rgba(232,163,61,.55), rgba(232,163,61,0) 70%); pointer-events:none; animation:val .5s ease-out forwards;}
+  .badge{animation:bump .35s cubic-bezier(.3,1.6,.5,1);}
+  .splash svg{animation:puls 1.4s ease-in-out infinite;}
+  .card.trening{animation:ulaz .45s .1s cubic-bezier(.2,.8,.2,1) both;}
+  .animbroj{font-variant-numeric:tabular-nums;}
+  .kvacica circle{--d:190; stroke-dasharray:190; animation:crtaj .6s ease-out both;}
+  .kvacica path{--d:50; stroke-dasharray:50; animation:crtaj .4s .45s ease-out both;}
+  .savrseno{display:flex; flex-direction:column; align-items:center; text-align:center; padding:22px 16px; border-radius:16px;
+    border:1px solid rgba(95,176,122,.5); background:linear-gradient(180deg,rgba(95,176,122,.12),rgba(95,176,122,.02)); animation:sjaj 2.4s ease-in-out 2;}
+  .kasa-card.prazno{border-color:rgba(232,163,61,.55);}
+  .tile.mala{min-height:76px; padding:12px 11px 10px;}
+  .tile.mala .nm{font-size:14px;}
+  .tile .minus{padding:4px 10px; border-radius:8px; border:1px solid rgba(229,84,75,.5); color:var(--red); font-size:12px; font-weight:700;}
+  .tile:disabled{opacity:.4;}
+  @media (prefers-reduced-motion: reduce){ *, *::before, *::after{animation:none !important; transition:none !important;} }
 </style>
 </head>
 <body>
