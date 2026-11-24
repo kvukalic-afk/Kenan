@@ -610,3 +610,4 @@ section > .naslov-sekcije:first-child { margin-top: 22px; }
 .pin-polje { -webkit-text-security: disc; letter-spacing: 0.3em; font-size: 1.2rem; }
 .novi-pin { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 .novi-pin input { text-align: center; color: var(--tekst); }
+.osnov { font-size: 0.74rem; color: var(--tekst-blijed); margin-top: 3px; font-style: italic; line-height: 1.35; }

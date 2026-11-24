@@ -16,7 +16,8 @@ export function useKontrola(godina?: number): { k: KontekstKontrole; stanje: Sta
     return { plan, razgovori, aktivnosti, obrasci, rucno };
   }, [g]);
   if (!podaci) return null;
-  const k = kontekst(g, danasIso(), { plan: podaci.plan, razgovori: podaci.razgovori, aktivnosti: podaci.aktivnosti, obrasci: podaci.obrasci, zadnjaKopija: postavke.zadnjaKopija });
+  const k = kontekst(g, danasIso(), { plan: podaci.plan, razgovori: podaci.razgovori, aktivnosti: podaci.aktivnosti, obrasci: podaci.obrasci, zadnjaKopija: postavke.zadnjaKopija,
+    pocetakRada: postavke.pocetakRada ?? '', pripravnik: !!postavke.pripravnik });
   return { k, stanje: stanjeKontrole(k, podaci.rucno) };
 }
 

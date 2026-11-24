@@ -29,8 +29,31 @@ describe('kontrolna lista za inspekciju', () => {
     expect(tekst).toContain('[x] Godišnji program rada psihologa');
     expect(tekst).not.toContain('U1');
   });
-  it('sve stavke imaju jedinstven ključ i rok', () => {
+  it('novozaposleni: rokovi od dolaska, mjesečne obaveze od mjeseca dolaska, pripravnik', () => {
+    const k = kontekst(2026, '2026-11-24', { ...prazno, pocetakRada: '2026-11-16', pripravnik: true });
+    const s = stanjeKontrole(k, []);
+    const po = (kljuc: string) => s.find((x) => x.def.kljuc === kljuc);
+    expect(po('program')).toMatchObject({ rok: '2026-12-16', kasni: false });
+    expect(po('dnevnik')).toBeUndefined(); // oktobar je prije dolaska
+    expect(po('mjesecni')?.rok).toBe('2026-11-23'); // prvi mjesec: 7 dana od dolaska
+    expect(po('pripravnik-rjesenje')).toMatchObject({ rok: '2026-11-24', kasni: false });
+    expect(po('primopredaja')?.rok).toBe('2026-12-01');
+    expect(po('teskoce')?.rok).toBe('2026-12-16');
+    expect(po('upis')).toBeUndefined(); // od 01.03.
+    expect(sazetakStanjaZaAI(k, s)).toContain('od 16.11.2026');
+    // bez datuma dolaska i bez pripravništva: nema stavki za početak
+    const s2 = stanjeKontrole(kontekst(2026, '2026-11-24', prazno), []);
+    expect(s2.some((x) => x.def.grupa === 'pocetak')).toBe(false);
+    // u decembru se traži dnevnik za novembar
+    const s3 = stanjeKontrole(kontekst(2026, '2026-12-02', { ...prazno, pocetakRada: '2026-11-16' }), []);
+    expect(s3.find((x) => x.def.kljuc === 'dnevnik')?.id).toBe('2026:dnevnik:2026-11');
+  });
+  it('sve stavke imaju jedinstven ključ, rok, grupu i osnov', () => {
     expect(new Set(KONTROLNA_LISTA.map((d) => d.kljuc)).size).toBe(KONTROLNA_LISTA.length);
-    for (const d of KONTROLNA_LISTA) expect(d.rok(2026, '2026-11')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    for (const d of KONTROLNA_LISTA) {
+      expect(d.rok(2026, '2026-11')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(d.osnov.length).toBeGreaterThan(5);
+      expect(d.grupa).toBeTruthy();
+    }
   });
 });

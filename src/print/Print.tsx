@@ -14,6 +14,8 @@ import { definicija, popuniUvod } from '../lib/obrasci';
 import { brojPerioda, nazivDana, naslovIzvjestaja, opisPerioda, sazetakPerioda, stavkePerioda, vrstaPerioda } from '../lib/periodIzvjestaj';
 import { procitajTekst } from '../screens/IzvjestajPeriod';
 import { punoIme, type Aktivnost, type Analiza, type PopunjenObrazac, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
+import { GRUPE } from '../lib/dokumentacija';
+import { useKontrola } from '../lib/useKontrola';
 import './print.css';
 
 function Dokument({ naslov, podnaslov, nazivFajla, postavke, children }: {
@@ -669,6 +671,40 @@ export function PrintUsavrsavanje({ godina }: { godina: number }) {
         </table>
       )}
       <p style={{ fontSize: '9pt' }}>Uz evidenciju se prilažu potvrde/certifikati o učešću.</p>
+    </Dokument>
+  );
+}
+
+export function PrintDokumentacija({ godina }: { godina: number }) {
+  const postavke = usePostavke();
+  const kon = useKontrola(godina);
+  if (!kon) return <Ucitavanje />;
+  let rb = 0;
+  return (
+    <Dokument naslov="PREGLED OBAVEZNE DOKUMENTACIJE PSIHOLOGA" podnaslov={`Školska ${nazivSkolskeGodine(godina)}. godina · stanje na dan ${prikaz(danasIso())}`} nazivFajla={`Dokumentacija_psihologa_${godina}-${godina + 1}`} postavke={postavke}>
+      {kon.k.pocetakRada && <p style={{ fontSize: '9.5pt' }}>Psiholog radi u školi od {prikaz(kon.k.pocetakRada)}{kon.k.pripravnik ? ' (pripravnik)' : ''}. Rokovi za obaveze koje su dospjele prije dolaska računaju se od dana početka rada.</p>}
+      <table className="lista-tab">
+        <thead><tr><th style={{ width: '5%' }}>R. br.</th><th style={{ width: '33%' }}>Dokument / obaveza</th><th>Pravni osnov</th><th style={{ width: '12%' }}>Rok</th><th style={{ width: '11%' }}>Stanje</th></tr></thead>
+        <tbody>
+          {GRUPE.map((g) => {
+            const stavke = kon.stanje.filter((s) => s.def.grupa === g.kljuc).sort((a, b) => a.rok.localeCompare(b.rok));
+            if (!stavke.length) return null;
+            return [
+              <tr key={g.kljuc} className="zbir"><td colSpan={5}>{g.naziv}</td></tr>,
+              ...stavke.map((s) => (
+                <tr key={s.id}>
+                  <td className="n">{++rb}.</td>
+                  <td className="tekst-celija"><strong>{s.def.naziv}</strong><br /><span style={{ fontSize: '8.5pt' }}>{s.def.opis}</span></td>
+                  <td className="tekst-celija" style={{ fontSize: '8.5pt' }}>{s.def.osnov}</td>
+                  <td>{prikaz(s.rok)}{s.def.ponavljanje === 'mjesecno' ? <><br /><span style={{ fontSize: '8pt' }}>(svaki mjesec)</span></> : null}</td>
+                  <td>{s.gotovo ? '✓ urađeno' : s.kasni ? 'kasni' : '☐'}</td>
+                </tr>
+              )),
+            ];
+          })}
+        </tbody>
+      </table>
+      <p style={{ fontSize: '8.5pt' }}>Napomena: obaveze označene kao „dobra praksa“ nisu izričito propisane, ali ih inspekcija i Pedagoški zavod uobičajeno očekuju. Izvori: Zakon o osnovnom odgoju i obrazovanju USK (Sl. glasnik USK 19/2023), Pedagoški standardi i normativi za osnovno obrazovanje USK (Sl. glasnik USK 20/2024, čl. 13).</p>
     </Dokument>
   );
 }

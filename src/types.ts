@@ -147,6 +147,10 @@ export interface Postavke {
   pinDuzina?: number;
   /** Nakon koliko sekundi van appa se traži PIN (0 ili prazno = odmah). */
   zakljucajNakonSek?: number;
+  /** datum početka rada u ovoj školi (YYYY-MM-DD) – pomjera rokove za novozaposlenog */
+  pocetakRada?: string;
+  /** prvo zaposlenje u školi (pripravnički staž) */
+  pripravnik?: boolean;
   imenaUDokumentima?: boolean; // imena učenika u printu i Excelu (zadano: da)
   zadnjaKopija: string; // ISO ili ''
   updatedAt: string;

@@ -26,7 +26,7 @@ import { AnalizaDetalj } from './screens/AnalizaDetalj';
 import { Obrazac } from './screens/Obrazac';
 import { Dokumentacija } from './screens/Dokumentacija';
 import { Asistent } from './screens/Asistent';
-import { PrintAktivnost, PrintAnaliza, PrintDnevnik, PrintObrazac, PrintUsavrsavanje, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
+import { PrintAktivnost, PrintAnaliza, PrintDnevnik, PrintDokumentacija, PrintObrazac, PrintUsavrsavanje, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
 import type { Period } from './lib/statistika';
 
 const NEAKTIVNOST_MS = 5 * 60 * 1000;
@@ -178,6 +178,7 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
       : d1 === 'obrazac' ? <PrintObrazac id={d2} />
       : d1 === 'analiza' ? <PrintAnaliza id={d2} />
       : d1 === 'usavrsavanje' ? <PrintUsavrsavanje godina={Number(d2)} />
+      : d1 === 'dokumentacija' ? <PrintDokumentacija godina={Number(d2)} />
       : d1 === 'plan' ? <PrintPlan godina={Number(d2)} mjesec={d3} />
       : d1 === 'dnevnik' ? <PrintDnevnik mjesec={d2} />
       : d1 === 'period' ? <PrintPeriod od={d2} do={d3} biljeske={ruta.upit.get('biljeske') === '1'} />

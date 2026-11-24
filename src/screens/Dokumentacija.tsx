@@ -3,17 +3,18 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { obrisi, uuid } from '../db/repo';
 import { Ikona } from '../components/Ikona';
-import { Modal, Polje, Potvrda, Prazno } from '../components/Polja';
+import { DatumPolje, Modal, Polje, Potvrda, Prazno } from '../components/Polja';
 import { Zaglavlje } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { prikaz } from '../lib/datum';
-import { IZVORI, PROPIS_TEKST, spremnost } from '../lib/dokumentacija';
+import { GRUPE, IZVORI, PROPIS_TEKST, spremnost } from '../lib/dokumentacija';
 import { definicija, OBRASCI } from '../lib/obrasci';
 import { PODRUCJA } from '../lib/podrucja';
-import { useImenik } from '../lib/podaci';
+import { useImenik, usePostavke } from '../lib/podaci';
+import { sacuvajPostavke } from '../db/repo';
 import { idi } from '../lib/router';
 import { potvrdiStavku, useKontrola } from '../lib/useKontrola';
-import { punoIme, type MojDokument } from '../types';
+import { punoIme, type MojDokument, type Postavke } from '../types';
 
 type Tab = 'spremnost' | 'obrasci' | 'dokumenti' | 'propisi';
 const TABOVI: [Tab, string][] = [['spremnost', 'Spremnost'], ['obrasci', 'Obrasci'], ['dokumenti', 'Moji dokumenti'], ['propisi', 'Propisi']];
@@ -58,29 +59,69 @@ function Spremnost() {
           <a className="chip ai-chip mali" href="#/asistent?pitanje=inspekcija" style={{ marginTop: 8, display: 'inline-flex' }}>🤖 Pitaj AI šta mi fali</a>
         </div>
       </section>
-      <ul className="kontrolna">
-        {stanje.map((s) => (
-          <li key={s.id} className={`${s.gotovo ? 'gotovo' : ''} ${s.kasni ? 'kasni' : ''}`}>
-            <button type="button" className="kvacica-dugme" aria-pressed={s.gotovo} aria-label={`${s.def.naziv}: ${s.gotovo ? 'urađeno' : 'nije urađeno'}`}
-              onClick={async () => { await potvrdiStavku(s.id, !s.rucno); toast(!s.rucno ? 'Označeno ✓' : 'Vraćeno'); }}>
-              {s.gotovo ? '✓' : ''}
-            </button>
-            <div className="rastegni">
-              <strong>{s.def.naziv}</strong>
-              <div className="malo blijedo">{s.def.opis}</div>
-              <div className="malo" style={{ marginTop: 4 }}>
-                <span className={`oznaka ${s.gotovo ? 'zelena' : s.kasni ? 'crvena' : s.danaDoRoka <= 7 ? 'narandzasta' : ''}`}>
-                  {s.gotovo ? 'urađeno' : s.kasni ? `kasni (rok ${prikaz(s.rok)})` : `rok ${prikaz(s.rok)}`}
-                </span>
-                {s.auto && <span className="blijedo"> · {s.auto.tekst}</span>}
-              </div>
-            </div>
-            {s.link && <a className="ikona-dugme" href={`#${s.link}`} aria-label={`Otvori: ${s.def.naziv}`}><Ikona ime="desno" /></a>}
-          </li>
-        ))}
-      </ul>
-      <p className="malo blijedo">Stavke se potvrđuju dodirom na kvadratić (npr. kad odštampaš i potpišeš). Neke se provjeravaju automatski iz podataka u appu. Lista je izrađena prema Pedagoškim standardima USK i uobičajenoj praksi – dopuni je prema zahtjevima svoje škole.</p>
+      <MojPocetak />
+      {GRUPE.map((g) => {
+        const stavke = stanje.filter((s) => s.def.grupa === g.kljuc);
+        if (!stavke.length) return null;
+        const gotovih = stavke.filter((s) => s.gotovo).length;
+        return (
+          <section key={g.kljuc}>
+            <div className="naslov-sekcije"><h2>{g.naziv}</h2><span className="malo blijedo">{gotovih}/{stavke.length}</span></div>
+            <ul className="kontrolna">
+              {stavke.map((s) => (
+                <li key={s.id} className={`${s.gotovo ? 'gotovo' : ''} ${s.kasni ? 'kasni' : ''}`}>
+                  <button type="button" className="kvacica-dugme" aria-pressed={s.gotovo} aria-label={`${s.def.naziv}: ${s.gotovo ? 'urađeno' : 'nije urađeno'}`}
+                    onClick={async () => { await potvrdiStavku(s.id, !s.rucno); toast(!s.rucno ? 'Označeno ✓' : 'Vraćeno'); }}>
+                    {s.gotovo ? '✓' : ''}
+                  </button>
+                  <div className="rastegni">
+                    <strong>{s.def.naziv}</strong>
+                    <div className="malo blijedo">{s.def.opis}</div>
+                    <div className="osnov">Osnov: {s.def.osnov}</div>
+                    <div className="malo" style={{ marginTop: 4 }}>
+                      <span className={`oznaka ${s.gotovo ? 'zelena' : s.kasni ? 'crvena' : s.danaDoRoka <= 7 ? 'narandzasta' : ''}`}>
+                        {s.gotovo ? 'urađeno' : s.kasni ? `kasni (rok ${prikaz(s.rok)})` : `rok ${prikaz(s.rok)}`}
+                      </span>
+                      {s.auto && <span className="blijedo"> · {s.auto.tekst}</span>}
+                    </div>
+                  </div>
+                  {s.link && <a className="ikona-dugme" href={`#${s.link}`} aria-label={`Otvori: ${s.def.naziv}`}><Ikona ime="desno" /></a>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+      <a className="dugme" href={`#/print/dokumentacija/${kon.k.godina}`} style={{ margin: '8px 0 12px' }}><Ikona ime="print" /> Štampaj pregled obavezne dokumentacije</a>
+      <p className="malo blijedo">Stavke se potvrđuju dodirom na kvadratić (npr. kad odštampaš i potpišeš). Neke se provjeravaju automatski iz podataka u appu. Uz svaku stavku piše osnov: propis (Zakon o osnovnom odgoju i obrazovanju USK, Pedagoški standardi USK) ili „dobra praksa“ kad propis to izričito ne traži. Pravilnike ministra (o dokumentaciji škole, o stručnom ispitu, o djeci s teškoćama) nisam našao javno – kad ih dobiješ, ubaci ih u „Moji dokumenti“.</p>
     </>
+  );
+}
+
+function MojPocetak() {
+  const postavke = usePostavke();
+  const [otvoreno, setOtvoreno] = useState(!postavke.pocetakRada);
+  const sacuvaj = (iz: Partial<Postavke>) => void sacuvajPostavke(iz);
+  if (!otvoreno && postavke.pocetakRada) {
+    return (
+      <p className="malo blijedo" style={{ margin: '0 0 8px' }}>
+        U školi od <strong>{prikaz(postavke.pocetakRada)}</strong>{postavke.pripravnik ? ' · pripravnik' : ''}.{' '}
+        <button type="button" className="link" onClick={() => setOtvoreno(true)}>Promijeni</button>
+      </p>
+    );
+  }
+  return (
+    <section className="kartica">
+      <h2 style={{ marginTop: 0 }}>Moj početak rada</h2>
+      <p className="malo blijedo">Za novozaposlenog app pomjera rokove: ono što je trebalo biti gotovo prije tvog dolaska dobija rok od dolaska, a mjesečne obaveze počinju od mjeseca dolaska.</p>
+      <DatumPolje labela="Počeo/la sam raditi u ovoj školi" vrijednost={postavke.pocetakRada ?? ''} onChange={(v) => sacuvaj({ pocetakRada: v })} />
+      <div className="chipovi" style={{ marginBottom: 8 }}>
+        <span className="malo blijedo" style={{ alignSelf: 'center' }}>Prvo zaposlenje u školi (pripravnik)?</span>
+        <button type="button" className="chip mali" aria-pressed={!!postavke.pripravnik} onClick={() => sacuvaj({ pripravnik: true })}>Da</button>
+        <button type="button" className="chip mali" aria-pressed={!postavke.pripravnik} onClick={() => sacuvaj({ pripravnik: false })}>Ne</button>
+      </div>
+      {postavke.pocetakRada && <button type="button" className="dugme primarno" onClick={() => setOtvoreno(false)}>Gotovo</button>}
+    </section>
   );
 }
 
