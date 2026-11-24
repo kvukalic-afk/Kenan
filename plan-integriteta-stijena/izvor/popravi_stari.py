@@ -159,7 +159,7 @@ PL = {1: '1 – neznatne', 2: '2 – značajne', 3: '3 – vrlo značajne'}
 
 # ───────── 1. Naslovna i osnovne informacije
 replace_in(find('Cazin, juni 2021'), 'juni 2021. godine', '23.11.2026. godine')
-set_text(find('Datum usvajanje plana integriteta'), f'Datum usvajanja plana integriteta {B}')
+set_text(find('Datum usvajanje plana integriteta'), 'Datum usvajanja plana integriteta 20.11.2026. godine')
 for old, new in [('1. Sabina Žunić,pedagog - koordinator radne grupe', '1. Sabina Žunić, pedagog - koordinator radne grupe'), ('3. Dženita Hepić,knjigovođa', '3. Dženita Hepić, knjigovođa'), ('5. Dževaira Džehverović, soc.radnik', '5. Dževaira Džehverović, soc. radnik')]:
     hit = [p for p in paras() if norm(p.text) == old]
     if hit: set_text(hit[0], new)
@@ -171,10 +171,10 @@ add_after(p6, '7. Kenan Vukalić, psiholog')
 set_text(find('Agencija za prevenciju korupcije i koordinaciju borbe protiv korupcije u BiH obavezala'),
          'Zakonom o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 24/25) propisana je obaveza svih javnih ustanova čiji je osnivač Unsko-sanski kanton da donesu i provode plan integriteta, u skladu sa Uputstvom za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu („Službeni glasnik Unsko-sanskog kantona“, broj 11/26) i Strategijom za borbu protiv korupcije Unsko-sanskog kantona 2023.–2027.')
 
-replace_in(find('Imajući u vidu naprijed navedeno, direktor škole je donio odluku o izradi Plana integriteta'), 'koja je pristupila izradi plana.', 'koja je pristupila izradi plana. Odlukom o izmjenama i dopunama Odluke o izradi plana integriteta broj\u00a0' + BR['odluka'] + ' od ' + B + ' godine postupak izrade usklađen je sa Zakonom o prevenciji korupcije u Unsko-sanskom kantonu i Uputstvom, a radna grupa dopunjena psihologom škole.')
+# uvod: rečenica o izradi plana ostaje kao u originalu
 
 # ───────── 3–5. Izvorni akti (Odluka 610-93/2025, Obavijest 610-94/2025, Program 610-95/2025) ostaju NEPROMIJENJENI.
-# Izmjene se uvode novom Odlukom o izmjenama i dopunama i novom obaviješću, koje se umeću iza Programa rada.
+# Nova akta se ne umeću; izvorni akti se ne mijenjaju.
 from docx.enum.text import WD_ALIGN_PARAGRAPH as _AL
 _AMAP = {'L': _AL.LEFT, 'C': _AL.CENTER, 'R': _AL.RIGHT, 'J': _AL.JUSTIFY}
 def write_block(anchor, lines):
@@ -223,8 +223,8 @@ oba = [
 ]
 _zk = find('ZAKONSKI OKVIR I INTERNI PROPISI')
 _anc = _zk._p.getprevious()
-_anc = write_block(_anc, izm)
-_anc = write_block(_anc, oba)
+# Nova akta se NE umeću (bez novih djelovodnih brojeva). Kenan Vukalić navodi se samo u novim/izmijenjenim dijelovima plana.
+# Izvorni akti 610-93/2025, 610-94/2025 i 610-95/2025 ostaju potpuno netaknuti.
 _zk.paragraph_format.page_break_before = True
 
 # ───────── 6. Zakonski okvir – dodati antikorupcijske propise
@@ -332,13 +332,13 @@ _ODL = BR['odluka'].replace('-', '‑')
 lines = [
     # (tekst, bold, prijelom prije, poravnanje: L/C/R/J)
     ('NACRT', True, True, 'R'),
-    (f'Broj: {B}', False, False, 'L'), (f'Datum: {B}', False, False, 'L'),
+    (f'Broj: {B}', False, False, 'L'), ('Datum: 20.11.2026. godine', False, False, 'L'),
     (f'Na osnovu člana 43., 46., 47. i 49. Zakona o prevenciji korupcije u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 24/25) i Uputstva za izradu i provođenje Plana integriteta u institucijama u Unsko-sanskom kantonu („Službeni glasnik USK“, broj 11/26), a nakon pribavljenog mišljenja Ureda za borbu protiv korupcije Unsko-sanskog kantona broj {B} od {B}, direktor JU OŠ „Stijena“ donosi', False, False, 'J'),
     ('ODLUKU', True, False, 'C'), ('o usvajanju i provođenju Plana integriteta JU OŠ „Stijena“', True, False, 'C'),
     ('Član 1.', True, False, 'C'),
     ('Ovom odlukom usvaja se Plan integriteta JU OŠ „Stijena“ koji je pripremila radna grupa za izradu plana integriteta.', False, False, 'J'),
     ('Član 2.', True, False, 'C'),
-    ('Stupanjem na snagu ove odluke razrješavaju se dužnosti koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj 610‑93/2025 od 28.01.2025. godine i Odluka o izmjenama i dopunama broj ' + _ODL + ' od ' + B + ' godine).', False, False, 'J'),
+    ('Stupanjem na snagu ove odluke razrješavaju se dužnosti koordinator i članovi radne grupe za izradu plana integriteta (Odluka broj 610‑93/2025 od 28.01.2025. godine).', False, False, 'J'),
     ('Član 3.', True, False, 'C'),
     ('(1) Za osobu zaduženu za nadzor nad provođenjem plana integriteta (menadžera integriteta) imenuje se Dževaira Džehverović, soc. radnik.', False, False, 'J'),
     ('(2) Osoba zadužena za nadzor nad provođenjem plana integriteta ima zadatak da prati provođenje Plana integriteta, a posebno dijela koji se odnosi na mjere za poboljšanje integriteta institucije, te davanje prijedloga za njegovo unapređenje.', False, False, 'J'),
