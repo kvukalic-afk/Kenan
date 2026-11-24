@@ -61,3 +61,10 @@ PDF u prilogu: `RFQ_HELVERA_premium_box_v2_EN.pdf`. Poslano na 15 adresa:
 
 ## Rezerva (nije kontaktirano)
 Montcarton (ME) montcarton@t-com.me · ID Print (BG) office@idprint.bg · OpenPrint (PL) kontakt@openprint.pl · Foldruk (PL) wyceny@foldruk.pl · Prolix (HR) tel. +385 1 3470 435 · Kanpak (HR, samo štampa na gotovim kutijama) info@kanpak.hr
+
+## 24.11.2026: odluka korisnika i finalna specifikacija
+**Odluka:** sklopiva kutija (ne tvrda), lijep umetak za bočicu, naljepnice u 6 dizajna, BEZ pečata i BEZ folije.
+- **Poslano Fine Packingu i Yucaiju:** finalna specifikacija s 3 opcije umetka (karton, crna EVA, plastični uložak), naljepnice 6 dizajna, traženo ukupno + dostava + uzorak.
+- **Nije obaviješteno** (čekaju odgovore na raniji upit): BePrint, Kontrast, no KACHI, zpapieru.pl, Meikei, Hanlong, Srbija (Bari Print, Pressia, Grafolik, PROOF), Pepi-Karttis.
+
+**MJC Pack (23.11.):** tvrda kutija 750 $ / 100 kom, naljepnice 6 × 70 $, pečati 6 × 70 $. Preskupo. KAdruk (PL) odbio, ne šalje u BiH.
