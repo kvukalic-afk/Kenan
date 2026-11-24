@@ -90,6 +90,23 @@ describe('unos iz teksta', () => {
     expect(u).toContain('Zamjena nastavnika | Čas odjeljenske zajednice');
     expect(u).toContain('Danas je 20.11.2026');
     // uputa iz appa mora se moći pročitati vlastitim parserom (bez grešaka u strukturi)
-    expect(parsirajTekst(u, k).map((x) => x.tip)).toEqual(['razgovor', 'radionica', 'saradnja', 'aktivnost']);
+    expect(parsirajTekst(u, k).map((x) => x.tip)).toEqual(['biljeska', 'razgovor', 'radionica', 'saradnja', 'aktivnost']);
+  });
+  it('bilješka s hodnika: vrsta, učenik, osobe, zapis i stručno sročen tekst', () => {
+    const r = parsirajTekst(`### BILJEŠKA
+datum: jučer
+vrsta: hodnik
+ucenik: U056
+osobe: razrednik 7-1, majka
+tekst: kaže razrednik da često kasni
+sroceno: Razrednik je informisao psihologa da učenik učestalo kasni na nastavu.
+
+### HODNIK
+tekst: grupa djece se svađala`, k);
+    expect(r).toHaveLength(2);
+    expect(r[0]).toMatchObject({ tip: 'biljeska', greske: [], podaci: { datum: '2026-11-19', sifra: 'U056', kategorija: 'Hodnik / u prolazu', osobe: ['razrednik 7-1', 'majka'], tekst: 'kaže razrednik da često kasni', obradjena: false } });
+    expect((r[0].podaci as { sroceno: string }).sroceno).toContain('učestalo kasni');
+    expect(r[1]).toMatchObject({ tip: 'biljeska', greske: [], podaci: { kategorija: 'Hodnik / u prolazu', sifra: '' } });
+    expect(parsirajTekst('### BILJEŠKA\nvrsta: Opservacija', k)[0].greske[0]).toContain('tekst');
   });
 });

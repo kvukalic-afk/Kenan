@@ -16,7 +16,8 @@ import { useImenik } from '../lib/podaci';
 import { idi } from '../lib/router';
 import { punoIme, type BrzaBiljeska } from '../types';
 
-export const KATEGORIJE_BILJESKI = ['Hodnik / u prolazu', 'Informativni razgovor', 'Opservacija', 'Telefon / poruka', 'Sastanak', 'Ostalo'];
+import { KATEGORIJE_BILJESKI } from '../lib/unosIzTeksta';
+export { KATEGORIJE_BILJESKI };
 const OSNOVNE_OSOBE = ['majka', 'otac', 'roditelji', 'razrednik', 'nastavnik', 'pedagog', 'direktor', 'grupa učenika', 'odjeljenje'];
 
 const vrijeme = (iso: string) => {

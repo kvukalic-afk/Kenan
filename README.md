@@ -165,7 +165,7 @@ cas: 3
 predmet: Matematika
 ```
 
-Bloka može biti **RAZGOVOR, RADIONICA, SARADNJA, AKTIVNOST, ZAMJENA** ili **ČAS ODJELJENSKE ZAJEDNICE**. Datum može biti i „danas“ ili „jučer“, a sljedeći kontakt i „za 7 dana“.
+Bloka može biti **BILJEŠKA** (ili **HODNIK** / **INFORMATIVNI**), **RAZGOVOR, RADIONICA, SARADNJA, AKTIVNOST, ZAMJENA** ili **ČAS ODJELJENSKE ZAJEDNICE**. Bilješka ima polja `vrsta`, `ucenik`, `osobe`, `tekst` (kako je rečeno) i `sroceno` (stručno). Datum može biti i „danas“ ili „jučer“, a sljedeći kontakt i „za 7 dana“.
 
 ### Plan rada, dnevnik rada i 40-satna sedmica
 

@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { osigurajUcenika, sacuvajAktivnost, sacuvajRadionicu, sacuvajRazgovor, sacuvajSaradnju } from '../db/repo';
+import { osigurajUcenika, uuid, sacuvajAktivnost, sacuvajRadionicu, sacuvajRazgovor, sacuvajSaradnju } from '../db/repo';
 import { Ikona } from '../components/Ikona';
 import { AutoTextarea, Modal, Polje } from '../components/Polja';
 import { NAZIV_VRSTE, Zaglavlje } from '../components/Okvir';
@@ -74,6 +74,7 @@ export function UnosIzTeksta() {
         if (u.tip === 'razgovor') await sacuvajRazgovor(u.podaci);
         else if (u.tip === 'radionica') await sacuvajRadionicu(u.podaci);
         else if (u.tip === 'saradnja') await sacuvajSaradnju(u.podaci);
+        else if (u.tip === 'biljeska') { const t = new Date().toISOString(); await db.brzeBiljeske.add({ ...u.podaci, id: uuid(), createdAt: t, updatedAt: t }); }
         else await sacuvajAktivnost(u.podaci);
         n++;
       }
@@ -175,6 +176,9 @@ function KarticaPregleda({ u, poSifri, ukljucen, onPrebaci }: {
   } else if (u.tip === 'saradnja') {
     dodaj('Učenik', ucenik(u.podaci.sifra)); dodaj('Ustanova / osoba', d.ustanovaOsoba); dodaj('Opis osobe', d.opisOsobe); dodaj('Način', d.nacin);
     dodaj('Razlog', d.razlog); dodaj('Dogovor / ishod', d.dogovorIshod);
+  } else if (u.tip === 'biljeska') {
+    dodaj('Vrsta', d.kategorija); dodaj('Učenik', ucenik(u.podaci.sifra)); dodaj('O kome / sa kim', u.podaci.osobe?.join(', '));
+    dodaj('Zapis', d.tekst); dodaj('Stručno sročeno', d.sroceno);
   } else {
     dodaj('Vrsta', d.vrsta); dodaj('Razred', d.razred); dodaj('Čas', d.cas); dodaj('Umjesto koga', d.umjestoKoga); dodaj('Predmet', d.predmet);
     dodaj('Tema', d.tema); dodaj('Zapažanja', d.zapazanja); dodaj('Napomena', d.napomena);
@@ -183,7 +187,7 @@ function KarticaPregleda({ u, poSifri, ukljucen, onPrebaci }: {
   return (
     <section className="kartica" style={{ opacity: ukljucen || ima ? 1 : 0.6, borderColor: ima ? 'var(--crvena)' : undefined }}>
       <div className="razdvoji" style={{ marginBottom: 8 }}>
-        <span className={`oznaka ${u.tip}`}>{NAZIV_VRSTE[u.tip]}</span>
+        <span className={`oznaka ${u.tip}`}>{u.tip === 'biljeska' ? 'Bilješka' : NAZIV_VRSTE[u.tip]}</span>
         <span className="rastegni blijedo malo">red {u.red}</span>
         {!ima && (
           <label className="prekidac" style={{ minHeight: 32 }}>

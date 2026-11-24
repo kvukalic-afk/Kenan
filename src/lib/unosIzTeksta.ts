@@ -14,7 +14,11 @@
 
 import { dodajDane, parsirajPrikaz } from './datum';
 import { jeIspravnaSifra, normalizujRazred, ocistiSifru } from './sifra';
-import type { Aktivnost, Kategorija, Radionica, Razgovor, Saradnja, StavkaSifrarnika, Ucenik, VrstaUnosa } from '../types';
+import type { Aktivnost, BrzaBiljeska, Kategorija, Radionica, Razgovor, Saradnja, StavkaSifrarnika, Ucenik, VrstaUnosa } from '../types';
+
+export const KATEGORIJE_BILJESKI = ['Hodnik / u prolazu', 'Informativni razgovor', 'Opservacija', 'Telefon / poruka', 'Sastanak', 'Ostalo'];
+
+type TipBloka = VrstaUnosa | 'biljeska';
 
 type Bez<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -22,7 +26,8 @@ export type ParsiranUnos =
   | { tip: 'razgovor'; podaci: Bez<Razgovor> } & Meta
   | { tip: 'radionica'; podaci: Bez<Radionica> } & Meta
   | { tip: 'saradnja'; podaci: Bez<Saradnja> } & Meta
-  | { tip: 'aktivnost'; podaci: Bez<Aktivnost> } & Meta;
+  | { tip: 'aktivnost'; podaci: Bez<Aktivnost> } & Meta
+  | { tip: 'biljeska'; podaci: Bez<BrzaBiljeska> } & Meta;
 
 interface Meta {
   red: number; // red u tekstu gdje blok počinje
@@ -43,8 +48,9 @@ export const norm = (s: string) =>
 
 // ---------- tipovi blokova ----------
 
-function tipBloka(naslov: string): { tip: VrstaUnosa; vrstaAktivnosti?: string } | null {
+function tipBloka(naslov: string): { tip: TipBloka; vrstaAktivnosti?: string } | null {
   const n = norm(naslov);
+  if (/^(brza )?biljesk|^hodnik|^informativn/.test(n)) return { tip: 'biljeska', vrstaAktivnosti: /^hodnik/.test(n) ? 'Hodnik / u prolazu' : /^informativn/.test(n) ? 'Informativni razgovor' : undefined };
   if (/^razgovor/.test(n)) return { tip: 'razgovor' };
   if (/^radionic/.test(n)) return { tip: 'radionica' };
   if (/^saradnj/.test(n)) return { tip: 'saradnja' };
@@ -56,7 +62,13 @@ function tipBloka(naslov: string): { tip: VrstaUnosa; vrstaAktivnosti?: string }
 
 // ---------- nazivi polja ----------
 
-const POLJA: Record<VrstaUnosa, Record<string, string>> = {
+const POLJA: Record<TipBloka, Record<string, string>> = {
+  biljeska: {
+    datum: 'datum', ucenik: 'ucenik', sifra: 'ucenik', vrsta: 'kategorija', kategorija: 'kategorija',
+    osobe: 'osobe', osoba: 'osobe', 'o kome': 'osobe', 'sa kim': 'osobe', 'o kome sa kim': 'osobe',
+    tekst: 'tekst', zapis: 'tekst', biljeska: 'tekst', biljeske: 'tekst', sroceno: 'sroceno', strucno: 'sroceno', 'strucni tekst': 'sroceno',
+    obradjena: 'obradjena', obradjeno: 'obradjena',
+  },
   razgovor: {
     datum: 'datum', ucenik: 'ucenik', sifra: 'ucenik', 'sifra ucenika': 'ucenik', razred: 'razred',
     vrsta: 'vrstaKontakta', 'vrsta kontakta': 'vrstaKontakta', kontakt: 'vrstaKontakta',
@@ -142,7 +154,7 @@ const broj = (v: string): number | null => {
 
 export function parsirajTekst(tekst: string, k: Kontekst): ParsiranUnos[] {
   const linije = (tekst || '').replace(/\r/g, '').split('\n');
-  const blokovi: { red: number; tip: VrstaUnosa; vrstaAktivnosti?: string; polja: Record<string, string>; nepoznata: string[] }[] = [];
+  const blokovi: { red: number; tip: TipBloka; vrstaAktivnosti?: string; polja: Record<string, string>; nepoznata: string[] }[] = [];
   let tren: (typeof blokovi)[number] | null = null;
   let zadnjePolje = '';
 
@@ -211,6 +223,24 @@ export function parsirajTekst(tekst: string, k: Kontekst): ParsiranUnos[] {
 
     const meta = { red: b.red, greske, upozorenja, noviUcenici };
 
+    if (b.tip === 'biljeska') {
+      const sifra = ucenikIz('ucenik', false, normalizujRazred(p.razred ?? ''));
+      if (!p.tekst && !p.sroceno) greske.push('Nedostaje „tekst:“ bilješke.');
+      let kategorija = b.vrstaAktivnosti ?? '';
+      if (p.kategorija) {
+        const [v, upoz] = uskladi(p.kategorija, KATEGORIJE_BILJESKI, 'Vrsta bilješke');
+        if (upoz) upozorenja.push(upoz);
+        kategorija = v;
+      }
+      return {
+        tip: 'biljeska', ...meta,
+        podaci: {
+          datum: d, sifra, tekst: (p.tekst || p.sroceno || '').trim(), sroceno: p.tekst ? (p.sroceno ?? '') : '',
+          obradjena: /^(da|yes|true|x)/i.test(p.obradjena ?? ''), kategorija,
+          osobe: (p.osobe ?? '').split(/[,;]/).map((x) => x.trim()).filter(Boolean),
+        },
+      };
+    }
     if (b.tip === 'razgovor') {
       const razred = normalizujRazred(p.razred ?? '');
       const sifra = ucenikIz('ucenik', true, razred);
@@ -288,6 +318,14 @@ Pravila:
 - Datum piši kao DD.MM.YYYY. Danas je ${danasPrikaz}. Ako ne kažem datum, piši danas.
 - Bilješke piši stručno, kratko, u trećem licu, bez imena (ni roditelja ni nastavnika – samo „majka“, „razrednik 7-1“ i sl.).
 - Kod polja s ponuđenim vrijednostima koristi jednu od ponuđenih.
+
+### BILJEŠKA
+datum: DD.MM.YYYY
+vrsta: ${KATEGORIJE_BILJESKI.join(' | ')}
+ucenik: U000 (ako se odnosi na učenika)
+osobe: uloge, npr. razrednik 7-1, majka (bez imena)
+tekst: kratko, kako je rečeno
+sroceno: isti sadržaj stručno sročen
 
 ### RAZGOVOR
 datum: DD.MM.YYYY

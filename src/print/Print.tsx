@@ -225,13 +225,15 @@ export function PrintSaradnja({ id }: { id: string }) {
 export function PrintKarton({ sifra }: { sifra: string }) {
   const postavke = usePostavke();
   const p = useLiveQuery(async () => {
-    const [ucenik, razgovori, saradnja, radionice] = await Promise.all([
+    const [ucenik, razgovori, saradnja, radionice, biljeske, analize] = await Promise.all([
       db.ucenici.where('sifra').equals(sifra).first(),
       db.razgovori.where('sifra').equals(sifra).toArray(),
       db.saradnja.where('sifra').equals(sifra).toArray(),
       db.radionice.where('ucenicizaPracenje').equals(sifra).toArray(),
+      db.brzeBiljeske.where('sifra').equals(sifra).toArray(),
+      db.analize.where('sifra').equals(sifra).toArray(),
     ]);
-    return { ucenik, razgovori, saradnja, radionice };
+    return { ucenik, razgovori, saradnja, radionice, biljeske, analize };
   }, [sifra]);
   const uc = useUcenikZaDokument(sifra);
   if (!p) return <Ucitavanje />;
@@ -270,7 +272,7 @@ export function PrintKarton({ sifra }: { sifra: string }) {
                 <td>{r.vrstaKontakta}</td>
                 <td>{r.razlog}</td>
                 <td className="tekst-celija">{[r.biljeske, r.zakljucak && `Zaključak: ${r.zakljucak}`].filter(Boolean).join('\n\n')}</td>
-                <td className="tekst-celija">{r.preporuke}</td>
+                <td className="tekst-celija">{[r.preporuke, r.sljedeciKorak && `Sljedeći korak: ${r.sljedeciKorak}`, r.datumSljedecegKontakta && `Sljedeći kontakt: ${prikaz(r.datumSljedecegKontakta)}`].filter(Boolean).join('\n\n')}</td>
                 <td>{r.statusSlucaja}</td>
               </tr>
             ))}
@@ -294,6 +296,30 @@ export function PrintKarton({ sifra }: { sifra: string }) {
             ))}
           </tbody>
         </table>
+      )}
+
+      <h2>Bilješke i informativni razgovori</h2>
+      {p.biljeske.length === 0 ? <p>Nema bilješki vezanih za učenika.</p> : (
+        <table className="lista-tab">
+          <thead><tr><th style={{ width: '12%' }}>Datum</th><th style={{ width: '16%' }}>Vrsta</th><th style={{ width: '18%' }}>O kome / sa kim</th><th>Zapis</th></tr></thead>
+          <tbody>
+            {[...p.biljeske].sort(poDatumu).map((b) => (
+              <tr key={b.id}><td>{prikaz(b.datum)}</td><td>{b.kategorija}</td><td>{(b.osobe ?? []).join(', ')}</td><td className="tekst-celija">{b.sroceno || b.tekst}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {p.analize.length > 0 && (
+        <>
+          <h2>Analize i zaključci</h2>
+          {[...p.analize].sort((a, b) => a.datum.localeCompare(b.datum)).map((a) => (
+            <div key={a.id} style={{ breakInside: 'avoid', marginBottom: 10 }}>
+              <p style={{ margin: '0 0 4px' }}><strong>{prikaz(a.datum)} – {a.naslov}</strong></p>
+              <div className="tekst-celija" style={{ fontSize: '9.5pt', whiteSpace: 'pre-wrap' }}>{a.tekst}</div>
+            </div>
+          ))}
+        </>
       )}
 
       <h2>Radionice</h2>
