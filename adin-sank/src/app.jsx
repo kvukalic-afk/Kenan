@@ -612,6 +612,7 @@ function Radnik({ radnici, izabran, onDalje, onAdmin }) {
       <div style={{ textAlign: 'center', marginTop: 30 }}>
         <button className="linkbtn" onClick={onAdmin}>Vlasnik ›</button>
       </div>
+      <div className="sit" style={{ textAlign: 'center', opacity: .5 }}>verzija __VERZIJA__</div>
     </div>
   );
 }

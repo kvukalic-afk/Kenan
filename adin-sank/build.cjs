@@ -8,7 +8,8 @@ const esbuild = require('esbuild');
 const src = fs.readFileSync(path.join(__dirname, 'src', 'app.jsx'), 'utf8');
 const sablon = fs.readFileSync(path.join(__dirname, 'src', 'index.template.html'), 'utf8');
 
-const { code } = esbuild.transformSync(src, {
+const verzijaTxt = new Date().toLocaleString('bs-BA', { timeZone: 'Europe/Sarajevo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const { code } = esbuild.transformSync(src.replace(/__VERZIJA__/g, verzijaTxt), {
   loader: 'jsx',
   jsx: 'transform',
   jsxFactory: 'React.createElement',
