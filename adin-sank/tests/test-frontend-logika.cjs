@@ -155,3 +155,17 @@ test('paket: karta + trener, samo trener, tip proizvoda', () => {
   const d = L.podijeli([karta, tr, { naziv: 'Dnevni trening', cijena: 3 }, { naziv: 'Red Bull', prati_zalihu: true }, { naziv: 'Peškir', cijena: 2 }]);
   assert.equal([d.clanarine.length, d.treneri.length, d.dnevne.length, d.roba.length, d.usluge.length].join(), '1,1,1,1,1');
 });
+
+test('raspored: dan u sedmici, termini za dan, grupisanje termina', () => {
+  assert.equal(L.danUSedmici('2026-11-22'), 'ned');
+  assert.equal(L.danUSedmici('2026-11-24'), 'uto');
+  const r = [
+    { termin_id: 'a', osobe: 'Enes', dan: 'pon', vrijeme: '19:00', trening: 'Prsa' },
+    { termin_id: 'b', osobe: 'Amra', dan: 'pon', vrijeme: '07:30', trening: 'Full body' },
+    { termin_id: 'a', osobe: 'Enes', dan: 'uto', vrijeme: '19:00', trening: 'Leđa' }
+  ];
+  assert.equal(L.zaDan(r, 'pon').map(x => x.osobe).join(), 'Amra,Enes');
+  const t = L.termini(r);
+  assert.equal(t.length, 2);
+  assert.equal(JSON.stringify(t[0].dani), JSON.stringify({ pon: 'Prsa', uto: 'Leđa' }));
+});

@@ -276,6 +276,17 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByText('Nermin Test').waitFor();
     await page.screenshot({ path: path.join(SLIKE, '8b-karte.png'), fullPage: true });
 
+    // raspored: vlasnik upiše šta Enes trenira danas, radnik to vidi na prvom ekranu
+    const danasKljuc = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'][(new Date(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Sarajevo' }).format(new Date()) + 'T00:00:00Z').getUTCDay() + 6) % 7];
+    await page.getByRole('button', { name: 'Raspored', exact: true }).click();
+    await page.getByRole('button', { name: '+ Novi termin' }).click();
+    await page.getByTestId('t-osobe').fill('Enes Test');
+    await page.locator(`[data-dan="${danasKljuc}"]`).click();
+    await page.locator(`[data-trening="${danasKljuc}"]`).fill('Noge + core');
+    await page.getByRole('button', { name: 'Sačuvaj', exact: true }).click();
+    await page.getByText('Noge + core').first().waitFor();
+    await page.screenshot({ path: path.join(SLIKE, '8c-raspored.png'), fullPage: true });
+
     // vlasnik dodaje novi proizvod
     await page.getByRole('button', { name: 'Proizvodi', exact: true }).click();
     await page.getByRole('button', { name: '+ Novi proizvod / ponuda' }).click();
@@ -310,6 +321,10 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await pauza(4000);
     await page.screenshot({ path: path.join(SLIKE, '9-vrata.png'), fullPage: true });
     assert.equal(tuya.stanje.losPotpis, 0);
+
+    await page.getByRole('button', { name: 'Izađi iz pregleda' }).click();
+    await page.getByTestId('danas-trening').filter({ hasText: 'Noge + core' }).waitFor();
+    await page.screenshot({ path: path.join(SLIKE, '1b-radnik-trening.png') });
 
     assert.deepEqual(greske.filter(x => !/favicon|Failed to load resource/.test(x)), [], 'nema JS grešaka u browseru');
     assert.deepEqual(t2.greske.filter(x => !/favicon|Failed to load resource/.test(x)), []);

@@ -22,7 +22,7 @@ var CONFIG = {
 /* ═══════ STRUKTURA TABELA ═══════ */
 var TAB = {
   PROIZVODI: 'PROIZVODI', SMJENE: 'SMJENE', DOGADJAJI: 'DOGADJAJI',
-  INVENTURA: 'INVENTURA', CLANOVI: 'CLANOVI', PREGLED: 'PREGLED', ULAZI: 'ULAZI'
+  INVENTURA: 'INVENTURA', CLANOVI: 'CLANOVI', PREGLED: 'PREGLED', ULAZI: 'ULAZI', TRENINZI: 'TRENINZI'
 };
 
 var KOLONE = {
@@ -39,7 +39,8 @@ var KOLONE = {
     'prodano_po_inventuri', 'razlika_kom', 'razlika_KM'],
   CLANOVI: ['member_id', 'ime', 'telefon', 'vrsta', 'pocetak', 'istek', 'zadnje_produzenje',
     'napomena', 'aktivan', 'brava_id', 'trener', 'trener_do'],
-  ULAZI: ['izvor_id', 'datum', 'vrijeme', 'nacin', 'korisnik_brave', 'ime', 'member_id', 'clanarina', 'napomena']
+  ULAZI: ['izvor_id', 'datum', 'vrijeme', 'nacin', 'korisnik_brave', 'ime', 'member_id', 'clanarina', 'napomena'],
+  TRENINZI: ['termin_id', 'osobe', 'dan', 'vrijeme', 'trening', 'trener', 'napomena', 'aktivan']
 };
 
 // Kolone koje moraju ostati čisti tekst (da ih Sheets ne pretvori u datum/vrijeme/broj)
@@ -49,7 +50,8 @@ var TEKST_KOLONE = {
   DOGADJAJI: ['event_id', 'shift_id', 'datum', 'timestamp', 'product_id'],
   INVENTURA: ['shift_id', 'datum', 'product_id'],
   CLANOVI: ['member_id', 'telefon', 'pocetak', 'istek', 'zadnje_produzenje', 'brava_id', 'trener_do'],
-  ULAZI: ['izvor_id', 'datum', 'vrijeme', 'korisnik_brave', 'member_id']
+  ULAZI: ['izvor_id', 'datum', 'vrijeme', 'korisnik_brave', 'member_id'],
+  TRENINZI: ['termin_id', 'dan', 'vrijeme']
 };
 
 var SEED_PROIZVODI = [
@@ -76,7 +78,8 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '4';   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
+var VERZIJA_SEME = '5';
+var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
  *  WEB APLIKACIJA
@@ -586,6 +589,20 @@ function osigurajTabele_(formatiraj) {
     }
   } catch (e) { /* */ }
 
+  // primjer termina iz dogovora s vlasnikom (jednom; poslije se uređuje u Vlasnik → Raspored)
+  try {
+    if (!svojstva_().getProperty('SEED_RASPORED')) {
+      var tt = tabela_(TAB.TRENINZI);
+      if (!tt.redovi.length) {
+        dodajRedove_(tt, ['ned', 'pon', 'uto', 'sri', 'cet'].map(function (d) {
+          return { termin_id: 'T-enes', osobe: 'Enes Velić + supruga, Nino', dan: d, vrijeme: '19:00', trening: '', trener: '', napomena: '', aktivan: true };
+        }));
+        uradjeno.push('upisan primjer rasporeda treninga');
+      }
+      svojstva_().setProperty('SEED_RASPORED', '1');
+    }
+  } catch (e) { /* */ }
+
   var pg = ss.getSheetByName(TAB.PREGLED);
   if (!pg) {
     pg = ss.insertSheet(TAB.PREGLED);
@@ -859,6 +876,7 @@ function getBootstrap() {
       treneri: treneri_(),
       razlozi: CONFIG.RAZLOZI,
       clanovi: clanovi,
+      raspored: raspored_(),
       danas: t.datum,
       server_ts: t.ts
     };
@@ -1432,6 +1450,7 @@ function getAdminData(pin) {
         };
       }),
       karte: karte,
+      raspored: raspored_(),
       treneri: treneri_(),
       radnici: radnici_(),
       vlasnici: CONFIG.VLASNICI
@@ -1588,6 +1607,91 @@ function addProductRadnik(podaci) {
       var proizvod = null;
       proizvodi_().forEach(function (x) { if (x.product_id === k) proizvod = javniProizvod_(x); });
       return { proizvod: proizvod, u_smjenu: uSmjenu, proizvodi: proizvodi_().map(javniProizvod_) };
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ *  RASPORED TRENINGA (planer: ko dolazi koji dan, u koliko sati, šta trenira)
+ *  Tabela TRENINZI: jedan red = jedan termin u jednom danu.
+ * ═══════════════════════════════════════════════════════════════ */
+function danKljuc_(v) {
+  var t = normaliziraj_(v).slice(0, 3);
+  var mapa = { pon: 'pon', uto: 'uto', sri: 'sri', cet: 'cet', pet: 'pet', sub: 'sub', ned: 'ned', mon: 'pon', tue: 'uto', wed: 'sri', thu: 'cet', fri: 'pet', sat: 'sub', sun: 'ned' };
+  return mapa[t] || '';
+}
+
+/** Dan u sedmici za 'yyyy-MM-dd' → 'pon'…'ned'. */
+function danUSedmici_(datum) {
+  var n = danBroj_(datum);
+  return DANI[(new Date(n * 86400000).getUTCDay() + 6) % 7];
+}
+
+function raspored_() {
+  var lista = [];
+  tabela_(TAB.TRENINZI).redovi.forEach(function (r) {
+    var aktivan = s_(r.aktivan) === '' ? true : bool_(r.aktivan);
+    var dan = danKljuc_(r.dan);
+    if (!aktivan || !dan || !s_(r.osobe)) return;
+    lista.push({
+      termin_id: s_(r.termin_id), osobe: s_(r.osobe), dan: dan, vrijeme: vrijeme_(r.vrijeme),
+      trening: s_(r.trening), trener: s_(r.trener), napomena: s_(r.napomena)
+    });
+  });
+  lista.sort(function (a, b) { return DANI.indexOf(a.dan) - DANI.indexOf(b.dan) || (a.vrijeme < b.vrijeme ? -1 : a.vrijeme > b.vrijeme ? 1 : 0); });
+  return lista;
+}
+
+/**
+ * Vlasnik sprema termin: osobe, vrijeme, trener, napomena i za svaki izabrani dan šta se trenira.
+ * dani = { pon: 'Prsa + triceps', sri: 'Noge', ... } — dan koji nije naveden se isključuje.
+ */
+function saveTermin(pin, termin) {
+  return api_(function () {
+    provjeriPin_(pin);
+    var x = termin || {};
+    var osobe = s_(x.osobe).slice(0, 120);
+    if (!osobe) throw greska_('OSOBE', 'Upiši ko trenira.');
+    var vrijeme = vrijeme_(x.vrijeme);
+    if (!vrijeme) throw greska_('VRIJEME', 'Upiši vrijeme (npr. 19:00).');
+    var dani = {};
+    Object.keys(x.dani || {}).forEach(function (k) { var d = danKljuc_(k); if (d) dani[d] = s_(x.dani[k]).slice(0, 200); });
+    if (!Object.keys(dani).length) throw greska_('DANI', 'Izaberi bar jedan dan.');
+    return zakljucano_(function () {
+      var t = tabela_(TAB.TRENINZI);
+      var id = s_(x.termin_id) || noviId_('T');
+      var zajedno = { osobe: osobe, vrijeme: vrijeme, trener: s_(x.trener).slice(0, 40), napomena: s_(x.napomena).slice(0, 200) };
+      var vidjeni = {};
+      t.redovi.forEach(function (r) {
+        if (s_(r.termin_id) !== id) return;
+        var d = danKljuc_(r.dan);
+        if (dani.hasOwnProperty(d) && !vidjeni[d]) {
+          vidjeni[d] = true;
+          azurirajRed_(t, r, Object.assign({ trening: dani[d], aktivan: true }, zajedno));
+        } else {
+          azurirajRed_(t, r, { aktivan: false });
+        }
+      });
+      var novi = Object.keys(dani).filter(function (d) { return !vidjeni[d]; }).map(function (d) {
+        return Object.assign({ termin_id: id, dan: d, trening: dani[d], aktivan: true }, zajedno);
+      });
+      if (novi.length) dodajRedove_(t, novi);
+      return { termin_id: id, raspored: raspored_() };
+    });
+  });
+}
+
+/** Ukloni termin iz rasporeda (redovi ostaju u tabeli kao neaktivni). */
+function deleteTermin(pin, terminId) {
+  return api_(function () {
+    provjeriPin_(pin);
+    var id = s_(terminId);
+    return zakljucano_(function () {
+      var t = tabela_(TAB.TRENINZI);
+      var n = 0;
+      t.redovi.forEach(function (r) { if (s_(r.termin_id) === id) { azurirajRed_(t, r, { aktivan: false }); n++; } });
+      if (!n) throw greska_('NEMA_TERMINA', 'Termin ne postoji.');
+      return { raspored: raspored_() };
     });
   });
 }

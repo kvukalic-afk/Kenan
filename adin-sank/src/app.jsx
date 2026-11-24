@@ -189,6 +189,28 @@ var Logika = (function () {
     return { stavke: stavke, ukupno: Math.round(ukupno * 100) / 100, spreman: spreman };
   }
 
+  /* ── raspored treninga ── */
+  var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];
+  var DANI_IME = { pon: 'Ponedjeljak', uto: 'Utorak', sri: 'Srijeda', cet: 'Četvrtak', pet: 'Petak', sub: 'Subota', ned: 'Nedjelja' };
+  function danUSedmici(datum) {
+    var m = String(datum).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return DANI[(d.getUTCDay() + 6) % 7];
+  }
+  function zaDan(raspored, dan) {
+    return (raspored || []).filter(function (r) { return r.dan === dan; })
+      .sort(function (a, b) { return a.vrijeme < b.vrijeme ? -1 : a.vrijeme > b.vrijeme ? 1 : 0; });
+  }
+  /** Termini grupisani po terminu (za uređivanje): {termin_id, osobe, vrijeme, trener, napomena, dani:{pon:'…'}} */
+  function termini(raspored) {
+    var m = {}, red = [];
+    (raspored || []).forEach(function (r) {
+      if (!m[r.termin_id]) { m[r.termin_id] = { termin_id: r.termin_id, osobe: r.osobe, vrijeme: r.vrijeme, trener: r.trener, napomena: r.napomena, dani: {} }; red.push(m[r.termin_id]); }
+      m[r.termin_id].dani[r.dan] = r.trening;
+    });
+    return red;
+  }
+
   function grupisi(lista) {
     var red = [];
     lista.forEach(function (p) {
@@ -228,7 +250,8 @@ var Logika = (function () {
     dodajURed: dodajURed, ukloniIzReda: ukloniIzReda, sljedeciBatch: sljedeciBatch, pauza: pauza,
     spojiDogadjaje: spojiDogadjaje, dozvoliTap: dozvoliTap,
     dodajMjesece: dodajMjesece, produzenje: produzenje, normaliziraj: normaliziraj, traziClanove: traziClanove,
-    grupisi: grupisi, tekstIzvjestaja: tekstIzvjestaja, tip: tip, podijeli: podijeli, paket: paket
+    grupisi: grupisi, tekstIzvjestaja: tekstIzvjestaja, tip: tip, podijeli: podijeli, paket: paket,
+    DANI: DANI, DANI_IME: DANI_IME, danUSedmici: danUSedmici, zaDan: zaDan, termini: termini
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Logika;
@@ -318,7 +341,7 @@ function App() {
   const ucitaj = useCallback(async () => {
     try {
       const r = await api('getBootstrap');
-      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, radnici: r.radnici || [], treneri: r.treneri || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [] };
+      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, radnici: r.radnici || [], treneri: r.treneri || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [], raspored: r.raspored || [] };
       setPodaci(p);
       ls.set(LS.CACHE, p);
       if (r.aktivna) {
@@ -525,14 +548,14 @@ function App() {
     <>
       {zaglavlje}
       {toastEl}
-      {faza === 'radnik' && <Radnik radnici={podaci.radnici} izabran={radnik}
+      {faza === 'radnik' && <Radnik radnici={podaci.radnici} izabran={radnik} raspored={podaci.raspored || []}
         onDalje={ime => { setRadnik(ime); setGreska(''); setFaza('pocetna'); window.scrollTo(0, 0); }}
         onAdmin={() => setFaza('admin')} />}
 
       {faza === 'pocetna' && <Pocetna proizvodi={podaci.proizvodi} prijedlog={podaci.prijedlog} radnik={radnik} onNovi={noviProizvod}
         greska={greska} radi={radi} nazad={() => { setGreska(''); setFaza('radnik'); }} onStart={zapocni} />}
 
-      {faza === 'smjena' && smjena && <Smjena smjena={smjena} proizvodi={podaci.proizvodi} clanovi={podaci.clanovi} treneri={podaci.treneri || []} onNovi={noviProizvod}
+      {faza === 'smjena' && smjena && <Smjena smjena={smjena} raspored={podaci.raspored || []} proizvodi={podaci.proizvodi} clanovi={podaci.clanovi} treneri={podaci.treneri || []} onNovi={noviProizvod}
         dodaj={dodaj} pokaziToast={pokaziToast} setClanovi={c => setPodaci(p => ({ ...p, clanovi: c }))}
         onZavrsi={() => { setGreska(''); setFaza('zavrsna'); window.scrollTo(0, 0); }} />}
 
@@ -568,6 +591,34 @@ function Amblem({ v }) {
   );
 }
 
+/* ═══════ DANAS NA TRENINGU (podsjetnik na vrhu) ═══════ */
+function DanasTrening({ raspored }) {
+  const [sutra, setSutra] = useState(false);
+  const danas = Logika.danasSarajevo();
+  const sutraDatum = Logika.danasSarajevo(new Date(Date.now() + 86400000));
+  const dan = Logika.danUSedmici(sutra ? sutraDatum : danas);
+  const lista = Logika.zaDan(raspored, dan);
+  return (
+    <div className="card trening" data-testid="danas-trening">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div className="lab" style={{ marginBottom: 0, color: 'var(--gold)' }}>🏋️ {sutra ? 'SUTRA' : 'DANAS'} NA TRENINGU · {Logika.DANI_IME[dan].toUpperCase()}</div>
+        <button className="linkbtn" style={{ padding: '4px 0' }} onClick={() => setSutra(!sutra)}>{sutra ? '← danas' : 'sutra →'}</button>
+      </div>
+      {!lista.length && <div className="sit">Nema zakazanih treninga.</div>}
+      {lista.map((t, i) => (
+        <div key={t.termin_id + i} className="termin">
+          <div className="vr">{t.vrijeme}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>{t.osobe}</div>
+            <div style={{ fontSize: 14, color: t.trening ? 'var(--text)' : 'var(--dim)' }}>{t.trening || 'plan nije upisan'}</div>
+            {(t.trener || t.napomena) && <div className="sit">{t.trener ? 'trener ' + t.trener : ''}{t.trener && t.napomena ? ' · ' : ''}{t.napomena}</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ═══════ SYNC INDIKATOR ═══════ */
 function Sync({ stanje, broj }) {
   if (broj === 0 && stanje !== 'greska') {
@@ -584,7 +635,7 @@ function Sync({ stanje, broj }) {
 }
 
 /* ═══════ 1. KO JE NA SMJENI ═══════ */
-function Radnik({ radnici, izabran, onDalje, onAdmin }) {
+function Radnik({ radnici, izabran, onDalje, onAdmin, raspored }) {
   const lista = radnici && radnici.length ? radnici : ['Kenan', 'Edin'];
   const [izbor, setIzbor] = useState(izabran && lista.indexOf(izabran) < 0 ? 'Drugi' : (izabran || null));
   const [drugi, setDrugi] = useState(izabran && lista.indexOf(izabran) < 0 ? izabran : '');
@@ -609,6 +660,7 @@ function Radnik({ radnici, izabran, onDalje, onAdmin }) {
           onChange={e => setDrugi(e.target.value)} placeholder="Upiši ime" />
       )}
       <button className="btn" disabled={!ime} onClick={() => onDalje(ime)}>Dalje — prebroji robu</button>
+      <DanasTrening raspored={raspored} />
       <div style={{ textAlign: 'center', marginTop: 30 }}>
         <button className="linkbtn" onClick={onAdmin}>Vlasnik ›</button>
       </div>
@@ -680,7 +732,7 @@ function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart, o
 }
 
 /* ═══════ 3. AKTIVNA SMJENA ═══════ */
-function Smjena({ smjena, proizvodi, clanovi, treneri, dodaj, pokaziToast, setClanovi, onZavrsi, onNovi }) {
+function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, dodaj, pokaziToast, setClanovi, onZavrsi, onNovi }) {
   const [zadnji, setZadnji] = useState(null);  // {p, n}
   const [sheet, setSheet] = useState(null);    // dopuna | ispravka | clan | zavrsi
   const [hit, setHit] = useState(null);
@@ -758,6 +810,8 @@ function Smjena({ smjena, proizvodi, clanovi, treneri, dodaj, pokaziToast, setCl
             </div>
           </div>
         </div>
+
+        {Logika.zaDan(raspored, Logika.danUSedmici(Logika.danasSarajevo())).length > 0 && <DanasTrening raspored={raspored} />}
 
         {(dio.dnevne.length > 0 || paketi.length > 0) && (
           <div>
@@ -1376,13 +1430,14 @@ function Admin({ nazad, pokaziToast }) {
         <button className="chip" onClick={() => ucitaj(pin)} disabled={radi}>{radi ? '…' : '↻ Osvježi'}</button>
       </div>
       <div className="tabs">
-        {[['danas', 'Danas'], ['karte', 'Karte'], ['vrata', 'Vrata'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['proizvodi', 'Proizvodi'], ['mjesec', 'Mjesec'], ['postavke', 'Postavke']].map(([k, n]) =>
+        {[['danas', 'Danas'], ['raspored', 'Raspored'], ['karte', 'Karte'], ['vrata', 'Vrata'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['proizvodi', 'Proizvodi'], ['mjesec', 'Mjesec'], ['postavke', 'Postavke']].map(([k, n]) =>
           <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>)}
       </div>
       {greska && <div className="err">{greska}</div>}
       {d && tab === 'danas' && <AdminDanas d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'zalihe' && <AdminZalihe d={d} />}
       {d && tab === 'karte' && <AdminKarte d={d} />}
+      {d && tab === 'raspored' && <AdminRaspored d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'clanovi' && <AdminClanovi d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'proizvodi' && <AdminProizvodi d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'vrata' && <AdminVrata pin={pin} pokaziToast={pokaziToast} />}
@@ -1451,6 +1506,85 @@ function AdminDanas({ d, pin, osvjezi, pokaziToast }) {
       {(d.proizvodi || []).some(p => p.dodao) && <div className="warn">★ Radnik je dodao novi proizvod: {(d.proizvodi || []).filter(p => p.dodao).map(p => p.naziv).join(', ')}. Provjeri cijenu i upiši nabavnu u tabu „Proizvodi".</div>}
       {d.zalihe.some(z => z.nisko) && <div className="warn">Nisko na zalihi: {d.zalihe.filter(z => z.nisko).map(z => z.naziv + ' (' + z.kolicina + ')').join(', ')}</div>}
     </>
+  );
+}
+
+function AdminRaspored({ d, pin, osvjezi, pokaziToast }) {
+  const [uredi, setUredi] = useState(null);
+  const raspored = d.raspored || [];
+  const termini = Logika.termini(raspored);
+  return (
+    <>
+      <div className="info">Ovo radnik vidi na početku dana i tokom smjene: ko dolazi, u koliko sati i šta taj dan trenira.</div>
+      <button className="btn" onClick={() => setUredi({ termin_id: '', osobe: '', vrijeme: '19:00', trener: '', napomena: '', dani: {} })}>+ Novi termin</button>
+      {Logika.DANI.map(dan => {
+        const lista = Logika.zaDan(raspored, dan);
+        return (
+          <div key={dan}>
+            <div className="grp">{Logika.DANI_IME[dan].toUpperCase()}</div>
+            <div className="card0">
+              {!lista.length && <div className="sit" style={{ padding: '12px 14px', marginTop: 0 }}>—</div>}
+              {lista.map((t, i) => (
+                <button key={t.termin_id + i} className="listbtn" data-termin={t.termin_id} onClick={() => setUredi(termini.find(x => x.termin_id === t.termin_id))}>
+                  <span><b style={{ color: 'var(--gold)' }}>{t.vrijeme}</b> {t.osobe}<div className="sit">{t.trening || 'plan nije upisan'}{t.trener ? ' · ' + t.trener : ''}</div></span>
+                  <span className="sit">uredi ›</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      {uredi && <UrediTermin t={uredi} treneri={d.treneri || []} pin={pin} zatvori={() => setUredi(null)}
+        gotovo={poruka => { setUredi(null); pokaziToast(poruka, 'ok'); osvjezi(); }} />}
+    </>
+  );
+}
+
+function UrediTermin({ t, treneri, pin, zatvori, gotovo }) {
+  const [x, setX] = useState({ ...t, dani: { ...t.dani } });
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState('');
+  const prebaci = dan => setX(s => { const d = { ...s.dani }; if (d.hasOwnProperty(dan)) delete d[dan]; else d[dan] = ''; return { ...s, dani: d }; });
+  const sacuvaj = async () => {
+    setRadi(true); setGr('');
+    try { await api('saveTermin', pin, x); gotovo('✓ Raspored sačuvan.'); } catch (e) { setGr(e.message); } finally { setRadi(false); }
+  };
+  const obrisi = async () => {
+    setRadi(true); setGr('');
+    try { await api('deleteTermin', pin, x.termin_id); gotovo('Termin uklonjen iz rasporeda.'); } catch (e) { setGr(e.message); } finally { setRadi(false); }
+  };
+  const izabrani = Logika.DANI.filter(d => x.dani.hasOwnProperty(d));
+  return (
+    <Sheet naslov={t.termin_id ? 'Uredi termin' : 'Novi termin'} zatvori={zatvori}>
+      <div className="lab">KO TRENIRA</div>
+      <input className="inp" data-testid="t-osobe" value={x.osobe} maxLength={120} placeholder="npr. Enes Velić + supruga, Nino" onChange={e => setX({ ...x, osobe: e.target.value })} />
+      <div className="two" style={{ marginTop: 12 }}>
+        <div style={{ flex: 1 }}><div className="lab">VRIJEME</div>
+          <input className="inp" type="time" data-testid="t-vrijeme" value={x.vrijeme} onChange={e => setX({ ...x, vrijeme: e.target.value })} /></div>
+      </div>
+      <div className="lab" style={{ marginTop: 12 }}>TRENER</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <button className={'chip' + (!x.trener ? ' on' : '')} onClick={() => setX({ ...x, trener: '' })}>bez trenera</button>
+        {treneri.map(tr => <button key={tr} className={'chip' + (x.trener === tr ? ' on' : '')} onClick={() => setX({ ...x, trener: tr })}>{tr}</button>)}
+      </div>
+      <div className="lab" style={{ marginTop: 14 }}>DANI</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {Logika.DANI.map(dan => <button key={dan} data-dan={dan} className={'chip' + (x.dani.hasOwnProperty(dan) ? ' on' : '')} style={{ minWidth: 56 }} onClick={() => prebaci(dan)}>{Logika.DANI_IME[dan].slice(0, 3)}</button>)}
+      </div>
+      {izabrani.length > 0 && <div className="lab" style={{ marginTop: 14 }}>ŠTA TRENIRA KOJI DAN</div>}
+      {izabrani.map(dan => (
+        <div key={dan} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <div style={{ width: 84, flexShrink: 0, fontSize: 14, color: 'var(--dim)' }}>{Logika.DANI_IME[dan]}</div>
+          <input className="inp" data-trening={dan} value={x.dani[dan]} maxLength={200} placeholder="npr. Noge + core"
+            onChange={e => { const v = e.target.value; setX(s => ({ ...s, dani: { ...s.dani, [dan]: v } })); }} />
+        </div>
+      ))}
+      <div className="lab" style={{ marginTop: 6 }}>NAPOMENA (NIJE OBAVEZNO)</div>
+      <input className="inp" value={x.napomena || ''} maxLength={200} placeholder="npr. donijeti peškir, plaća krajem mjeseca" onChange={e => setX({ ...x, napomena: e.target.value })} />
+      {gr && <div className="err" style={{ marginTop: 10 }}>{gr}</div>}
+      <button className="btn" style={{ marginTop: 12 }} disabled={radi || !x.osobe.trim() || !x.vrijeme || !izabrani.length} onClick={sacuvaj}>{radi ? 'Čuvam…' : 'Sačuvaj'}</button>
+      {t.termin_id && <button className="btn2" style={{ marginTop: 10, color: 'var(--red)' }} disabled={radi} onClick={obrisi}>Ukloni termin iz rasporeda</button>}
+    </Sheet>
   );
 }
 

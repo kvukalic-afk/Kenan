@@ -275,3 +275,34 @@ test('radnik dodaje novo piće: odmah se prodaje i broji, vlasnik vidi „dodao"
   a = ok(g.getAdminData('2580'));
   assert.equal(a.proizvodi.find(p => p.product_id === 'monster_mango').dodao, '');
 });
+
+test('raspored treninga: primjer Enes (ned–čet 19h), uređivanje po danima, brisanje, prikaz radniku', () => {
+  const g = okruzenje();
+  let b = ok(g.getBootstrap());
+  assert.deepEqual(b.raspored.map(r => r.dan), ['pon', 'uto', 'sri', 'cet', 'ned']);
+  assert.ok(b.raspored.every(r => r.vrijeme === '19:00' && /Enes Velić/.test(r.osobe)));
+  assert.equal(g.danUSedmici_('2026-11-22'), 'ned');
+  assert.equal(g.danUSedmici_('2026-11-23'), 'pon');
+  // vlasnik upiše šta trenira po danima; srijedu ukloni, doda petak
+  const r = ok(g.saveTermin('2580', { termin_id: 'T-enes', osobe: 'Enes Velić + supruga, Nino', vrijeme: '19:00', trener: 'Kenan',
+    dani: { ned: 'Noge', pon: 'Prsa + triceps', uto: 'Leđa + biceps', cet: 'Ramena', pet: 'Kardio' } }));
+  assert.deepEqual(r.raspored.map(x => x.dan + ':' + x.trening), ['pon:Prsa + triceps', 'uto:Leđa + biceps', 'cet:Ramena', 'pet:Kardio', 'ned:Noge']);
+  assert.ok(r.raspored.every(x => x.trener === 'Kenan'));
+  // drugi termin isti dan, ranije — sortira se po vremenu
+  ok(g.saveTermin('2580', { osobe: 'Amra', vrijeme: '7:30', dani: { pon: 'Full body' } }));
+  b = ok(g.getBootstrap());
+  const pon = b.raspored.filter(x => x.dan === 'pon');
+  assert.deepEqual(pon.map(x => x.vrijeme + ' ' + x.osobe.split(' ')[0]), ['07:30 Amra', '19:00 Enes']);
+  // validacija i PIN
+  assert.equal(g.saveTermin('1111', {}).code, 'PIN');
+  assert.equal(g.saveTermin('2580', { osobe: 'X', vrijeme: '19:00', dani: {} }).code, 'DANI');
+  assert.equal(g.saveTermin('2580', { osobe: 'X', vrijeme: 'navečer', dani: { pon: '' } }).code, 'VRIJEME');
+  // brisanje: nestane iz rasporeda, redovi ostaju (neaktivni)
+  const n = g.__tabela('TRENINZI').length;
+  ok(g.deleteTermin('2580', 'T-enes'));
+  assert.ok(!ok(g.getBootstrap()).raspored.some(x => x.termin_id === 'T-enes'));
+  assert.equal(g.__tabela('TRENINZI').length, n);
+  // ponovni setup ne vraća obrisani primjer
+  g.setupSpreadsheet();
+  assert.ok(!ok(g.getBootstrap()).raspored.some(x => x.termin_id === 'T-enes'));
+});

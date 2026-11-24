@@ -97,6 +97,12 @@ Najlakše u aplikaciji: **Vlasnik › → Proizvodi** (+ Novi proizvod, klik na 
 - **Spisak radnika i trenera**: **Vlasnik → Postavke**.
 - **Evidencija**: **Vlasnik → Karte** (dnevne i mjesečne danas/mjesec, nove i produžene, ko ima trenera i do kada).
 
+## 10b. Raspored treninga (podsjetnik "Danas na treningu")
+
+- Na prvom ekranu i tokom smjene radnik vidi **ko danas dolazi, u koliko sati, s kojim trenerom i šta trenira** (dugme "sutra →" pokazuje sutrašnji dan).
+- Uređuje se u **Vlasnik → Raspored**: "+ Novi termin" ili klik na postojeći → osobe, vrijeme, trener, dani i za **svaki dan** šta se trenira.
+- Podaci su u tabu **TRENINZI** u Sheetu (jedan red = jedan termin u jednom danu).
+
 ## 11. Provjera da sve radi (5 minuta)
 
 Uradi ovo jednom nakon postavljanja (poslije možeš obrisati redove testa iz SMJENE/DOGADJAJI/INVENTURA):
