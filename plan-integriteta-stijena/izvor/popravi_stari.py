@@ -159,7 +159,10 @@ PL = {1: '1 – neznatne', 2: '2 – značajne', 3: '3 – vrlo značajne'}
 
 # ───────── 1. Naslovna i osnovne informacije
 replace_in(find('Cazin, juni 2021'), 'juni 2021. godine', '23.11.2026. godine')
-set_text(find('Datum usvajanje plana integriteta'), 'Datum usvajanja plana integriteta 20.11.2026. godine')
+_du = find('Datum usvajanje plana integriteta')
+set_text(_du, 'Datum usvajanja plana integriteta ')
+_r = copy.deepcopy(_du.runs[0]._r); _du._p.append(_r)
+_rr = docx.text.run.Run(_r, _du); _rr.text = '20.11.2026. godine'; _rr.bold = False
 for old, new in [('1. Sabina Žunić,pedagog - koordinator radne grupe', '1. Sabina Žunić, pedagog - koordinator radne grupe'), ('3. Dženita Hepić,knjigovođa', '3. Dženita Hepić, knjigovođa'), ('5. Dževaira Džehverović, soc.radnik', '5. Dževaira Džehverović, soc. radnik')]:
     hit = [p for p in paras() if norm(p.text) == old]
     if hit: set_text(hit[0], new)
@@ -268,14 +271,11 @@ for o in R['oblasti']:
         last = new_par_after(last, f"Oblast: {o['id']} – {o['naziv']} ({o['vrsta'].lower()} oblast) | Rizik {r['id']}: {r['naziv']}", bold=True, size=9)
         rows = [['Br.', 'Faktori/izvori rizika: Sistemski (S), Organizacijski (O), Individualni (I), Radno-procesni i proceduralni (P)', 'Postojeće mjere/ kontrolni mehanizmi na snazi u instituciji', 'Analiza rizika', 'Ocjena vjerovatnoće nastanka korupcije', 'Ocjena posljedice nastanka korupcije', 'Intenzitet rizika'],
                 ['1.', [f"{i + 1}. ({f[0]}) {f[1]}" for i, f in enumerate(r['f'])], ['• ' + k for k in r['k']], r['a'], VL[r['v']], PL[r['p']], f"{NIV[r['nivo']]} ({r['x']})"]]
-        t = mk_table(rows, [0.7, 4.6, 3.8, 2.0, 1.6, 1.6, 1.7], fills={(1, 6): FILL[r['nivo']]})
+        t = mk_table(rows, [0.9, 4.2, 3.7, 2.0, 2.0, 1.6, 1.6], fills={(1, 6): FILL[r['nivo']]})
         last.addnext(t._tbl); last = t._tbl
 
 # ───────── 9. Preporuke – popuniti prazan prioritet (skala 1–5 iz originala)
-T6 = TBL[6]
-for ri, pr in zip(range(3, 9), ['1', '3', '2', '1', '2', '3']):
-    c = T6.rows[ri].cells[2]
-    if not norm(c.text): cell_set(c, pr, size=9)
+# prioritet je u originalu označen u kućicama – tabela ostaje kakva jeste
 
 # ───────── 10. Mjere – tabela po modelu Uputstva
 T7 = TBL[7]
@@ -431,13 +431,86 @@ for k in (1, 2, 3, 4):
 tbl_font(TBL[8], 11)
 
 # ───────── 18. Zaglavlja izvornih tabela: ponavljanje na novoj stranici i bez prelamanja reda zaglavlja
-for k in (0, 1, 2, 3, 4, 6, 8):
-    tr = TBL[k].rows[0]._tr
+for k, nh in ((1, 1), (2, 1), (3, 2), (4, 1), (8, 1)):
+  for tr in [r._tr for r in TBL[k].rows[:nh]]:
     trPr = tr.get_or_add_trPr()
     for tag in ('w:cantSplit', 'w:tblHeader'):
         if trPr.find(qn(tag)) is None:
             e = OxmlElement(tag); e.set(qn('w:val'), 'true'); trPr.append(e)
 find('Izvještaj o integritetu – Analiza ranjivih aktivnosti').paragraph_format.page_break_before = True
+
+# ───────── 19. Priprema za štampu: svaki akt na svojoj stranici, bez razvučenih redova, bez naslova na dnu stranice
+def _empty(el):
+    return el.tag == qn('w:p') and not ''.join(t.text or '' for t in el.iter(qn('w:t'))).strip() and el.find('.//' + qn('w:br')) is None and el.find('.//' + qn('w:sectPr')) is None and el.find('.//' + qn('w:drawing')) is None and el.find('.//' + qn('w:pict')) is None
+def _shrink(el, half_pts=12):
+    pPr = el.find(qn('w:pPr'))
+    if pPr is None: pPr = OxmlElement('w:pPr'); el.insert(0, pPr)
+    rPr = pPr.find(qn('w:rPr'))
+    if rPr is None: rPr = OxmlElement('w:rPr'); pPr.append(rPr)
+    for tag in ('w:sz', 'w:szCs'):
+        e = rPr.find(qn(tag))
+        if e is None: e = OxmlElement(tag); rPr.append(e)
+        e.set(qn('w:val'), str(half_pts))
+    sp = pPr.find(qn('w:spacing'))
+    if sp is None: sp = OxmlElement('w:spacing'); pPr.append(sp)
+    sp.set(qn('w:before'), '0'); sp.set(qn('w:after'), '0')
+def _between(a, b):
+    out, el = [], a._p.getnext()
+    while el is not None and el is not b._p:
+        out.append(el); el = el.getnext()
+    return out
+# akti iz 2025: Odluka (str. 5), Obavijest (str. 6) i Program (str. 7) svaki počinje na novoj stranici; prazni redovi u njima upola niži
+_b93 = find('Broj: 610-93/2025'); _b94 = find('Broj: 610-94/2025')
+_prog = [p for p in paras() if norm(p.text) == 'JU OŠ „Stijena“'][0]
+for el in _between(_b93, _prog):
+    if _empty(el): _shrink(el)
+_b94.paragraph_format.page_break_before = True
+_prog.paragraph_format.page_break_before = True
+# naslov poglavlja ne ostaje sam na dnu stranice
+find('ORGANIZACIONA STRUKTURA, KATALOG RADNIH MJESTA').paragraph_format.page_break_before = True
+find('IDENTIFIKACIJA, ANALIZA I PROCJENA RIZIKA').paragraph_format.page_break_before = True
+# kontrolni mehanizmi na novoj stranici, postupak prijave odmah iza njih, konačni izvještaj cijeli na jednoj stranici
+_pp = find('POSTUPAK PRIJAVE KORUPCIJE'); _pp.paragraph_format.page_break_before = False
+_pp.paragraph_format.space_before = Pt(18)
+find('KONAČNI IZVJEŠTAJ RADNE GRUPE').paragraph_format.page_break_before = True
+# nabrajanja u postupku prijave: viseća uvlaka (prelomljeni red poravnat s tekstom, ne s oznakom)
+for el in _between(_pp, find('KONAČNI IZVJEŠTAJ RADNE GRUPE')):
+    if el.tag != qn('w:p'): continue
+    pp_ = docx.text.paragraph.Paragraph(el, None)
+    if pp_.text.startswith('•'):
+        pf = pp_.paragraph_format; pf.left_indent = Cm(0.63); pf.first_line_indent = Cm(-0.63)
+        pf.tab_stops.add_tab_stop(Cm(0.63))
+    elif _empty(el):
+        _shrink(el)
+# status quo: višestruki prazni redovi svedeni na jedan
+_sq = [p for p in paras() if norm(p.text) == 'STATUS QUO'][0]
+_prev_empty = False
+for el in _between(_sq, find('PREPORUKE ZA UNAPREĐENJE')):
+    e = _empty(el)
+    if e and _prev_empty: el.getparent().remove(el); continue
+    _prev_empty = e
+# obostrano poravnati pasusi koji završavaju skrivenim prelomom reda (w:cr / w:br) – zadnji red se ne razvlači
+for el in d.element.body.iter(qn('w:p')):
+    runs = el.findall(qn('w:r'))
+    while runs:
+        last_r = runs[-1]
+        kids = [k for k in last_r if k.tag != qn('w:rPr')]
+        if kids and kids[-1].tag in (qn('w:cr'),) or (kids and kids[-1].tag == qn('w:br') and kids[-1].get(qn('w:type')) in (None, 'textWrapping')):
+            if not ''.join(t.text or '' for t in el.iter(qn('w:t'))).strip(): break
+            last_r.remove(kids[-1])
+            if len(kids) == 1: el.remove(last_r); runs = el.findall(qn('w:r')); continue
+        break
+# program rada: redovi tabele se ne prelamaju (zaglavlje faze ne ostaje samo na dnu stranice)
+for r in TBL[0].rows:
+    trPr = r._tr.get_or_add_trPr()
+    if trPr.find(qn('w:cantSplit')) is None:
+        e = OxmlElement('w:cantSplit'); e.set(qn('w:val'), 'true'); trPr.append(e)
+# fontovi u katalogu radnih mjesta ujednačeni (Times New Roman)
+for c in [c for r in TBL[1].rows for c in r.cells]:
+    for p_ in c.paragraphs:
+        for rr in p_.runs:
+            rr.font.name = 'Times New Roman'; rr._r.get_or_add_rPr().get_or_add_rFonts().set(qn('w:hAnsi'), 'Times New Roman')
+            if rr.font.size is None or rr.font.size.pt > 10: rr.font.size = Pt(10)
 
 # ───────── samostalni ručni prijelomi stranice → „početak na novoj stranici“ na sljedećem paragrafu (sprječava prazne stranice)
 for el in list(d.element.body.iterchildren()):
@@ -458,6 +531,15 @@ for el in list(d.element.body.iterchildren()):
         prv = el.getprevious()
         while prv is not None and prv.tag == qn('w:p') and not ''.join(t.text or '' for t in prv.iter(qn('w:t'))).strip() and prv.find('.//' + qn('w:br')) is None and prv.find('.//' + qn('w:sectPr')) is None and prv.find('.//' + qn('w:drawing')) is None:
             rm = prv; prv = prv.getprevious(); rm.getparent().remove(rm)
+
+# ───────── 20. Završne korekcije prijeloma (nakon pretvaranja ručnih prijeloma)
+for r in TBL[6].rows:
+    trPr = r._tr.get_or_add_trPr()
+    if trPr.find(qn('w:cantSplit')) is None:
+        e = OxmlElement('w:cantSplit'); e.set(qn('w:val'), 'true'); trPr.append(e)
+find('POSTUPAK PRIJAVE KORUPCIJE').paragraph_format.page_break_before = True
+find('Analiza statusa quo na temelju saradnje sa drugim tijelima').paragraph_format.page_break_before = True
+docx.text.paragraph.Paragraph(p_meth, None).paragraph_format.space_after = Pt(6)
 
 # ───────── ažuriranje sadržaja pri otvaranju u Wordu
 settings = d.settings.element
