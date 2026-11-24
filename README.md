@@ -199,6 +199,19 @@ Na Početnoj je kartica **„Dokumentacija za inspekciju“** s procentom spremn
 
 > **Važno:** na internetu je javno dostupan samo dokument *Pedagoški standardi i normativi za osnovni odgoj i obrazovanje USK* (pzusk.ba). Zvanične obrasce Ministarstva obrazovanja USK, Vlade USK i Sindikata nisam našao javno objavljene. Zato su obrasci u appu napravljeni po uobičajenoj praksi školskih psihologa. Ako škola ili Pedagoški zavod imaju svoje obrasce, ubaci ih u **Moji dokumenti**, pa se obrasci u appu mogu uskladiti s njima.
 
+### Za uvid pedagogu (Izvještaji → Za uvid pedagogu)
+
+Na jednom mjestu je sve što pedagog ili direktor obično traže na uvid, za izabrani mjesec, sa stanjem i dugmetom za print:
+- godišnji program rada;
+- mjesečni plan;
+- dnevnik rada s evidencijom 40-satne sedmice;
+- zbirna evidencija rada s učenicima;
+- stručno usavršavanje;
+- zapisnici;
+- pregled obavezne dokumentacije.
+
+Dokumenti za uvid imaju **šifre umjesto imena i nemaju sadržaj razgovora**. Pedagog vidi da je rad obavljen (kada, s kim, zbog čega i koliko), a bilješke, nalazi i testovi ostaju povjerljivi.
+
 ### AI asistent
 
 **+ → AI asistent**, traka na Početnoj ili Izvještaji → AI asistent. To je razgovor s AI-jem koji:

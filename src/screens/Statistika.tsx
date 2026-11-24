@@ -55,6 +55,7 @@ export function Statistika() {
       <main className="sadrzaj sirok">
         <div className="plocice">
           <a href="#/dokumentacija" className="istaknuta"><Ikona ime="kopija" /><strong>Dokumentacija</strong><span>inspekcija, obrasci, propisi</span></a>
+          <a href="#/uvid" className="istaknuta"><Ikona ime="print" /><strong>Za uvid pedagogu</strong><span>sve što se traži na uvid</span></a>
           <a href="#/asistent"><Ikona ime="razgovor" /><strong>AI asistent</strong><span>pitaj o propisima i planu</span></a>
           <a href="#/izvjestaj"><Ikona ime="kalendar" /><strong>Dnevni / sedmični</strong><span>izvještaj šta sam radio/la</span></a>
           <a href={`#/print/dnevnik/${danasIso().slice(0, 7)}`}><Ikona ime="print" /><strong>Dnevnik rada</strong><span>ovaj mjesec, za print</span></a>

@@ -26,7 +26,8 @@ import { AnalizaDetalj } from './screens/AnalizaDetalj';
 import { Obrazac } from './screens/Obrazac';
 import { Dokumentacija } from './screens/Dokumentacija';
 import { Asistent } from './screens/Asistent';
-import { PrintAktivnost, PrintAnaliza, PrintDnevnik, PrintDokumentacija, PrintObrazac, PrintUsavrsavanje, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
+import { Uvid } from './screens/Uvid';
+import { PrintAktivnost, PrintAnaliza, PrintDnevnik, PrintDokumentacija, PrintUvidUcenici, PrintObrazac, PrintUsavrsavanje, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
 import type { Period } from './lib/statistika';
 
 const NEAKTIVNOST_MS = 5 * 60 * 1000;
@@ -153,6 +154,7 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
   else if (d0 === 'analiza' && d1) ekran = <AnalizaDetalj key={d1} id={d1} />;
   else if (d0 === 'obrazac' && d1) { navigacija = false; ekran = <Obrazac key={ruta.putanja + ruta.upit.toString()} vrsta={d1} id={ruta.upit.get('id') ?? undefined} sifra={ruta.upit.get('sifra') ?? undefined} biljeskaId={ruta.upit.get('biljeska') ?? undefined} />; }
   else if (d0 === 'dokumentacija') ekran = <Dokumentacija pocetniTab={ruta.upit.get('tab') ?? undefined} />;
+  else if (d0 === 'uvid') ekran = <Uvid />;
   else if (d0 === 'asistent') { navigacija = false; ekran = <Asistent pocetnoPitanje={ruta.upit.get('pitanje') ?? undefined} />; }
   else if (d0 === 'plan') ekran = <PlanRada godina={ruta.upit.get('godina') ? Number(ruta.upit.get('godina')) : undefined} mjesec={ruta.upit.get('mjesec') ?? undefined} />;
   else if (d0 === 'unos-tekst') { ekran = <UnosIzTeksta />; navigacija = false; }
@@ -180,7 +182,8 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
       : d1 === 'usavrsavanje' ? <PrintUsavrsavanje godina={Number(d2)} />
       : d1 === 'dokumentacija' ? <PrintDokumentacija godina={Number(d2)} />
       : d1 === 'plan' ? <PrintPlan godina={Number(d2)} mjesec={d3} />
-      : d1 === 'dnevnik' ? <PrintDnevnik mjesec={d2} />
+      : d1 === 'dnevnik' ? <PrintDnevnik mjesec={d2} uvid={ruta.upit.get('uvid') === '1'} />
+      : d1 === 'uvid-ucenici' ? <PrintUvidUcenici od={d2} do={d3} />
       : d1 === 'period' ? <PrintPeriod od={d2} do={d3} biljeske={ruta.upit.get('biljeske') === '1'} />
       : <PrintIzvjestaj godina={Number(d2)} period={(['I', 'II'].includes(d3) ? d3 : 'godina') as Period} />;
   } else {

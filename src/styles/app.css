@@ -611,3 +611,5 @@ section > .naslov-sekcije:first-child { margin-top: 22px; }
 .novi-pin { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 .novi-pin input { text-align: center; color: var(--tekst); }
 .osnov { font-size: 0.74rem; color: var(--tekst-blijed); margin-top: 3px; font-style: italic; line-height: 1.35; }
+.kvacica-dugme.status { cursor: default; background: var(--zelena); border-color: var(--zelena); }
+.kvacica-dugme.status.prazna { background: var(--narandzasta); border-color: var(--narandzasta); }

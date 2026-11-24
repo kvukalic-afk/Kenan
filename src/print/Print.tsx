@@ -517,7 +517,7 @@ export function PrintPlan({ godina, mjesec }: { godina: number; mjesec?: string 
 
 // ---------- 7. Dnevnik rada psihologa (mjesec) ----------
 
-export function PrintDnevnik({ mjesec }: { mjesec: string }) {
+export function PrintDnevnik({ mjesec, uvid = false }: { mjesec: string; uvid?: boolean }) {
   const postavke = usePostavke();
   const { poSifri } = useImenik();
   const ulaz = useLiveQuery(async () => {
@@ -530,12 +530,13 @@ export function PrintDnevnik({ mjesec }: { mjesec: string }) {
   const stavke = stavkeDnevnika(ulaz, od, doD);
   const sedmica = radnihSedmica(mjesec);
   const ev = evidencijaPoPodrucjima(stavke, sedmica);
-  const imena = postavke.imenaUDokumentima !== false;
-  const ucenik = (s: string) => (s ? (imena && punoIme(poSifri.get(s)) ? `${punoIme(poSifri.get(s))} (${s})` : s) : '');
+  // za uvid (pedagog, direktor) samo šifra i razred, bez imena
+  const imena = !uvid && postavke.imenaUDokumentima !== false;
+  const ucenik = (s: string) => (!s ? '' : imena && punoIme(poSifri.get(s)) ? `${punoIme(poSifri.get(s))} (${s})` : [s, poSifri.get(s)?.razred].filter(Boolean).join(', '));
   const ukupnoMin = stavke.reduce((s, x) => s + x.minuta, 0);
   const naziv = `${MJESECI[m - 1]} ${g}.`;
   return (
-    <Dokument naslov="DNEVNIK RADA PSIHOLOGA" podnaslov={`${naziv[0].toUpperCase()}${naziv.slice(1)}`} nazivFajla={`Dnevnik_rada_${mjesec}`} postavke={postavke}>
+    <Dokument naslov="DNEVNIK RADA PSIHOLOGA" podnaslov={`${naziv[0].toUpperCase()}${naziv.slice(1)}${uvid ? ' · za uvid' : ''}`} nazivFajla={`Dnevnik_rada_${mjesec}`} postavke={postavke}>
       {stavke.length === 0 ? <p>U ovom mjesecu nema evidentiranog rada.</p> : (
         <table className="lista-tab">
           <thead>
@@ -705,6 +706,50 @@ export function PrintDokumentacija({ godina }: { godina: number }) {
         </tbody>
       </table>
       <p style={{ fontSize: '8.5pt' }}>Napomena: obaveze označene kao „dobra praksa“ nisu izričito propisane, ali ih inspekcija i Pedagoški zavod uobičajeno očekuju. Izvori: Zakon o osnovnom odgoju i obrazovanju USK (Sl. glasnik USK 19/2023), Pedagoški standardi i normativi za osnovno obrazovanje USK (Sl. glasnik USK 20/2024, čl. 13).</p>
+    </Dokument>
+  );
+}
+
+/** Zbirna evidencija rada s učenicima za uvid (pedagog, direktor): bez imena i bez sadržaja razgovora. */
+export function PrintUvidUcenici({ od, do: doD }: { od: string; do: string }) {
+  const postavke = usePostavke();
+  const { poSifri } = useImenik();
+  const ulaz = useLiveQuery(async () => {
+    const [razgovori, saradnja] = await Promise.all([db.razgovori.toArray(), db.saradnja.toArray()]);
+    return { razgovori: razgovori.filter((r) => r.datum >= od && r.datum <= doD), saradnja: saradnja.filter((s) => s.sifra && s.datum >= od && s.datum <= doD) };
+  }, [od, doD]);
+  if (!ulaz) return <Ucitavanje />;
+  const zadnji = zadnjiRazgovorPoUceniku(ulaz.razgovori);
+  const redovi = [...zadnji.keys()].map((sifra) => {
+    const svi = ulaz.razgovori.filter((r) => r.sifra === sifra).sort((a, b) => a.datum.localeCompare(b.datum));
+    return {
+      sifra,
+      razred: poSifri.get(sifra)?.razred || svi[svi.length - 1].razred || '',
+      broj: svi.length,
+      saradnja: ulaz.saradnja.filter((s) => s.sifra === sifra).length,
+      prvi: svi[0].datum, zadnji: svi[svi.length - 1].datum,
+      razlozi: [...new Set(svi.map((r) => r.razlog).filter(Boolean))].join(', '),
+      status: zadnji.get(sifra)?.statusSlucaja || '',
+    };
+  }).sort((a, b) => a.razred.localeCompare(b.razred, 'bs', { numeric: true }) || a.sifra.localeCompare(b.sifra, 'bs', { numeric: true }));
+  const ukupno = redovi.reduce((s, r) => s + r.broj, 0);
+  return (
+    <Dokument naslov="EVIDENCIJA RADA S UČENICIMA – ZBIRNO" podnaslov={`Period ${prikaz(od)} – ${prikaz(doD)} · za uvid`} nazivFajla={`Evidencija_ucenici_zbirno_${od}_${doD}`} postavke={postavke}>
+      {redovi.length === 0 ? <p>U ovom periodu nema evidentiranih razgovora s učenicima.</p> : (
+        <table className="lista-tab">
+          <thead><tr><th style={{ width: '5%' }}>R. br.</th><th style={{ width: '10%' }}>Šifra</th><th style={{ width: '8%' }}>Razred</th><th style={{ width: '9%' }} className="n">Razgovora</th><th style={{ width: '10%' }} className="n">Saradnja (roditelji, nastavnici)</th><th>Razlog</th><th style={{ width: '13%' }}>Prvi / zadnji kontakt</th><th style={{ width: '11%' }}>Status</th></tr></thead>
+          <tbody>
+            {redovi.map((r, i) => (
+              <tr key={r.sifra}>
+                <td className="n">{i + 1}.</td><td>{r.sifra}</td><td>{r.razred}</td><td className="n">{r.broj}</td><td className="n">{r.saradnja || ''}</td>
+                <td className="tekst-celija">{r.razlozi}</td><td>{prikaz(r.prvi)}{r.zadnji !== r.prvi ? <><br />{prikaz(r.zadnji)}</> : null}</td><td>{r.status}</td>
+              </tr>
+            ))}
+            <tr className="zbir"><td colSpan={3}>Ukupno: {redovi.length} učenika</td><td className="n">{ukupno}</td><td colSpan={4}></td></tr>
+          </tbody>
+        </table>
+      )}
+      <p style={{ fontSize: '8.5pt' }}>Evidencija pokazuje obim i vrstu rada. Bilješke iz razgovora, zaključci, nalazi i testovi su povjerljiva dokumentacija psihologa i čuvaju se odvojeno (Etički kodeks psihologa; propisi o zaštiti ličnih podataka). Ključ šifri učenika je kod psihologa.</p>
     </Dokument>
   );
 }

@@ -59,6 +59,11 @@ function Spremnost() {
           <a className="chip ai-chip mali" href="#/asistent?pitanje=inspekcija" style={{ marginTop: 8, display: 'inline-flex' }}>🤖 Pitaj AI šta mi fali</a>
         </div>
       </section>
+      <a className="asistent-traka" href="#/uvid" style={{ marginBottom: 12 }}>
+        <span className="asistent-ikona">📂</span>
+        <span className="rastegni"><strong>Za uvid pedagogu</strong><span className="blijedo"> · plan, dnevnik, evidencija – spremno za print</span></span>
+        <Ikona ime="desno" />
+      </a>
       <MojPocetak />
       {GRUPE.map((g) => {
         const stavke = stanje.filter((s) => s.def.grupa === g.kljuc);
