@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<title>Karusel — Ženski termin 20:30</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Lora:ital,wght@1,500;1,600&display=block" rel="stylesheet">
+<style>
+  :root{--ivory:#F6F1E8;--gold:#D6B67C;--graphite:#16140F;--g2:#1E1B16}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0c0b09;font-family:Poppins,sans-serif;color:var(--ivory)}
+  .slide{position:relative;width:1080px;height:1350px;overflow:hidden;margin-bottom:40px;
+    background:
+      radial-gradient(900px 700px at 8% 4%, rgba(107,31,28,.55), transparent 62%),
+      radial-gradient(700px 600px at 100% 100%, rgba(150,96,40,.22), transparent 60%),
+      radial-gradient(1200px 900px at 50% 45%, var(--g2), var(--graphite) 70%)}
+  .tall .slide{height:1920px}
+  .slide::after{content:"";position:absolute;inset:-50%;pointer-events:none;z-index:8;opacity:.12;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
+  .vig{position:absolute;inset:0;pointer-events:none;z-index:7;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%)}
+  .frame{position:absolute;inset:44px;border:1.5px solid rgba(214,182,124,.45);z-index:9;pointer-events:none}
+  .c{position:absolute;width:46px;height:46px;border:0 solid var(--gold)}
+  .c.tl{top:-4px;left:-4px;border-top-width:4px;border-left-width:4px}
+  .c.tr{top:-4px;right:-4px;border-top-width:4px;border-right-width:4px}
+  .c.bl{bottom:-4px;left:-4px;border-bottom-width:4px;border-left-width:4px}
+  .c.br{bottom:-4px;right:-4px;border-bottom-width:4px;border-right-width:4px}
+
+  /* fotografija */
+  .photo{position:absolute;left:0;right:0;bottom:0;height:880px;z-index:1;
+    background:url(ekipa.jpg) 42% 78%/122% auto no-repeat;
+    filter:brightness(.96) contrast(1.06) saturate(1.04) sepia(.08);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.55) 14%,#000 30%,#000 100%);
+            mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.55) 14%,#000 30%,#000 100%)}
+  .photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 80%,rgba(16,14,11,.75) 100%)}
+  .tall .photo{bottom:auto;top:600px;height:980px;background-position:42% 70%;background-size:auto 112%;
+    -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 24%,#000 80%,transparent 100%);
+            mask-image:linear-gradient(180deg,transparent 0%,#000 24%,#000 80%,transparent 100%)}
+  .tall .photo::after{display:none}
+  .inner{position:absolute;inset:44px;z-index:10;padding:78px 84px 70px;display:flex;flex-direction:column}
+  .tall .inner{padding:300px 84px 470px}
+  .top{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:22px;letter-spacing:.32em;color:var(--gold);text-transform:uppercase}
+  .tall .top{position:absolute;top:96px;left:84px;right:84px}
+  .top .n{letter-spacing:.12em;color:rgba(246,241,232,.6);font-weight:500}
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .body.up{justify-content:flex-start;padding-top:56px}
+  .tall .body.up{padding-top:0}
+  .label{font-weight:600;font-size:26px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:26px}
+  h1{font-weight:800;font-size:96px;line-height:1.02;letter-spacing:-.03em;text-wrap:balance}
+  h1.md{font-size:82px}
+  h1 .g{color:var(--gold)}
+  p.sub{margin-top:36px;font-weight:500;font-size:42px;line-height:1.32;color:rgba(246,241,232,.9);text-wrap:pretty}
+  em{font-family:Lora,serif;font-style:italic;font-weight:600;color:var(--gold)}
+  .days{display:flex;gap:16px;margin-top:30px}
+  .day{font-weight:700;font-size:30px;letter-spacing:.12em;padding:12px 24px;border:2px solid var(--gold);color:var(--gold);border-radius:60px}
+  .days.big{gap:22px;margin-top:46px}
+  .days.big .day{flex:1;text-align:center;font-size:33px;padding:26px 0;border-radius:10px;background:rgba(214,182,124,.08)}
+  .time{font-weight:900;font-size:250px;line-height:.9;letter-spacing:-.05em;color:var(--ivory);margin-top:40px}
+  .time span{color:var(--gold)}
+  .list{margin-top:40px;display:flex;flex-direction:column;gap:20px}
+  .list div{font-size:40px;font-weight:600;line-height:1.25;padding-left:46px;position:relative}
+  .list div::before{content:"";position:absolute;left:0;top:.4em;width:20px;height:20px;background:var(--gold);transform:rotate(45deg)}
+  .kw{display:inline-block;background:var(--gold);color:var(--graphite);padding:0 22px 6px;border-radius:8px}
+  .foot{display:flex;justify-content:space-between;align-items:flex-end;font-size:24px;color:rgba(246,241,232,.7);font-weight:500}
+  .tall .foot{position:absolute;left:84px;right:84px;bottom:390px}
+  .swipe{font-weight:600;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-size:24px}
+  .swipe b{font-size:34px;margin-left:8px;letter-spacing:0}
+  .slogan{font-family:Lora,serif;font-style:italic;font-size:30px;color:var(--gold)}
+  .admit{margin-top:46px;padding-top:34px;border-top:1.5px solid rgba(214,182,124,.35);font-weight:500;font-size:32px;line-height:1.38;color:rgba(246,241,232,.82)}
+  .s1 .foot{text-shadow:0 2px 12px rgba(0,0,0,.7)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const S=[
+ { // 1 FOTO + HOOK
+  cls:'s1', photo:true, up:true,
+  html:`<div class="label">Ženski termin</div>
+   <h1>Ovo je ekipa <span class="g">iz 20:30.</span></h1>
+   <div class="days"><span class="day">NED</span><span class="day">UTO</span><span class="day">ČET</span></div>`, foot:'swipe'},
+ { // 2 TERMIN
+  html:`<div class="label">Ženski termin · svake sedmice</div>
+   <h1 class="md">Tri večeri. Jedna ekipa.</h1>
+   <div class="days big"><span class="day">NEDJELJA</span><span class="day">UTORAK</span><span class="day">ČETVRTAK</span></div>
+   <div class="time">20<span>:</span>30</div>
+   <p class="sub">Dođeš zbog treninga. <em>Ostaneš zbog ekipe.</em></p>`, foot:'swipe'},
+ { // 3 CTA
+  html:`<div class="label">Prvi put?</div>
+   <h1>Povedi <span class="g">drugaricu.</span></h1>
+   <div class="list">
+     <div>Ne treba ti nikakvo iskustvo</div>
+     <div>Ponesi čiste patike i vodu</div>
+     <div>Ostalo je na nama</div>
+   </div>
+   <p class="admit">Prvi trening neće biti lahak. Ali biće zabavniji nego što misliš. Napiši <span class="kw">TERMIN</span> u poruku.</p>`, foot:'end'},
+];
+if(new URLSearchParams(location.search).get('f')==='tall') document.body.classList.add('tall');
+const root=document.getElementById('root'), N=S.length;
+S.forEach((s,i)=>{
+  const foot=s.foot==='swipe'?`<span>@fitnesadin</span><span class="swipe">prevuci<b>»</b></span>`
+    :`<span>Fitness Club Adin · Stijena · 060 307 1722</span><span class="slogan">Jači od jučer.</span>`;
+  root.insertAdjacentHTML('beforeend',`<section class="slide ${s.cls||''}" id="s${i+1}">
+    ${s.photo?'<div class="photo"></div>':''}<div class="vig"></div>
+    <div class="frame"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
+    <div class="inner"><div class="top"><span>Fitness Club Adin</span><span class="n">0${i+1} / 0${N}</span></div>
+    <div class="body ${s.up?'up':''}">${s.html}</div><div class="foot">${foot}</div></div></section>`);
+});
+</script>
+</body>
+</html>
