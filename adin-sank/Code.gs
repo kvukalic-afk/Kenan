@@ -78,7 +78,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '7';
+var VERZIJA_SEME = '8';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -664,6 +664,18 @@ function osigurajTabele_(formatiraj) {
       stanje[ids['Mega Watt']] = 71; stanje[ids['Hell 0,5 L']] = 10; stanje[ids['Monster']] = 4;
       svojstva_().setProperty('PRIJAVLJENO_STANJE', JSON.stringify(stanje));
       svojstva_().setProperty('SEED_PICA_1125', '1');
+    }
+  } catch (e) { /* */ }
+
+  // korekcija javljenog stanja: Mega Watt −5 (71 → 66). Radi samo dok je podsjetnik još aktivan (prije prvog brojanja).
+  try {
+    if (!svojstva_().getProperty('SEED_KOREKCIJA_MEGAWATT')) {
+      var pj = svojstva_().getProperty('PRIJAVLJENO_STANJE');
+      if (pj) {
+        var mapa = JSON.parse(pj);
+        if (mapa.mega_watt === 71) { mapa.mega_watt = 66; svojstva_().setProperty('PRIJAVLJENO_STANJE', JSON.stringify(mapa)); uradjeno.push('Mega Watt javljeno stanje: 66'); }
+      }
+      svojstva_().setProperty('SEED_KOREKCIJA_MEGAWATT', '1');
     }
   } catch (e) { /* */ }
 

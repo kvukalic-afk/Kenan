@@ -360,7 +360,7 @@ test('nova pića (Mega Watt, Hell, Monster) i stanje koje je javio vlasnik: pods
   assert.ok(['mega_watt', 'hell_0_5_l', 'monster'].every(id => prod(id).prati_zalihu && prod(id).kategorija === 'Energy'));
   const pr = g.__tabela('PROIZVODI');
   assert.deepEqual([pr.find(p => p.product_id === 'mega_watt').nabavna_cijena, pr.find(p => p.product_id === 'hell_0_5_l').nabavna_cijena, pr.find(p => p.product_id === 'monster').nabavna_cijena], [1, 1.65, 2.8]);
-  assert.deepEqual(JSON.parse(JSON.stringify(b.prijavljeno)), { powerade: 2, voda1: 23, voda05: 73, redbull: 9, sultan_kola: 12, mega_watt: 71, hell_0_5_l: 10, monster: 4 });
+  assert.deepEqual(JSON.parse(JSON.stringify(b.prijavljeno)), { powerade: 2, voda1: 23, voda05: 73, redbull: 9, sultan_kola: 12, mega_watt: 66, hell_0_5_l: 10, monster: 4 });
   // ponovni setup ne dodaje duplikate
   g.setupSpreadsheet();
   assert.equal(g.__tabela('PROIZVODI').filter(p => p.naziv === 'Monster').length, 1);
