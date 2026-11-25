@@ -52,8 +52,8 @@ export function PlutajuceDugme() {
           <button role="menuitem" className="dugme" onClick={() => izaberi('/novi/saradnja')}><Ikona ime="saradnja" /> Saradnja</button>
           <button role="menuitem" className="dugme" onClick={() => izaberi('/novi/aktivnost')}><Ikona ime="aktivnost" /> Ostala aktivnost</button>
           <button role="menuitem" className="dugme" onClick={() => izaberi('/obrazac/sluzbena-biljeska')}><Ikona ime="prazno" /> Službena bilješka</button>
-          <button role="menuitem" className="dugme" onClick={() => izaberi('/asistent')}><Ikona ime="razgovor" /> AI asistent</button>
-          <button role="menuitem" className="dugme" onClick={() => izaberi('/unos-tekst')}><Ikona ime="posalji" /> Unos iz teksta (AI)</button>
+          <button role="menuitem" className="dugme ai-stavka" onClick={() => izaberi('/unos-tekst')}><Ikona ime="mikrofon" /> Ispričaj dan (AI)</button>
+          <button role="menuitem" className="dugme ai-stavka" onClick={() => izaberi('/ai')}><Ikona ime="iskra" /> Pametni alati</button>
         </div>
       )}
       <button type="button" className="fab" aria-label={otvoreno ? 'Zatvori meni' : 'Novi unos'} aria-expanded={otvoreno} onClick={() => setOtvoreno((o) => !o)}>

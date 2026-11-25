@@ -41,7 +41,7 @@ export function BrzeBiljeske({ pocetniTab }: { pocetniTab?: string }) {
   const [samoNeobradjene, setSamoNeobradjene] = useState(false);
   const [analiza, setAnaliza] = useState(false);
   const biljeske = useLiveQuery(() => db.brzeBiljeske.orderBy('createdAt').reverse().toArray(), []);
-  const analize = useLiveQuery(() => db.analize.orderBy('createdAt').reverse().toArray(), []);
+  const analize = useLiveQuery(async () => (await db.analize.orderBy('createdAt').reverse().toArray()).filter((a) => !a.vrsta || a.vrsta === 'analiza'), []);
 
   const razredUcenika = sifra ? poSifri.get(sifra)?.razred ?? '' : '';
   const prijedloziOsoba = useMemo(() => {

@@ -7,7 +7,10 @@ import { NAZIV_VRSTE, Zaglavlje } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { danasIso, dodajDane, pocetakSedmice, prikaz } from '../lib/datum';
 import { idi } from '../lib/router';
-import { useImenik } from '../lib/podaci';
+import { useImenik, usePostavke } from '../lib/podaci';
+import { anonimizujSve, AIGreska, generisi, imaKljuc, nazivAI } from '../lib/ai';
+import { PODRUCJA } from '../lib/podrucja';
+import { AIRazmislja } from '../components/AIRad';
 import { brojPerioda, nazivDana, naslovIzvjestaja, opisPerioda, sazetakPerioda, stavkePerioda, tekstZaAI } from '../lib/periodIzvjestaj';
 import { punoIme } from '../types';
 
@@ -33,6 +36,8 @@ export function IzvjestajPeriod({ od: pocOd, do: pocDo }: { od?: string; do?: st
   const [tekst, setTekst] = useState(() => procitajTekst(od, doDatum));
   const [rucnoKopiraj, setRucnoKopiraj] = useState('');
   const { poSifri } = useImenik();
+  const postavke = usePostavke();
+  const [pise, setPise] = useState(false);
 
   const ulaz = useLiveQuery(async () => {
     const [ucenici, razgovori, radionice, saradnja, aktivnosti] = await Promise.all([
@@ -53,6 +58,10 @@ export function IzvjestajPeriod({ od: pocOd, do: pocDo }: { od?: string; do?: st
     ['Ova sedmica', ponOve, dodajDane(ponOve, 6)],
     ['Prošla sedmica', dodajDane(ponOve, -7), dodajDane(ponOve, -1)],
     ['Ovaj mjesec', `${danas.slice(0, 7)}-01`, dodajDane(`${dodajDane(`${danas.slice(0, 7)}-28`, 4).slice(0, 7)}-01`, -1)],
+    ['Prošli mjesec', dodajDane(`${danas.slice(0, 7)}-01`, -1).slice(0, 8) + '01', dodajDane(`${danas.slice(0, 7)}-01`, -1)],
+    ['I polugodište', `${postavke.skolskaGodinaPocetak}-09-01`, `${postavke.skolskaGodinaPocetak}-12-31`],
+    ['II polugodište', `${postavke.skolskaGodinaPocetak + 1}-01-01`, `${postavke.skolskaGodinaPocetak + 1}-06-30`],
+    ['Školska godina', `${postavke.skolskaGodinaPocetak}-09-01`, `${postavke.skolskaGodinaPocetak + 1}-08-31`],
   ];
 
   if (!ulaz) return <Zaglavlje naslov="Izvještaj za period" nazadNa="/" />;
@@ -67,6 +76,24 @@ export function IzvjestajPeriod({ od: pocOd, do: pocDo }: { od?: string; do?: st
       toast('Kopirano ✓ Zalijepi u ChatGPT');
     } catch {
       setRucnoKopiraj(t);
+    }
+  };
+
+  const napisiAI = async () => {
+    setPise(true);
+    try {
+      const dugo = (new Date(doDatum).getTime() - new Date(od).getTime()) / 86400000 > 40;
+      const sistem = `Ti si iskusan školski psiholog u osnovnoj školi u Unsko-sanskom kantonu i pišeš službene izvještaje o radu. ${dugo
+        ? `Za ovaj duži period napiši pregledan izvještaj: kratak uvod, zatim rad po područjima iz Pedagoških standarda USK (${PODRUCJA.map((p) => `${p.kod}. ${p.naziv}`).join('; ')}) – samo područja za koja ima podataka, svako s naslovom u posebnom redu i 1–3 pasusa – i na kraju zaključak s planom za naredni period.`
+        : 'Napiši izvještaj u 2–4 kratka pasusa.'} Bosanski jezik, ijekavica, službeni stručni stil, bez markdown zvjezdica. Koristi samo date podatke, ništa ne izmišljaj; učenike navodi samo šiframa.`;
+      const r = await generisi({ sistem, poruke: [{ uloga: 'user', tekst: await anonimizujSve(tekstZaAI(ulaz, od, doDatum, { biljeske: biljeskeAI })) }], napor: 'medium', maxTokens: 10000 });
+      setTekst(r.trim());
+      sacuvajTekst(od, doDatum, r.trim());
+      toast('Izvještaj je napisan ✓ Pročitaj i po potrebi uredi.');
+    } catch (e) {
+      toast(e instanceof AIGreska ? e.message : String(e), 'greska');
+    } finally {
+      setPise(false);
     }
   };
 
@@ -94,14 +121,20 @@ export function IzvjestajPeriod({ od: pocOd, do: pocDo }: { od?: string; do?: st
             <section className="kartica">
               <h2>Tekst izvještaja</h2>
               <p className="malo blijedo">
-                Ovaj tekst ide u print. Možeš ga napisati sam/a (i diktirati) ili ga napiše AI:
-                1) „Kopiraj za AI“ → 2) zalijepi u ChatGPT → 3) njegov odgovor zalijepi ovdje i provjeri.
+                Ovaj tekst ide u print. Napiši ga sam/a (i diktiraj) ili ga jednim klikom napiše AI iz evidencije – za polugodište i godinu po 11 područja rada.
                 Ako ostane prazno, u printu je automatski sažetak.
               </p>
               <div className="red-dugmadi" style={{ marginBottom: 10 }}>
-                <button type="button" className="dugme" onClick={() => void kopirajZaAI()}><Ikona ime="razgovor" /> Kopiraj za AI</button>
-                <a className="dugme" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Otvori ChatGPT</a>
+                {imaKljuc() ? (
+                  <button type="button" className="dugme primarno" disabled={pise || !stavke.length} onClick={() => void napisiAI()}><Ikona ime="iskra" /> {tekst.trim() ? 'Napiši ponovo' : 'Napiši izvještaj'} ({nazivAI()})</button>
+                ) : (
+                  <>
+                    <button type="button" className="dugme" onClick={() => void kopirajZaAI()}><Ikona ime="razgovor" /> Kopiraj za AI</button>
+                    <a className="dugme" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Otvori ChatGPT</a>
+                  </>
+                )}
               </div>
+              {pise && <AIRazmislja tekst={`${nazivAI()} piše izvještaj iz ${stavke.length} aktivnosti…`} />}
               <Prekidac labela="U tekst za AI uključi i bilješke" vrijednost={biljeskeAI} onChange={setBiljeskeAI} />
               <p className="malo blijedo" style={{ marginTop: 0 }}>
                 Tekst za AI sadrži samo šifre učenika – bez imena učenika i nastavnika. {biljeskeAI

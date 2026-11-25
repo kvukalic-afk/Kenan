@@ -3,7 +3,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { obrisi, sacuvajPlanStavku, uuid } from '../db/repo';
 import { Ikona } from '../components/Ikona';
-import { Modal, Polje, Potvrda, Prazno } from '../components/Polja';
+import { Modal, Polje, Potvrda, Prazno, TekstPolje } from '../components/Polja';
+import { AIGreskaBlok, AIRazmislja, RucniAI, useAIPoziv } from '../components/AIRad';
+import { anonimizujSve, nazivAI } from '../lib/ai';
+import { PLAN_SISTEM, porukaPlana, procitajPlan, type PrijedlogStavke } from '../lib/aiAlati';
 import { Zaglavlje } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { MJESECI, nazivSkolskeGodine, skolskaGodinaZaDatum } from '../lib/datum';
@@ -30,12 +33,13 @@ const kraj = (kljuc: string) => {
   return `${kljuc}-${String(new Date(g, m, 0).getDate()).padStart(2, '0')}`;
 };
 
-export function PlanRada({ godina: pocGodina, mjesec: pocMjesec }: { godina?: number; mjesec?: string }) {
+export function PlanRada({ godina: pocGodina, mjesec: pocMjesec, ai: pocAi = false }: { godina?: number; mjesec?: string; ai?: boolean }) {
   const toast = useToast();
   const postavke = usePostavke();
   const [godina, setGodina] = useState(pocGodina ?? postavke.skolskaGodinaPocetak);
   const [mjesec, setMjesec] = useState(pocMjesec ?? ''); // '' = godišnji program
   const [uredi, setUredi] = useState<PlanStavka | null>(null);
+  const [aiPlan, setAiPlan] = useState(pocAi);
 
   const podaci = useLiveQuery(async () => {
     const [plan, razgovori, radionice, saradnja, aktivnosti] = await Promise.all([
@@ -87,6 +91,12 @@ export function PlanRada({ godina: pocGodina, mjesec: pocMjesec }: { godina?: nu
             return <button key={m} type="button" className="chip mali" aria-pressed={mjesec === k} onClick={() => setMjesec(k)}>{MJESECI[m - 1].slice(0, 3)}</button>;
           })}
         </div>
+
+        <button type="button" className="ai-baner" onClick={() => setAiPlan(true)}>
+          <span className="ai-baner-ikona">✨</span>
+          <span className="rastegni"><strong>Napravi plan s AI</strong><span>Opiši dogovore i potrebe škole – AI složi stavke po 11 područja</span></span>
+          <Ikona ime="desno" />
+        </button>
 
         <div className="red-dugmadi" style={{ margin: '4px 0 12px' }}>
           {!mjesec ? (
@@ -149,6 +159,7 @@ export function PlanRada({ godina: pocGodina, mjesec: pocMjesec }: { godina?: nu
         })}
       </main>
       {uredi && <UrediStavku stavka={uredi} onZatvori={() => setUredi(null)} />}
+      {aiPlan && <AIPlan godina={godina} postojece={podaci.plan.map((p) => p.sadrzaj)} pocetakRada={postavke.pocetakRada ?? ''} onZatvori={() => setAiPlan(false)} />}
     </>
   );
 }
@@ -202,3 +213,76 @@ function UrediStavku({ stavka, onZatvori }: { stavka: PlanStavka; onZatvori: () 
   );
 }
 
+
+/** Plan rada iz opisa: AI predloži stavke po područjima, psiholog izabere koje dodaje. */
+function AIPlan({ godina, postojece, pocetakRada, onZatvori }: { godina: number; postojece: string[]; pocetakRada: string; onZatvori: () => void }) {
+  const toast = useToast();
+  const ai = useAIPoziv();
+  const [opis, setOpis] = useState('');
+  const [prijedlog, setPrijedlog] = useState<PrijedlogStavke[] | null>(null);
+  const [izabrane, setIzabrane] = useState<Set<number>>(new Set());
+  const odMjeseca = pocetakRada >= `${godina}-09-01` && pocetakRada <= `${godina + 1}-06-30` ? Number(pocetakRada.slice(5, 7)) : null;
+
+  const poruka = async () => porukaPlana(await anonimizujSve(opis), nazivSkolskeGodine(godina), odMjeseca, postojece);
+  const obradi = (t: string) => {
+    const p = procitajPlan(t);
+    if (!p.length) { toast('AI nije vratio stavke u očekivanom obliku. Pokušaj ponovo.', 'greska'); return; }
+    setPrijedlog(p);
+    setIzabrane(new Set(p.map((_, i) => i)));
+  };
+  const posalji = async () => { const r = await ai.posalji({ sistem: PLAN_SISTEM, poruke: [{ uloga: 'user', tekst: await poruka() }], napor: 'medium', maxTokens: 8000 }); if (r) obradi(r); };
+  const dodaj = async () => {
+    if (!prijedlog) return;
+    const t = new Date().toISOString();
+    const nove = prijedlog.filter((_, i) => izabrane.has(i)).map((p) => ({ ...p, id: uuid(), skolskaGodina: godina, realizovano: [], napomena: 'AI prijedlog', createdAt: t, updatedAt: t }));
+    await db.plan.bulkAdd(nove);
+    toast(`Dodano ${nove.length} stavki u plan ✓`);
+    onZatvori();
+  };
+
+  return (
+    <Modal naslov="✨ Plan rada s AI" onZatvori={onZatvori}>
+      {!prijedlog && ai.faza === 'unos' && (
+        <>
+          <TekstPolje labela="Šta je dogovoreno i šta škola treba" vrijednost={opis} onChange={setOpis}
+            placeholder="npr. Sa pedagogom i sociologom dogovorena podjela: ja vodim učenike s teškoćama u matičnoj i dvije područne škole, profesionalnu orijentaciju 9. razreda i radionice prevencije nasilja u 6. razredima…" />
+          <p className="malo blijedo">{odMjeseca ? `Plan ide od mjeseca tvog dolaska (${MJESECI[odMjeseca - 1]}) do juna. ` : ''}AI pravi stavke po 11 područja USK standarda; ti biraš koje ulaze u plan i poslije ih uređuješ.</p>
+          {ai.automatski ? (
+            <div className="red-dugmadi">
+              <button type="button" className="dugme" onClick={onZatvori}>Odustani</button>
+              <button type="button" className="dugme primarno" onClick={() => void posalji()}>✨ Napravi prijedlog ({nazivAI()})</button>
+            </div>
+          ) : <RucniAI pripremi={async () => `${PLAN_SISTEM}\n\n${await poruka()}`} onOdgovor={obradi} dugme="Prikaži prijedlog" />}
+        </>
+      )}
+      {ai.faza === 'salje' && <AIRazmislja tekst={`${nazivAI()} slaže plan po 11 područja…`} />}
+      {ai.faza === 'greska' && <AIGreskaBlok greska={ai.greska} onNazad={() => ai.setFaza('unos')} onPonovo={() => void posalji()} />}
+      {prijedlog && (
+        <>
+          <p className="malo"><strong>{prijedlog.length}</strong> prijedloga · izabrano {izabrane.size}. Odznači ono što ne želiš.</p>
+          <div className="ai-plan-lista">
+            {PODRUCJA.map((p) => {
+              const st = prijedlog.map((s, i) => [s, i] as const).filter(([s]) => s.podrucje === p.kod);
+              if (!st.length) return null;
+              return (
+                <div key={p.kod} className="ai-plan-grupa">
+                  <div className="ai-plan-podrucje"><span className="broj-podrucja">{p.kod}</span>{p.naziv}</div>
+                  {st.map(([s, i]) => (
+                    <label key={i} className="ai-plan-stavka">
+                      <input type="checkbox" checked={izabrane.has(i)} onChange={() => setIzabrane((x) => { const n = new Set(x); if (n.has(i)) n.delete(i); else n.add(i); return n; })} />
+                      <span><span>{s.sadrzaj}</span><span className="blijedo malo" style={{ display: 'block' }}>{[vrijemeRealizacije(s.mjeseci), s.saradnici].filter(Boolean).join(' · ')}</span></span>
+                    </label>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+          <div className="red-dugmadi">
+            <button type="button" className="dugme" onClick={() => { setPrijedlog(null); ai.setFaza('unos'); }}>Nazad</button>
+            <button type="button" className="dugme primarno" disabled={!izabrane.size} onClick={() => void dodaj()}>Dodaj u plan ({izabrane.size})</button>
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}

@@ -74,3 +74,11 @@ table.dokument > thead > tr > td, table.dokument > tfoot > tr > td, table.dokume
 .potpis-polje { min-width: 55mm; text-align: center; font-size: 10pt; }
 .potpis-polje .linija-potpisa { border-bottom: 0.8pt solid #111; height: 22pt; margin-bottom: 3pt; }
 .potpis-polje.mp { min-width: 20mm; align-self: flex-end; font-weight: bold; }
+
+/* letak i priprema (javni dokumenti) */
+.dok-oznaka { font-size: 9pt; letter-spacing: 0.08em; text-transform: uppercase; color: #17556b; font-weight: 700; }
+.formatiran p { margin: 0 0 7pt; line-height: 1.5; }
+.letak-podnaslov { font-size: 12pt; color: #17556b; margin: 12pt 0 5pt; padding-bottom: 2pt; border-bottom: 1.5pt solid #d9e7ec; }
+.letak-lista { margin: 0 0 8pt; padding-left: 16pt; }
+.letak-lista li { margin-bottom: 4pt; line-height: 1.45; }
+.letak .formatiran > p:first-child { font-size: 11.5pt; font-style: italic; color: #333; }

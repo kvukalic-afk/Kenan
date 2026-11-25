@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { db } from '../db/db';
 import { uuid } from '../db/repo';
 import { Ikona } from '../components/Ikona';
@@ -7,7 +7,9 @@ import { Zaglavlje } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { AIGreska, anonimizujSve, generisi, imaKljuc, nazivAI } from '../lib/ai';
 import { sastaviIzvore } from '../lib/analiza';
-import { danasIso } from '../lib/datum';
+import { danasIso, prikaz } from '../lib/datum';
+import { AIGreskaBlok, AIRazmislja, RucniAI, useAIPoziv } from '../components/AIRad';
+import { procitajObrazac, sistemObrasca } from '../lib/aiAlati';
 import { definicija, type DefinicijaObrasca } from '../lib/obrasci';
 import { useImenik } from '../lib/podaci';
 import { idi, nazad } from '../lib/router';
@@ -20,6 +22,7 @@ export function Obrazac({ vrsta, id, sifra: pocSifra, biljeskaId }: { vrsta: str
   const [polja, setPolja] = useState<Record<string, string> | null>(null);
   const [greske, setGreske] = useState<Record<string, string>>({});
   const [nacrt, setNacrt] = useState(false);
+  const [diktat, setDiktat] = useState(false);
 
   useEffect(() => {
     if (!def) return;
@@ -84,6 +87,11 @@ export function Obrazac({ vrsta, id, sifra: pocSifra, biljeskaId }: { vrsta: str
       </header>
       <main className="sadrzaj forma-sadrzaj ulaz">
         <p className="malo blijedo">{def.opis}</p>
+        <button type="button" className="ai-baner" onClick={() => setDiktat(true)}>
+          <span className="ai-baner-ikona">🎙</span>
+          <span className="rastegni"><strong>Popuni iz diktata</strong><span>Ispričaj šta je bilo – AI popuni polja, ti provjeriš</span></span>
+          <Ikona ime="desno" />
+        </button>
         {def.aiNacrt && (
           <button type="button" className="chip ai-chip" style={{ marginBottom: 14 }} disabled={!polja.ucenik} onClick={() => setNacrt(true)}>
             ✨ AI nacrt iz evidencije učenika
@@ -114,6 +122,8 @@ export function Obrazac({ vrsta, id, sifra: pocSifra, biljeskaId }: { vrsta: str
           <button type="button" className="dugme primarno" onClick={() => void sacuvaj(true)}><Ikona ime="print" /> Sačuvaj i štampaj</button>
         </div>
       </div>
+      {diktat && <PopuniIzDiktata def={def} onZatvori={() => setDiktat(false)}
+        onPrihvati={(v) => { for (const [k, x] of Object.entries(v)) postavi(k, x); setDiktat(false); toast(`Popunjeno ${Object.keys(v).length} polja ✓ Provjeri ih.`); }} />}
       {nacrt && polja.ucenik && <AINacrtMisljenja def={def} sifra={polja.ucenik} svrha={polja.svrha ?? ''} onZatvori={() => setNacrt(false)}
         onPrihvati={(n, m) => { postavi('nalaz', n); postavi('misljenje', m); setNacrt(false); }} />}
     </>
@@ -180,6 +190,50 @@ function AINacrtMisljenja({ sifra, svrha, onZatvori, onPrihvati }: { def: Defini
         <button type="button" className="dugme" onClick={onZatvori}>Zatvori</button>
         {faza === 'gotovo' && <button type="button" className="dugme primarno" onClick={() => onPrihvati(nalaz, misljenje)}>Ubaci u obrazac</button>}
       </div>
+    </Modal>
+  );
+}
+
+/** Popuni polja obrasca iz slobodnog opisa ili diktata (npr. zapisnik sa sastanka). */
+function PopuniIzDiktata({ def, onZatvori, onPrihvati }: { def: DefinicijaObrasca; onZatvori: () => void; onPrihvati: (v: Record<string, string>) => void }) {
+  const ai = useAIPoziv();
+  const [opis, setOpis] = useState('');
+  const [rez, setRez] = useState<Record<string, string> | null>(null);
+  const sistem = sistemObrasca(def);
+  const poruka = async () => `Danas je ${prikaz(danasIso())}.\n\nOpis:\n${await anonimizujSve(opis)}`;
+  const obradi = (t: string) => setRez(procitajObrazac(def, t));
+  const posalji = async () => { const r = await ai.posalji({ sistem, poruke: [{ uloga: 'user', tekst: await poruka() }], napor: 'medium', maxTokens: 6000 }); if (r) obradi(r); };
+  const labela = (k: string) => def.polja.find((f) => f.kljuc === k)?.labela ?? k;
+  return (
+    <Modal naslov={`🎙 ${def.naziv} iz diktata`} onZatvori={onZatvori}>
+      {!rez && ai.faza === 'unos' && (
+        <>
+          <TekstPolje labela="Ispričaj ili izdiktiraj" vrijednost={opis} onChange={setOpis} autoFokus
+            placeholder={def.vrsta === 'zapisnik' || def.vrsta === 'strucni-tim' ? 'npr. Danas u 12:30 u zbornici nastavničko vijeće, prisutni direktor, pedagog, psiholog i razrednici. Dnevni red: … Dogovoreno je da …' : 'Opiši šta se desilo, ko je bio prisutan i šta je dogovoreno.'} />
+          <p className="malo blijedo">Imena učenika i razrednika se prije slanja zamijene šiframa i ulogama. AI sređuje tekst zapisnički, ali ne izmišlja.</p>
+          {ai.automatski ? (
+            <div className="red-dugmadi">
+              <button type="button" className="dugme" onClick={onZatvori}>Odustani</button>
+              <button type="button" className="dugme primarno" disabled={!opis.trim()} onClick={() => void posalji()}>✨ Popuni ({nazivAI()})</button>
+            </div>
+          ) : <RucniAI pripremi={async () => `${sistem}\n\n${await poruka()}`} onOdgovor={obradi} dugme="Prikaži polja" />}
+        </>
+      )}
+      {ai.faza === 'salje' && <AIRazmislja tekst="Popunjavam polja…" />}
+      {ai.faza === 'greska' && <AIGreskaBlok greska={ai.greska} onNazad={() => ai.setFaza('unos')} onPonovo={() => void posalji()} />}
+      {rez && (
+        <>
+          {Object.keys(rez).length === 0 ? <p className="ai-greska">AI nije vratio polja u očekivanom obliku. Pokušaj ponovo.</p> : (
+            <dl className="podaci">
+              {Object.entries(rez).map(([k, v]) => <Fragment key={k}><dt>{labela(k)}</dt><dd>{def.polja.find((f) => f.kljuc === k)?.tip === 'datum' ? prikaz(v) : v}</dd></Fragment>)}
+            </dl>
+          )}
+          <div className="red-dugmadi">
+            <button type="button" className="dugme" onClick={() => { setRez(null); ai.setFaza('unos'); }}>Nazad</button>
+            <button type="button" className="dugme primarno" disabled={!Object.keys(rez).length} onClick={() => onPrihvati(rez)}>Ubaci u obrazac</button>
+          </div>
+        </>
+      )}
     </Modal>
   );
 }

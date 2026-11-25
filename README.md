@@ -215,6 +215,19 @@ Na jednom mjestu je sve što pedagog ili direktor obično traže na uvid, za iza
 
 Dokumenti za uvid imaju **šifre umjesto imena i nemaju sadržaj razgovora**. Pedagog vidi da je rad obavljen (kada, s kim, zbog čega i koliko), a bilješke, nalazi i testovi ostaju povjerljivi.
 
+### Pametni alati (AI kao asistent, savjetnik i organizator)
+
+Otvaraju se preko kartice **Pametni alati** na Početnoj, iz **+ menija** ili iz Izvještaja. Imena učenika i razrednika se prije svakog slanja zamijene šiframa i ulogama. Bez AI ključa svaki alat radi preko „Kopiraj za AI“, pa zalijepiš odgovor nazad.
+
+- **Jutarnji brifing (Početna):** kartica „Danas“ s brojem hitnih stvari. Ispod su zakazani kontakti (i oni koji kasne), rokovi iz kontrolne liste, dogovoreni sljedeći koraci i **„Možda za praćenje“**: učenici koji se u zadnjih 30 dana često ili zabrinjavajuće pojavljuju u zapisima (nasilje, plač, sporne fotografije…), a nisu u praćenju. Dugme **„Šta da danas prvo uradim?“** traži od AI-ja plan dana. AI dobija samo šifre i rokove.
+- **40-satna sedmica:** traka na Početnoj pokazuje koliko je sati evidentirano ovaj mjesec u odnosu na normu i koja područja nemaju nijedan unos.
+- **🎙 Ispričaj dan** (+ → Ispričaj dan): izdiktiraš ili napišeš cijeli dan kako ti dođe, a AI ga pretvori u razgovore, bilješke, saradnju i aktivnosti. Svaki unos pregledaš prije čuvanja.
+- **🗂 Plan rada s AI** (Plan rada → „Napravi plan s AI“): opišeš dogovore stručne službe, a AI predloži stavke po 11 područja od mjeseca tvog dolaska. Ti biraš šta ulazi u plan.
+- **📝 Popuni iz diktata:** u svakom obrascu (npr. novi **Zapisnik sa sastanka** za vijeća, aktive i roditeljske sastanke) AI popuni polja iz tvog opisa.
+- **📊 Izvještaj jednim klikom:** u Izvještaju za period biraš „Prošli mjesec“, „I polugodište“ ili „Školska godina“ i klikneš **Napiši izvještaj**. Za duže periode tekst je po 11 područja.
+- **🎲 Osmisli radionicu:** razred, tema i trajanje, a AI predloži cilj, tok, materijal i evaluaciju. Sačuvaš pripremu za print ili je odmah evidentiraš kao održanu radionicu.
+- **📄 Letak** za roditelje, nastavnike ili učenike na jednoj A4 strani (bez oznake POVJERLJIVO).
+
 ### AI asistent
 
 **+ → AI asistent**, traka na Početnoj ili Izvještaji → AI asistent. To je razgovor s AI-jem koji:

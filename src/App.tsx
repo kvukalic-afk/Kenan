@@ -27,6 +27,7 @@ import { Obrazac } from './screens/Obrazac';
 import { Dokumentacija } from './screens/Dokumentacija';
 import { Asistent } from './screens/Asistent';
 import { Uvid } from './screens/Uvid';
+import { PametniAlati } from './screens/PametniAlati';
 import { PrintAktivnost, PrintAnaliza, PrintDnevnik, PrintDokumentacija, PrintUvidUcenici, PrintObrazac, PrintUsavrsavanje, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
 import type { Period } from './lib/statistika';
 
@@ -155,8 +156,9 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
   else if (d0 === 'obrazac' && d1) { navigacija = false; ekran = <Obrazac key={ruta.putanja + ruta.upit.toString()} vrsta={d1} id={ruta.upit.get('id') ?? undefined} sifra={ruta.upit.get('sifra') ?? undefined} biljeskaId={ruta.upit.get('biljeska') ?? undefined} />; }
   else if (d0 === 'dokumentacija') ekran = <Dokumentacija pocetniTab={ruta.upit.get('tab') ?? undefined} />;
   else if (d0 === 'uvid') ekran = <Uvid />;
+  else if (d0 === 'ai') ekran = <PametniAlati />;
   else if (d0 === 'asistent') { navigacija = false; ekran = <Asistent pocetnoPitanje={ruta.upit.get('pitanje') ?? undefined} />; }
-  else if (d0 === 'plan') ekran = <PlanRada godina={ruta.upit.get('godina') ? Number(ruta.upit.get('godina')) : undefined} mjesec={ruta.upit.get('mjesec') ?? undefined} />;
+  else if (d0 === 'plan') ekran = <PlanRada godina={ruta.upit.get('godina') ? Number(ruta.upit.get('godina')) : undefined} mjesec={ruta.upit.get('mjesec') ?? undefined} ai={ruta.upit.get('ai') === '1'} />;
   else if (d0 === 'unos-tekst') { ekran = <UnosIzTeksta />; navigacija = false; }
   else if (d0 === 'izvjestaj') ekran = <IzvjestajPeriod od={ruta.upit.get('od') ?? undefined} do={ruta.upit.get('do') ?? undefined} />;
   else if (d0 === 'postavke') ekran = <Postavke otvoriKopiju={ruta.upit.get('kopija') === '1'} />;

@@ -74,14 +74,18 @@ export function Karton({ sifra }: { sifra: string }) {
             <button type="button" className="dugme" onClick={() => setUredi(true)}><Ikona ime="uredi" /> Uredi</button>
             <a className="dugme" href={`#/print/karton/${encodeURIComponent(sifra)}`}><Ikona ime="print" /> Preuzmi karton za print</a>
           </div>
-          <div className="red-dugmadi" style={{ marginTop: 8 }}>
-            <button type="button" className="chip ai-chip" onClick={() => setAiPregled('priprema')}>🗣 Priprema za razgovor</button>
-            <button type="button" className="chip ai-chip" onClick={() => setAiPregled('teskoce')}>🧩 Procjena teškoća</button>
-            <button type="button" className="chip ai-chip" disabled={!podaci.razgovori.length && !podaci.biljeske.length && !podaci.saradnja.length} onClick={() => setAiPregled('pregled')}>🧠 AI pregled svih zapisa</button>
-            <a className="chip" href={`#/obrazac/misljenje?sifra=${encodeURIComponent(sifra)}`}>📄 Mišljenje</a>
-            <a className="chip" href={`#/obrazac/saglasnost?sifra=${encodeURIComponent(sifra)}`}>📄 Saglasnost</a>
-            <a className="chip" href={`#/obrazac/poziv?sifra=${encodeURIComponent(sifra)}`}>📄 Poziv roditelju</a>
-            <a className="chip" href={`#/obrazac/plan-podrske?sifra=${encodeURIComponent(sifra)}`}>📄 Plan podrške</a>
+          <div className="karton-ai" role="group" aria-label="AI alati za učenika">
+            <button type="button" onClick={() => setAiPregled('priprema')}><span className="em">🗣</span>Priprema za razgovor</button>
+            <button type="button" onClick={() => setAiPregled('teskoce')}><span className="em">🧩</span>Procjena teškoća</button>
+            <button type="button" disabled={!podaci.razgovori.length && !podaci.biljeske.length && !podaci.saradnja.length} onClick={() => setAiPregled('pregled')}><span className="em">🧠</span>Pregled zapisa</button>
+          </div>
+          <div className="karton-obrasci">
+            <span className="malo blijedo">Obrasci:</span>
+            <a className="chip" href={`#/obrazac/misljenje?sifra=${encodeURIComponent(sifra)}`}>Mišljenje</a>
+            <a className="chip" href={`#/obrazac/saglasnost?sifra=${encodeURIComponent(sifra)}`}>Saglasnost</a>
+            <a className="chip" href={`#/obrazac/poziv?sifra=${encodeURIComponent(sifra)}`}>Poziv roditelju</a>
+            <a className="chip" href={`#/obrazac/plan-podrske?sifra=${encodeURIComponent(sifra)}`}>Plan podrške</a>
+            <a className="chip" href={`#/obrazac/sluzbena-biljeska?sifra=${encodeURIComponent(sifra)}`}>Službena bilješka</a>
           </div>
         </section>
 

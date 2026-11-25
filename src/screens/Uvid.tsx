@@ -38,7 +38,7 @@ export function Uvid() {
   const planMj = podaci.plan.filter((s) => uMjesecu(s.mjeseci, mjesec)).length;
   const ucenika = new Set(podaci.razgovori.filter((r) => r.datum >= pocetak).map((r) => r.sifra)).size;
   const usavrs = podaci.aktivnosti.filter((a) => /usavršavanj/i.test(a.vrsta) && a.datum >= `${g}-09-01`).length;
-  const zapisnika = podaci.obrasci.filter((o) => ['strucni-tim', 'nasilje', 'plan-podrske'].includes(o.vrsta) && o.datum >= `${g}-09-01`).length;
+  const zapisnika = podaci.obrasci.filter((o) => ['zapisnik', 'strucni-tim', 'nasilje', 'plan-podrske'].includes(o.vrsta) && o.datum >= `${g}-09-01`).length;
   const polugodiste = danas >= `${g}-12-15`;
 
   const stavke: { naziv: string; opis: string; stanje: string; ok: boolean; href: string }[] = [
@@ -52,7 +52,7 @@ export function Uvid() {
       stanje: ucenika ? `učenika: ${ucenika}` : 'još nema razgovora', ok: ucenika > 0, href: `#/print/uvid-ucenici/${pocetak}/${danas}` },
     { naziv: 'Evidencija stručnog usavršavanja', opis: 'Seminari i edukacije (Zakon USK čl. 119). Uz nju certifikati.',
       stanje: `evidentirano: ${usavrs}`, ok: usavrs > 0, href: `#/print/usavrsavanje/${g}` },
-    { naziv: 'Zapisnici: stručni tim, nasilje, planovi podrške', opis: 'Popunjeni obrasci iz appa (arhiva).',
+    { naziv: 'Zapisnici: sastanci, stručni tim, nasilje, planovi podrške', opis: 'Popunjeni obrasci iz appa (arhiva).',
       stanje: `u appu: ${zapisnika}`, ok: true, href: '#/dokumentacija?tab=obrasci' },
     { naziv: 'Pregled obavezne dokumentacije', opis: 'Tabela sa rokovima i pravnim osnovom – prva strana registratora.',
       stanje: 'uvijek spremno', ok: true, href: `#/print/dokumentacija/${g}` },

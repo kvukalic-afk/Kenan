@@ -111,6 +111,8 @@ export interface Analiza extends Zapis {
   sifra: string; // ako se odnosi na jednog učenika
   tekst: string;
   brojIzvora: number;
+  /** prazno/'analiza' = analiza zapisa; ostalo su dokumenti iz „Pametnih alata“ */
+  vrsta?: 'analiza' | 'priprema-radionice' | 'letak';
 }
 
 /** Stavka kontrolne liste za inspekciju (ručna potvrda). id = "2026:dnevnik:2026-10" i sl. */

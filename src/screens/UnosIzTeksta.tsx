@@ -3,7 +3,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { osigurajUcenika, uuid, sacuvajAktivnost, sacuvajRadionicu, sacuvajRazgovor, sacuvajSaradnju } from '../db/repo';
 import { Ikona } from '../components/Ikona';
-import { AutoTextarea, Modal, Polje } from '../components/Polja';
+import { AutoTextarea, Modal, Polje, TekstPolje } from '../components/Polja';
+import { AIGreskaBlok, AIRazmislja, RucniAI, useAIPoziv } from '../components/AIRad';
+import { anonimizujSve, nazivAI } from '../lib/ai';
+import { DAN_DODATAK } from '../lib/aiAlati';
 import { NAZIV_VRSTE, Zaglavlje } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { danasIso, prikaz } from '../lib/datum';
@@ -12,6 +15,14 @@ import { parsirajTekst, uputaZaAI, type ParsiranUnos } from '../lib/unosIzTeksta
 import { punoIme, type Ucenik } from '../types';
 
 const KLJUC = 'unos-iz-teksta-nacrt';
+const KLJUC_DAN = 'ispricaj-dan-nacrt';
+const citajDan = () => { try { return localStorage.getItem(KLJUC_DAN) ?? ''; } catch { return ''; } };
+const pisiDan = (t: string) => { try { if (t) localStorage.setItem(KLJUC_DAN, t); else localStorage.removeItem(KLJUC_DAN); } catch { /* bez pamćenja */ } };
+
+/** Uputa za pretvaranje ispričanog dana u blokove (bez pitanja za potvrdu). */
+export function sistemDana(sifrarnik: Parameters<typeof uputaZaAI>[0], danasPrikaz: string): string {
+  return uputaZaAI(sifrarnik, danasPrikaz).replace(/\n*Potvrdi da si razumio\/la, pa čekaj moj opis\.\s*$/, '') + '\n' + DAN_DODATAK;
+}
 const citaj = () => { try { return localStorage.getItem(KLJUC) ?? ''; } catch { return ''; } };
 const pisi = (t: string) => { try { if (t) localStorage.setItem(KLJUC, t); else localStorage.removeItem(KLJUC); } catch { /* bez pamćenja */ } };
 
@@ -33,7 +44,10 @@ status: U praćenju`;
 
 export function UnosIzTeksta() {
   const toast = useToast();
+  const ai = useAIPoziv();
   const [tekst, setTekst] = useState(citaj);
+  const [dan, setDan] = useState(citajDan);
+  const [nacin, setNacin] = useState<'ispricaj' | 'zalijepi'>(() => (citaj() && !citajDan() ? 'zalijepi' : 'ispricaj'));
   const [pregled, setPregled] = useState<ParsiranUnos[] | null>(null);
   const [izabrani, setIzabrani] = useState<Set<number>>(new Set());
   const [snimanje, setSnimanje] = useState(false);
@@ -56,8 +70,20 @@ export function UnosIzTeksta() {
     }
   };
 
-  const pregledaj = () => {
-    const r = parsirajTekst(tekst, { ...podaci, danas: danasIso() });
+  const porukaDana = async () => `Moj opis (${prikaz(danasIso())}):\n${await anonimizujSve(dan)}`;
+  const sistem = () => sistemDana(podaci, prikaz(danasIso()));
+  const uBlokove = (odgovor: string) => {
+    setTekst(odgovor); pisi(odgovor);
+    setNacin('zalijepi'); // „Nazad na tekst“ vodi na blokove da se mogu ispraviti (npr. šifra ???)
+    pregledaj(odgovor);
+  };
+  const pretvori = async () => {
+    const r = await ai.posalji({ sistem: sistem(), poruke: [{ uloga: 'user', tekst: await porukaDana() }], napor: 'medium', maxTokens: 8000 });
+    if (r) uBlokove(r);
+  };
+
+  const pregledaj = (izvor = tekst) => {
+    const r = parsirajTekst(izvor, { ...podaci, danas: danasIso() });
     setPregled(r);
     setIzabrani(new Set(r.map((x, i) => (x.greske.length ? -1 : i)).filter((i) => i >= 0)));
     if (!r.length) toast('Nisam našao nijedan blok (### RAZGOVOR, ### ZAMJENA…)', 'greska');
@@ -81,6 +107,8 @@ export function UnosIzTeksta() {
       toast(`Sačuvano ✓ (${n} ${n % 10 === 1 && n % 100 !== 11 ? 'unos' : 'unosa'})`);
       setTekst('');
       pisi('');
+      setDan('');
+      pisiDan('');
       setPregled(null);
       idi('/');
     } catch (e) {
@@ -96,7 +124,29 @@ export function UnosIzTeksta() {
     <>
       <Zaglavlje naslov="Unos iz teksta" nazadNa="/" />
       <main className="sadrzaj forma-sadrzaj">
-        {!pregled ? (
+        {!pregled && (
+          <div className="segment" role="tablist">
+            <button type="button" role="tab" aria-selected={nacin === 'ispricaj'} onClick={() => setNacin('ispricaj')}>🎙 Ispričaj dan</button>
+            <button type="button" role="tab" aria-selected={nacin === 'zalijepi'} onClick={() => setNacin('zalijepi')}>📋 Zalijepi tekst</button>
+          </div>
+        )}
+        {!pregled && nacin === 'ispricaj' ? (
+          <>
+            {ai.faza === 'salje' ? <AIRazmislja tekst={`${nazivAI()} pretvara tvoj dan u unose…`} />
+              : ai.faza === 'greska' ? <AIGreskaBlok greska={ai.greska} onNazad={() => ai.setFaza('unos')} onPonovo={() => void pretvori()} />
+                : (
+                  <>
+                    <TekstPolje labela="Šta si danas radio/la?" vrijednost={dan} onChange={(v) => { setDan(v); pisiDan(v); }} autoFokus
+                      placeholder="Ispričaj ili izdiktiraj kako ti dođe: „Prvi čas zamjena u 7-1, matematika. Na odmoru mi je razrednica 6-2 rekla da Marko često plače. Poslije razgovor s majkom učenika iz 8-1 zbog izostanaka, dogovorili da se javi za sedam dana…“" />
+                    <div className="info-traka">
+                      <Ikona ime="brava" />
+                      <span>Imena učenika i razrednika app <strong>sam zamijeni šiframa</strong> prije slanja. Ostale odrasle navedi ulogom (majka, nastavnica bosanskog). AI napravi razgovore, bilješke, saradnju i aktivnosti – ti ih pregledaš prije čuvanja.</span>
+                    </div>
+                    {!ai.automatski && <RucniAI pripremi={async () => `${sistem()}\n\n${await porukaDana()}`} onOdgovor={uBlokove} dugme="Pregledaj unose" />}
+                  </>
+                )}
+          </>
+        ) : !pregled ? (
           <>
             <section className="kartica">
               <h2>Kako radi</h2>
@@ -127,10 +177,19 @@ export function UnosIzTeksta() {
       </main>
       <div className="sticky-dno">
         <div className="unutra">
-          {!pregled ? (
+          {!pregled && nacin === 'ispricaj' ? (
             <>
               <button type="button" className="dugme" onClick={() => idi('/')}>Odustani</button>
-              <button type="button" className="dugme primarno" disabled={!tekst.trim()} onClick={pregledaj}>Pregledaj</button>
+              {ai.automatski && (
+                <button type="button" className="dugme primarno" disabled={!dan.trim() || ai.faza === 'salje'} onClick={() => void pretvori()}>
+                  <Ikona ime="iskra" /> Pretvori u unose
+                </button>
+              )}
+            </>
+          ) : !pregled ? (
+            <>
+              <button type="button" className="dugme" onClick={() => idi('/')}>Odustani</button>
+              <button type="button" className="dugme primarno" disabled={!tekst.trim()} onClick={() => pregledaj()}>Pregledaj</button>
             </>
           ) : (
             <>

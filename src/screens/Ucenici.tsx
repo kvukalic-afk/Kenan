@@ -98,7 +98,7 @@ export function Ucenici({ pocetniFilter }: { pocetniFilter?: string }) {
                       {u.status !== 'Aktivan' && <span className="oznaka">{u.status}</span>}
                     </span>
                     <span className="red2 broj">
-                      {broj} {broj === 1 ? 'razgovor' : 'razgovora'}{zadnji ? ` · zadnji ${prikaz(zadnji.datum)}` : ''}
+                      {broj ? `${broj} ${broj % 10 === 1 && broj % 100 !== 11 ? 'razgovor' : 'razgovora'}${zadnji ? ` · zadnji ${prikaz(zadnji.datum)}` : ''}` : <span className="bez-zapisa">još bez razgovora</span>}
                     </span>
                   </span>
                   <Ikona ime="desno" />

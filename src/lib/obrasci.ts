@@ -112,6 +112,21 @@ export const OBRASCI: DefinicijaObrasca[] = [
     potpisi: ['Psiholog', 'Direktor'], mp: true,
   },
   {
+    vrsta: 'zapisnik', naslov: 'ZAPISNIK SA SASTANKA', naziv: 'Zapisnik sa sastanka',
+    opis: 'Nastavničko ili odjeljensko vijeće, aktiv, roditeljski sastanak, sastanak stručne službe.',
+    polja: [
+      { kljuc: 'datum', labela: 'Datum', tip: 'datum', obavezno: true },
+      { kljuc: 'vrstaSastanka', labela: 'Vrsta sastanka', tip: 'izbor', obavezno: true, opcije: ['Nastavničko vijeće', 'Odjeljensko vijeće', 'Stručni aktiv', 'Sastanak stručne službe', 'Roditeljski sastanak', 'Sastanak s direktorom', 'Sastanak s vanjskom ustanovom', 'Ostalo'] },
+      { kljuc: 'mjesto', labela: 'Mjesto i vrijeme', tip: 'tekst', pomoc: 'npr. zbornica, 12:30–13:30' },
+      { kljuc: 'prisutni', labela: 'Prisutni', tip: 'dugi', pomoc: 'Uloge: direktor, pedagog, psiholog, razrednici 6. razreda…' },
+      { kljuc: 'dnevniRed', labela: 'Dnevni red', tip: 'dugi', obavezno: true },
+      { kljuc: 'tok', labela: 'Tok sastanka', tip: 'dugi', ai: 'biljeske' },
+      { kljuc: 'zakljucci', labela: 'Zaključci', tip: 'dugi', obavezno: true, ai: 'zakljucak' },
+      { kljuc: 'zaduzenja', labela: 'Zaduženja i rokovi', tip: 'dugi' },
+    ],
+    potpisi: ['Zapisničar', 'Predsjedavajući'],
+  },
+  {
     vrsta: 'strucni-tim', naslov: 'ZAPISNIK SA SASTANKA STRUČNOG TIMA', naziv: 'Zapisnik stručnog tima',
     opis: 'Sastanak stručnog tima škole (IOOP, podrška učeniku, nasilje).',
     polja: [

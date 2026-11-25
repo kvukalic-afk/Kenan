@@ -18,8 +18,10 @@ import { GRUPE } from '../lib/dokumentacija';
 import { useKontrola } from '../lib/useKontrola';
 import './print.css';
 
-function Dokument({ naslov, podnaslov, nazivFajla, postavke, children }: {
+function Dokument({ naslov, podnaslov, nazivFajla, postavke, children, javno = false }: {
   naslov: string; podnaslov?: string; nazivFajla: string; postavke: Postavke; children: ReactNode;
+  /** dokument za dijeljenje (letak, priprema) – bez oznake POVJERLJIVO */
+  javno?: boolean;
 }) {
   useEffect(() => {
     const stari = document.title;
@@ -43,7 +45,7 @@ function Dokument({ naslov, podnaslov, nazivFajla, postavke, children }: {
               <tr><td>
                 <div className="dok-zaglavlje">
                   <span className="skola">{postavke.nazivSkole}</span>
-                  <span className="povjerljivo">POVJERLJIVO</span>
+                  {javno ? <span className="dok-oznaka">Školski psiholog</span> : <span className="povjerljivo">POVJERLJIVO</span>}
                 </div>
               </td></tr>
             </thead>
@@ -52,7 +54,7 @@ function Dokument({ naslov, podnaslov, nazivFajla, postavke, children }: {
                 <div className="dok-podnozje">
                   <div>
                     Datum: {prikaz(danasIso())}<br />
-                    <span className="povjerljivo">POVJERLJIVO</span>
+                    {!javno && <span className="povjerljivo">POVJERLJIVO</span>}
                   </div>
                   <div className="potpis">
                     Psiholog: {postavke.imePsihologa || '______________________'}<br />
@@ -655,11 +657,44 @@ export function PrintObrazac({ id }: { id: string }) {
 
 // ---------- 9. Analiza ----------
 
+/** Tekst s podnaslovima („Naslov:“ u svom redu) i stavkama („• …“) kao uredan HTML. */
+function FormatiranTekst({ tekst }: { tekst: string }) {
+  const blokovi: ReactNode[] = [];
+  let lista: string[] = [];
+  const zatvoriListu = () => { if (lista.length) { blokovi.push(<ul key={`l${blokovi.length}`} className="letak-lista">{lista.map((x, i) => <li key={i}>{x}</li>)}</ul>); lista = []; } };
+  for (const red of tekst.split('\n')) {
+    const t = red.trim();
+    if (!t) { zatvoriListu(); continue; }
+    if (/^[•\-*–]\s+/.test(t)) { lista.push(t.replace(/^[•\-*–]\s+/, '')); continue; }
+    zatvoriListu();
+    if (/^\d+\.\s.{2,80}$/.test(t) && !/[.!?]$/.test(t) || (/:$/.test(t) && t.length < 80)) blokovi.push(<h2 key={blokovi.length} className="letak-podnaslov">{t.replace(/:$/, '')}</h2>);
+    else blokovi.push(<p key={blokovi.length}>{t}</p>);
+  }
+  zatvoriListu();
+  return <div className="formatiran">{blokovi}</div>;
+}
+
 export function PrintAnaliza({ id }: { id: string }) {
   const postavke = usePostavke();
   const a = useLiveQuery(() => db.analize.get(id), [id], null as Analiza | null | undefined);
   if (a === null) return <Ucitavanje />;
-  if (!a) return <p style={{ padding: 24 }}>Analiza ne postoji.</p>;
+  if (!a) return <p style={{ padding: 24 }}>Dokument ne postoji.</p>;
+  if (a.vrsta === 'letak') {
+    const [naslov, ...ostalo] = a.tekst.trim().split('\n');
+    return (
+      <Dokument javno naslov={naslov.replace(/^#+\s*/, '').toUpperCase()} podnaslov={a.opseg} nazivFajla={`Letak_${a.datum}`} postavke={postavke}>
+        <div className="letak"><FormatiranTekst tekst={ostalo.join('\n')} /></div>
+      </Dokument>
+    );
+  }
+  if (a.vrsta === 'priprema-radionice') {
+    return (
+      <Dokument javno naslov="PRIPREMA ZA RADIONICU" podnaslov={a.naslov} nazivFajla={`Priprema_radionice_${a.datum}`} postavke={postavke}>
+        <table className="podaci-tab"><tbody><Red o="Datum pripreme" v={prikaz(a.datum)} /><Red o="Razred / grupa" v={a.opseg} /></tbody></table>
+        <FormatiranTekst tekst={a.tekst} />
+      </Dokument>
+    );
+  }
   return (
     <Dokument naslov="ANALIZA PRIKUPLJENIH INFORMACIJA" podnaslov={a.naslov} nazivFajla={`Analiza_${a.datum}`} postavke={postavke}>
       <table className="podaci-tab">
