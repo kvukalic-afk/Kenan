@@ -184,7 +184,7 @@
 <body>
 <div id="root"></div>
 <script>
-/* Generisano iz src/app.jsx (2026-11-24 01:13 UTC) — ne uređuj ručno, pokreni npm run build */
+/* Generisano iz src/app.jsx (2026-11-25 18:58 UTC) — ne uređuj ručno, pokreni npm run build */
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
@@ -640,7 +640,7 @@ function App() {
   const ucitaj = useCallback(async () => {
     try {
       const r = await api("getBootstrap");
-      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, radnici: r.radnici || [], treneri: r.treneri || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [], raspored: r.raspored || [] };
+      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, prijavljeno: r.prijavljeno || {}, radnici: r.radnici || [], treneri: r.treneri || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [], raspored: r.raspored || [] };
       setPodaci(p);
       ls.set(LS.CACHE, p);
       if (r.aktivna) {
@@ -877,6 +877,7 @@ function App() {
     {
       proizvodi: podaci.proizvodi,
       prijedlog: podaci.prijedlog,
+      prijavljeno: podaci.prijavljeno || {},
       radnik,
       onNovi: noviProizvod,
       greska,
@@ -973,12 +974,12 @@ function Radnik({ radnici, izabran, onDalje, onAdmin, raspored }) {
       onChange: (e) => setDrugi(e.target.value),
       placeholder: "Upiši ime"
     }
-  ), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !ime, onClick: () => onDalje(ime) }, "Dalje — prebroji robu"), /* @__PURE__ */ React.createElement(DanasTrening, { raspored }), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 30 } }, /* @__PURE__ */ React.createElement("button", { className: "linkbtn", onClick: onAdmin }, "Vlasnik ›")), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center", opacity: 0.5 } }, "verzija 24. 11. u 02:13"));
+  ), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !ime, onClick: () => onDalje(ime) }, "Dalje — prebroji robu"), /* @__PURE__ */ React.createElement(DanasTrening, { raspored }), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 30 } }, /* @__PURE__ */ React.createElement("button", { className: "linkbtn", onClick: onAdmin }, "Vlasnik ›")), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center", opacity: 0.5 } }, "verzija 25. 11. u 19:58"));
 }
-function Brojac({ pid, naziv, pod, v, set }) {
+function Brojac({ pid, naziv, pod, prij, v, set }) {
   const n = v === "" || v === void 0 ? null : Number(v);
   const prazno = v === "" || v === void 0;
-  return /* @__PURE__ */ React.createElement("div", { className: "row" + (prazno ? " prazno" : "") }, /* @__PURE__ */ React.createElement("div", { style: { minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15.5, fontWeight: 500 } }, naziv), pod !== void 0 && pod !== null && /* @__PURE__ */ React.createElement("div", { className: "sit" }, "prošli put: ", pod)), /* @__PURE__ */ React.createElement("div", { className: "cnt" }, /* @__PURE__ */ React.createElement("button", { className: "cbtn", "aria-label": "manje " + naziv, onClick: () => set(String(Math.max(0, (n || 0) - 1))) }, "−"), /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "row" + (prazno ? " prazno" : "") }, /* @__PURE__ */ React.createElement("div", { style: { minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15.5, fontWeight: 500 } }, naziv), prij !== void 0 && prij !== null ? /* @__PURE__ */ React.createElement("div", { className: "sit", style: { color: "var(--gold)" } }, "vlasnik javio: ", prij, pod !== void 0 && pod !== null && pod !== prij ? " · prošli put: " + pod : "") : pod !== void 0 && pod !== null && /* @__PURE__ */ React.createElement("div", { className: "sit" }, "prošli put: ", pod)), /* @__PURE__ */ React.createElement("div", { className: "cnt" }, /* @__PURE__ */ React.createElement("button", { className: "cbtn", "aria-label": "manje " + naziv, onClick: () => set(String(Math.max(0, (n || 0) - 1))) }, "−"), /* @__PURE__ */ React.createElement(
     "input",
     {
       className: "cin" + (prazno ? " prazno" : ""),
@@ -993,7 +994,7 @@ function Brojac({ pid, naziv, pod, v, set }) {
     }
   ), /* @__PURE__ */ React.createElement("button", { className: "cbtn", "aria-label": "više " + naziv, onClick: () => set(String((n || 0) + 1)) }, "+")));
 }
-function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart, onNovi }) {
+function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, nazad, onStart, onNovi }) {
   const roba = proizvodi.filter((p) => p.prati_zalihu);
   const [novi, setNovi] = useState(false);
   const [kasa, setKasa] = useNacrt("kasa_pocetna", "");
@@ -1008,6 +1009,7 @@ function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart, o
       pid: p.product_id,
       naziv: p.naziv,
       pod: prijedlog[p.product_id],
+      prij: prijavljeno[p.product_id],
       v: v[p.product_id],
       set: (n) => post(p.product_id, n)
     }

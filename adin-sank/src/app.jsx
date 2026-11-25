@@ -361,7 +361,7 @@ function App() {
   const ucitaj = useCallback(async () => {
     try {
       const r = await api('getBootstrap');
-      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, radnici: r.radnici || [], treneri: r.treneri || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [], raspored: r.raspored || [] };
+      const p = { proizvodi: r.proizvodi, prijedlog: r.prijedlog || {}, prijavljeno: r.prijavljeno || {}, radnici: r.radnici || [], treneri: r.treneri || [], razlozi: r.razlozi || [], clanovi: r.clanovi || [], raspored: r.raspored || [] };
       setPodaci(p);
       ls.set(LS.CACHE, p);
       if (r.aktivna) {
@@ -575,7 +575,7 @@ function App() {
         onDalje={ime => { setRadnik(ime); setGreska(''); setFaza('pocetna'); window.scrollTo(0, 0); }}
         onAdmin={() => setFaza('admin')} />}
 
-      {faza === 'pocetna' && <Pocetna proizvodi={podaci.proizvodi} prijedlog={podaci.prijedlog} radnik={radnik} onNovi={noviProizvod}
+      {faza === 'pocetna' && <Pocetna proizvodi={podaci.proizvodi} prijedlog={podaci.prijedlog} prijavljeno={podaci.prijavljeno || {}} radnik={radnik} onNovi={noviProizvod}
         greska={greska} radi={radi} nazad={() => { setGreska(''); setFaza('radnik'); }} onStart={zapocni} />}
 
       {faza === 'smjena' && smjena && <Smjena smjena={smjena} radnici={podaci.radnici || []} raspored={podaci.raspored || []} proizvodi={podaci.proizvodi} clanovi={podaci.clanovi} treneri={podaci.treneri || []} onNovi={noviProizvod}
@@ -693,14 +693,16 @@ function Radnik({ radnici, izabran, onDalje, onAdmin, raspored }) {
 }
 
 /* ═══════ BROJAČ (−  18  +) ═══════ */
-function Brojac({ pid, naziv, pod, v, set }) {
+function Brojac({ pid, naziv, pod, prij, v, set }) {
   const n = v === '' || v === undefined ? null : Number(v);
   const prazno = v === '' || v === undefined;
   return (
     <div className={'row' + (prazno ? ' prazno' : '')}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 15.5, fontWeight: 500 }}>{naziv}</div>
-        {pod !== undefined && pod !== null && <div className="sit">prošli put: {pod}</div>}
+        {prij !== undefined && prij !== null
+          ? <div className="sit" style={{ color: 'var(--gold)' }}>vlasnik javio: {prij}{pod !== undefined && pod !== null && pod !== prij ? ' · prošli put: ' + pod : ''}</div>
+          : (pod !== undefined && pod !== null && <div className="sit">prošli put: {pod}</div>)}
       </div>
       <div className="cnt">
         <button className="cbtn" aria-label={'manje ' + naziv} onClick={() => set(String(Math.max(0, (n || 0) - 1)))}>−</button>
@@ -715,7 +717,7 @@ function Brojac({ pid, naziv, pod, v, set }) {
 }
 
 /* ═══════ 2. POČETNA INVENTURA ═══════ */
-function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart, onNovi }) {
+function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, nazad, onStart, onNovi }) {
   const roba = proizvodi.filter(p => p.prati_zalihu);
   const [novi, setNovi] = useState(false);
   const [kasa, setKasa] = useNacrt('kasa_pocetna', '');
@@ -736,7 +738,7 @@ function Pocetna({ proizvodi, prijedlog, radnik, greska, radi, nazad, onStart, o
           <div className="grp">{g.ime.toUpperCase()}</div>
           <div className="card0">
             {g.stavke.map(p => (
-              <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} pod={prijedlog[p.product_id]}
+              <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} pod={prijedlog[p.product_id]} prij={prijavljeno[p.product_id]}
                 v={v[p.product_id]} set={n => post(p.product_id, n)} />
             ))}
           </div>

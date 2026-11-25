@@ -52,7 +52,7 @@ test('vlasnik dodaje i mijenja proizvod iz aplikacije; radnik ga odmah vidi', ()
   const b2 = ok(g.getBootstrap());
   assert.equal(b2.proizvodi.find(p => p.product_id === 'redbull').cijena, 4.5);
   assert.ok(!b2.proizvodi.some(p => p.product_id === 'kong'));
-  assert.equal(g.__tabela('PROIZVODI').length, 19, 'ništa obrisano');
+  assert.equal(g.__tabela('PROIZVODI').length, 22, 'ništa obrisano');
   // vlasnik vidi i neaktivne + nabavnu
   const a = ok(g.getAdminData('2580'));
   assert.equal(a.proizvodi.find(p => p.product_id === 'kong').aktivan, false);
@@ -350,4 +350,22 @@ test('kasa na početku + potrošnja osoblja + uzeto iz kase: tačan obračun kas
   assert.deepEqual(edin.stavke, [{ naziv: 'Protein', kom: 1 }]);
   assert.equal(kenan.uzeto, 20);
   assert.equal(kenan.nabavna, 2.37);
+});
+
+test('nova pića (Mega Watt, Hell, Monster) i stanje koje je javio vlasnik: podsjetnik, ne zamjena brojanja', () => {
+  const g = okruzenje();
+  const b = ok(g.getBootstrap());
+  const prod = id => b.proizvodi.find(p => p.product_id === id);
+  assert.deepEqual([prod('mega_watt').cijena, prod('hell_0_5_l').cijena, prod('monster').cijena], [2, 3, 4]);
+  assert.ok(['mega_watt', 'hell_0_5_l', 'monster'].every(id => prod(id).prati_zalihu && prod(id).kategorija === 'Energy'));
+  const pr = g.__tabela('PROIZVODI');
+  assert.deepEqual([pr.find(p => p.product_id === 'mega_watt').nabavna_cijena, pr.find(p => p.product_id === 'hell_0_5_l').nabavna_cijena, pr.find(p => p.product_id === 'monster').nabavna_cijena], [1, 1.65, 2.8]);
+  assert.deepEqual(JSON.parse(JSON.stringify(b.prijavljeno)), { powerade: 2, voda1: 23, voda05: 73, redbull: 9, sultan_kola: 12, mega_watt: 71, hell_0_5_l: 10, monster: 4 });
+  // ponovni setup ne dodaje duplikate
+  g.setupSpreadsheet();
+  assert.equal(g.__tabela('PROIZVODI').filter(p => p.naziv === 'Monster').length, 1);
+  // podsjetnik ne popunjava brojanje: smjena traži prave brojeve, a poslije starta podsjetnik nestaje
+  assert.equal(g.startShift({ shift_id: 'Z', radnik: 'Kenan', pocetna: {} }).code, 'NIJE_SVE_PREBROJANO');
+  ok(g.startShift({ shift_id: 'Z', radnik: 'Kenan', pocetna: pocetno(g, { mega_watt: 70, monster: 4 }) }));
+  assert.deepEqual(JSON.parse(JSON.stringify(ok(g.getBootstrap()).prijavljeno)), {});
 });

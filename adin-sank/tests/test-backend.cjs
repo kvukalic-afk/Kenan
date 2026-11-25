@@ -40,11 +40,11 @@ test('setupSpreadsheet je idempotentan i ne briše podatke', () => {
   // vlasnik promijeni cijenu i doda proizvod — drugi setup ne smije ništa pregaziti
   const sh = g.__ss.getSheetByName('PROIZVODI');
   sh.getRange(4, 4).setValue(4.5);
-  sh.getRange(19, 1, 1, 3).setValues([['novi', 'Ostalo', 'Novi proizvod']]);
+  sh.getRange(22, 1, 1, 3).setValues([['novi', 'Ostalo', 'Novi proizvod']]);
   const drugi = g.setupSpreadsheet();
   assert.match(drugi, /Ništa nije mijenjano/);
   const pr = g.__tabela('PROIZVODI');
-  assert.equal(pr.length, 18);
+  assert.equal(pr.length, 21);
   assert.equal(pr.find(p => p.product_id === 'redbull').cijena, 4.5);
   assert.deepEqual(Object.keys(pr[0]), ['product_id', 'kategorija', 'naziv', 'cijena', 'nabavna_cijena', 'prati_zalihu', 'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci', 'tip', 'dodao']);
 });
@@ -56,11 +56,11 @@ test('setup dodaje kolone koje fale, ne dira postojeće', () => {
   sh.getRange(2, 1, 1, 6).setValues([['voda05', 'Voda', 'Voda 0,5 L', 1, 0.5, true]]);
   g.setupSpreadsheet();
   const pr = g.__tabela('PROIZVODI');
-  assert.equal(pr.length, 2, 'seed se ne ubacuje kad tabela nije prazna (dodaje se samo novi proizvod Lični trener)');
+  assert.equal(pr.length, 5, 'seed se ne ubacuje kad tabela nije prazna (dodaju se samo Lični trener i tri nova pića)');
   assert.equal(pr[1].product_id, 'trener');
   assert.ok('aktivan' in pr[0] && 'clanarina_mjeseci' in pr[0]);
   const b = ok(g.getBootstrap());
-  assert.equal(b.proizvodi.length, 2, 'prazna kolona aktivan = aktivan');
+  assert.equal(b.proizvodi.length, 5, 'prazna kolona aktivan = aktivan');
   assert.equal(b.proizvodi.find(p => p.product_id === 'voda05').tip, 'roba', 'tip se pogađa kad kolona tip ne postoji');
 });
 
@@ -70,10 +70,10 @@ test('bootstrap: proizvodi, nema aktivne smjene, neaktivni sakriveni', () => {
   sh.getRange(3, 7).setValue(false); // voda1 neaktivna
   const b = ok(g.getBootstrap());
   assert.equal(b.aktivna, null);
-  assert.equal(b.proizvodi.length, 16);
+  assert.equal(b.proizvodi.length, 19);
   assert.ok(!b.proizvodi.some(p => p.product_id === 'voda1'));
   assert.deepEqual(b.radnici, ['Kenan', 'Edin']);
-  assert.equal(b.proizvodi.filter(p => p.prati_zalihu).length, 11);
+  assert.equal(b.proizvodi.filter(p => p.prati_zalihu).length, 14);
   assert.equal(b.proizvodi.find(p => p.product_id === 'clan50').clanarina_mjeseci, 1);
 });
 
@@ -124,7 +124,7 @@ test('SCENARIJ PRIHVATANJA (tačka 7)', () => {
   assert.equal(izv.kasa_razlika, 0);
   assert.equal(izv.broj_razlika, 1);
   assert.equal(izv.vrijednost_razlike, -4);
-  assert.equal(izv.stavke.filter(x => x.razlika_kom === 0).length, 11, 'ostali (11) se poklapaju');
+  assert.equal(izv.stavke.filter(x => x.razlika_kom === 0).length, 14, 'ostali (14) se poklapaju');
   assert.equal(izv.prodano_kom, 5);
   assert.equal(izv.trajanje_min, 6 * 60 + 30);
   assert.equal(izv.pocetak, '16:03');

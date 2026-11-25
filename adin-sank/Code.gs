@@ -78,7 +78,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '6';
+var VERZIJA_SEME = '7';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -638,6 +638,35 @@ function osigurajTabele_(formatiraj) {
     }
   } catch (e) { /* */ }
 
+  // nova pića + ukupno stanje koje je vlasnik javio (jednom). Stanje je samo PODSJETNIK pri sljedećem početnom brojanju.
+  try {
+    if (!svojstva_().getProperty('SEED_PICA_1125')) {
+      var tpr = tabela_(TAB.PROIZVODI);
+      var nova = [
+        { naziv: 'Mega Watt', kat: 'Energy', cijena: 2.00, nabavna: 1.00 },
+        { naziv: 'Hell 0,5 L', kat: 'Energy', cijena: 3.00, nabavna: 1.65 },
+        { naziv: 'Monster', kat: 'Energy', cijena: 4.00, nabavna: 2.80 }
+      ];
+      var ima = {}, maxR = 0;
+      tpr.redovi.forEach(function (r) { ima[normaliziraj_(r.naziv).replace(/[^a-z0-9]/g, '')] = s_(r.product_id); maxR = Math.max(maxR, num_(r.redoslijed)); });
+      var ids = {};
+      nova.forEach(function (n) {
+        var kljuc = normaliziraj_(n.naziv).replace(/[^a-z0-9]/g, '');
+        if (ima[kljuc]) { ids[n.naziv] = ima[kljuc]; return; }
+        var pid = slug_(n.naziv); maxR += 10;
+        dodajRedove_(tpr, [{ product_id: pid, kategorija: n.kat, naziv: n.naziv, cijena: n.cijena, nabavna_cijena: n.nabavna,
+          prati_zalihu: true, aktivan: true, redoslijed: maxR, minimum: 4, clanarina_mjeseci: 0, tip: 'roba', dodao: '' }]);
+        ids[n.naziv] = pid;
+        uradjeno.push('dodano piće ' + n.naziv);
+      });
+      var stanje = {};
+      stanje.powerade = 2; stanje.voda1 = 23; stanje.voda05 = 73; stanje.redbull = 9; stanje.sultan_kola = 12;
+      stanje[ids['Mega Watt']] = 71; stanje[ids['Hell 0,5 L']] = 10; stanje[ids['Monster']] = 4;
+      svojstva_().setProperty('PRIJAVLJENO_STANJE', JSON.stringify(stanje));
+      svojstva_().setProperty('SEED_PICA_1125', '1');
+    }
+  } catch (e) { /* */ }
+
   var pg = ss.getSheetByName(TAB.PREGLED);
   if (!pg) {
     pg = ss.insertSheet(TAB.PREGLED);
@@ -847,6 +876,11 @@ function smjenaJavno_(r, tInv, tDog) {
 }
 
 /** Zadnje prebrojano stanje po proizvodu (sugestija za sljedeću smjenu). */
+/** Ukupno stanje koje je javio vlasnik — važi samo do prvog početnog brojanja, i samo je podsjetnik. */
+function prijavljenoStanje_() {
+  try { return JSON.parse(svojstva_().getProperty('PRIJAVLJENO_STANJE') || '{}') || {}; } catch (e) { return {}; }
+}
+
 function prijedlog_(tInv) {
   var t = tInv || tabela_(TAB.INVENTURA);
   var p = {};
@@ -911,6 +945,7 @@ function getBootstrap() {
       proizvodi: proizvodi.map(javniProizvod_),
       aktivna: aktivna,
       prijedlog: prijedlog_(tInv),
+      prijavljeno: prijavljenoStanje_(),
       radnici: radnici_(),
       treneri: treneri_(),
       razlozi: CONFIG.RAZLOZI,
@@ -949,6 +984,7 @@ function startShift(podaci) {
         kasaPocetna = r2_(kasaPocetna);
       }
       var t = sada_();
+      svojstva_().deleteProperty('PRIJAVLJENO_STANJE'); // podsjetnik je iskorišten — od sada važi samo stvarno brojanje
       dodajRedove_(sm, [{
         shift_id: shiftId, datum: t.datum, radnik: radnik, vrijeme_pocetka: t.vrijeme, vrijeme_kraja: '',
         status: 'OPEN', created_at: t.ts, updated_at: t.ts, kasa_pocetna: kasaPocetna

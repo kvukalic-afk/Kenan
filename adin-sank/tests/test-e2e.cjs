@@ -92,7 +92,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     /* ── 2. Početna inventura ── */
     await page.getByText('Prebroji početno stanje').waitFor();
     const dugme = page.getByRole('button', { name: /za prebrojati|ZAPOČNI/ });
-    assert.match(await dugme.textContent(), /Još 12 za prebrojati/);
+    assert.match(await dugme.textContent(), /Još 15 za prebrojati/);
     assert.equal(await dugme.isDisabled(), true);
     await upisiBrojanje(page, { redbull: 10, voda05: 15 });
     await page.screenshot({ path: path.join(SLIKE, '2-pocetna.png'), fullPage: false });
@@ -137,7 +137,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     /* ── 5. Izvještaj ── */
     await page.getByTestId('izv-promet').waitFor();
     await page.getByTestId('izv-promet').filter({ hasText: '11,00' }).waitFor();
-    assert.match(await page.getByTestId('poklapa').textContent(), /11 proizvoda se poklapa/);
+    assert.match(await page.getByTestId('poklapa').textContent(), /14 proizvoda se poklapa/);
     assert.match(await page.getByTestId('razlike').textContent(), /1 proizvod ima razliku · −4,00 KM/);
     assert.match(await page.getByTestId('razlika-redbull').textContent(), /-1 kom · −4,00 KM/);
     assert.match(await page.getByTestId('kasa-razlika').textContent(), /0,00/);
@@ -306,12 +306,12 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     // vlasnik dodaje novi proizvod
     await page.getByRole('button', { name: 'Proizvodi', exact: true }).click();
     await page.getByRole('button', { name: '+ Novi proizvod / ponuda' }).click();
-    await page.getByTestId('p-naziv').fill('Monster');
+    await page.getByTestId('p-naziv').fill('Guarana');
     await page.getByTestId('p-cijena').fill('4,50');
     await page.getByTestId('p-nabavna').fill('2,60');
     await page.getByRole('button', { name: 'Sačuvaj', exact: true }).click();
-    await page.locator('[data-proizvod="monster"]').waitFor();
-    assert.equal(g.__tabela('PROIZVODI').find(p => p.product_id === 'monster').cijena, 4.5);
+    await page.locator('[data-proizvod="guarana"]').waitFor();
+    assert.equal(g.__tabela('PROIZVODI').find(p => p.product_id === 'guarana').cijena, 4.5);
 
     // vrata: povezivanje s Tuyom, otključavanje, svjetla, ulazi
     const tuya = lazniTuya([{ id: 7, update_time: Date.now() - 60000, status: [{ code: 'unlock_card', value: 'CHIP-1' }] }]);
