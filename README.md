@@ -186,7 +186,10 @@ Zvanični obrazac dnevnika rada za USK nije javno dostupan na internetu. Ako šk
 - Uz svaku bilješku: **✨ Sroči stručno**, **→ Razgovor** (prenese tekst u formu razgovora), **📄 Službena bilješka** (popuni obrazac), **✓ Obrađeno**, uredi i obriši.
 - **✨ Sroči stručno:** AI pretvara sirov tekst u uredan stručni tekst, kakav piše iskusan školski psiholog. Ništa ne izmišlja i ne dodaje dijagnoze. Prijedlog uvijek pregledaš i urediš prije nego ga prihvatiš. Isto dugme postoji uz tekstualna polja u formama.
 - **🧠 AI analiza:** dugme „AI analiza (N)“ šalje sve bilješke koje trenutno vidiš (npr. filter „Školska godina“ + jedan učenik, ili sve „Informativni razgovor“) na analizu. AI vraća pregled, ključna zapažanja i obrasce koji se ponavljaju, moguće zaključke, preporuke i otvorena pitanja. **Prije slanja vidiš tačan tekst koji ide AI-ju** (već bez imena) i možeš ga urediti ili dodati svoje pitanje. Analiza se čuva u tabu **Analize**, može se urediti i odštampati.
-- U **kartonu učenika** dugme **„🧠 AI pregled svih zapisa“** radi isto nad svim razgovorima, bilješkama i saradnjom za tog učenika. Tu su i prečice za obrasce (Mišljenje, Saglasnost, Poziv roditelju, Plan podrške).
+- U **kartonu učenika** su tri AI alata. Sve što upišeš prolazi kroz uklanjanje imena, a rezultat se sprema u karton i štampa se s njim.
+  - **🗣 Priprema za razgovor:** upišeš s kim je razgovor i šta znaš, a AI napravi tok razgovora, ključna pitanja, na šta paziti i šta zapisati poslije.
+  - **🧩 Procjena teškoća:** upišeš opis teškoća i sastanka, a AI napravi opis po područjima, radne hipoteze (ZA i PROTIV), šta još prikupiti, kome uputiti i šta škola može odmah. **Dijagnozu ne postavlja.** Nju postavljaju nadležni stručnjaci, a procjenu za školu Stručno tijelo (čl. 23 Zakona USK).
+- U kartonu je i dugme **„🧠 AI pregled svih zapisa“** radi isto nad svim razgovorima, bilješkama i saradnjom za tog učenika. Tu su i prečice za obrasce (Mišljenje, Saglasnost, Poziv roditelju, Plan podrške).
 
 ### Dokumentacija za inspekciju (Izvještaji → Dokumentacija)
 

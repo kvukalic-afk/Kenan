@@ -7,7 +7,7 @@ import { Modal, Polje, Potvrda, Prazno, Prekidac, SifraPolje } from '../componen
 import { RedStavke, StatusOznaka, Zaglavlje, type StavkaVremena } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { AnalizaModal } from '../components/AnalizaModal';
-import { sastaviIzvore } from '../lib/analiza';
+import { REZIMI, sastaviIzvore, type RezimAnalize } from '../lib/analiza';
 import { prikaz } from '../lib/datum';
 import { idi } from '../lib/router';
 import { jeIspravnaSifra } from '../lib/sifra';
@@ -17,7 +17,7 @@ import { punoIme, STATUSI_UCENIKA, type BrzaBiljeska, type StatusUcenika, type U
 export function Karton({ sifra }: { sifra: string }) {
   const toast = useToast();
   const [uredi, setUredi] = useState(false);
-  const [aiPregled, setAiPregled] = useState(false);
+  const [aiPregled, setAiPregled] = useState<RezimAnalize | null>(null);
   const podaci = useLiveQuery(async () => {
     const [ucenik, razgovori, saradnja, radionice, razredi, biljeske, analize] = await Promise.all([
       db.ucenici.where('sifra').equals(sifra).first(),
@@ -75,7 +75,9 @@ export function Karton({ sifra }: { sifra: string }) {
             <a className="dugme" href={`#/print/karton/${encodeURIComponent(sifra)}`}><Ikona ime="print" /> Preuzmi karton za print</a>
           </div>
           <div className="red-dugmadi" style={{ marginTop: 8 }}>
-            <button type="button" className="chip ai-chip" disabled={!podaci.razgovori.length && !podaci.biljeske.length && !podaci.saradnja.length} onClick={() => setAiPregled(true)}>🧠 AI pregled svih zapisa</button>
+            <button type="button" className="chip ai-chip" onClick={() => setAiPregled('priprema')}>🗣 Priprema za razgovor</button>
+            <button type="button" className="chip ai-chip" onClick={() => setAiPregled('teskoce')}>🧩 Procjena teškoća</button>
+            <button type="button" className="chip ai-chip" disabled={!podaci.razgovori.length && !podaci.biljeske.length && !podaci.saradnja.length} onClick={() => setAiPregled('pregled')}>🧠 AI pregled svih zapisa</button>
             <a className="chip" href={`#/obrazac/misljenje?sifra=${encodeURIComponent(sifra)}`}>📄 Mišljenje</a>
             <a className="chip" href={`#/obrazac/saglasnost?sifra=${encodeURIComponent(sifra)}`}>📄 Saglasnost</a>
             <a className="chip" href={`#/obrazac/poziv?sifra=${encodeURIComponent(sifra)}`}>📄 Poziv roditelju</a>
@@ -122,7 +124,8 @@ export function Karton({ sifra }: { sifra: string }) {
       {uredi && <UrediUcenika ucenik={ucenik} onZatvori={() => setUredi(false)} />}
       {aiPregled && (() => {
         const { tekst, broj } = sastaviIzvore({ biljeske: podaci.biljeske, razgovori: podaci.razgovori, saradnja: podaci.saradnja });
-        return <AnalizaModal naslov={`AI pregled – ${sifra}`} opseg={`svi zapisi o učeniku ${sifra}`} sifra={sifra} izvorniTekst={tekst} brojIzvora={broj} onZatvori={() => setAiPregled(false)} />;
+        const opseg = aiPregled === 'pregled' ? `svi zapisi o učeniku ${sifra}` : `${sifra}, razred ${ucenik.razred}`;
+        return <AnalizaModal rezim={aiPregled} naslov={`${REZIMI[aiPregled].naslov} – ${sifra}`} opseg={opseg} sifra={sifra} izvorniTekst={tekst} brojIzvora={broj} onZatvori={() => setAiPregled(null)} />;
       })()}
     </>
   );
