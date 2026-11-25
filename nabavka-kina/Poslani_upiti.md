@@ -68,3 +68,7 @@ Montcarton (ME) montcarton@t-com.me · ID Print (BG) office@idprint.bg · OpenPr
 - **Nije obaviješteno** (čekaju odgovore na raniji upit): BePrint, Kontrast, no KACHI, zpapieru.pl, Meikei, Hanlong, Srbija (Bari Print, Pressia, Grafolik, PROOF), Pepi-Karttis.
 
 **MJC Pack (23.11.):** tvrda kutija 750 $ / 100 kom, naljepnice 6 × 70 $, pečati 6 × 70 $. Preskupo. KAdruk (PL) odbio, ne šalje u BiH.
+
+## 25.11.2026: masovno slanje RFQ-HV-003 (jedna kutija + 6 naljepnica, cilj ~300 $)
+Spisak svih adresa je u `posiljaoci_v3.csv`, a PDF upit u `RFQ_HELVERA_box_labels_v3_EN.pdf`.
+Vraćeno kao nepostojeća adresa: Weiqi, no KACHI, QinPrinting, Kailiou, Tianshi.
