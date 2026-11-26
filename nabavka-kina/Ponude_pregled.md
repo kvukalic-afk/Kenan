@@ -1,10 +1,13 @@
-# Pregled ponuda (stanje 26.11.2026, popodne)
+# Pregled ponuda (stanje 26.11.2026, veče)
+
+MGM Zagreb: dostava DPD 50–60 € s carinjenjem.
 
 Cilj: 100 kutija (1 dizajn) + umetak + 180 naljepnica (6 dizajna × 30), oko 300 $ s dostavom u BiH.
 
 ## Kutija + naljepnice
 | Dobavljač | Šta nudi | Cijena | Dostava |
 |---|---|---|---|
+| **JHua / Jiahua (Kina)** | kutija 65×40×20 + prozirni plastični uložak (bočica leži) 1,23 $/kom + naljepnice 180 × 0,15 $; izrada 7 dana | **271,91 $ ukupno** | FedEx do Cazina uključen (DAP), carina i PDV nisu; 10–15 dana |
 | PackPro (Kina) | sklopiva kutija 72×52×25 (350 g) + umetak od valovitog kartona + naljepnice; besplatan digitalni uzorak | 300 $ | posebno, upitano |
 | Yellow Printing (Kina) | 100 kompleta s bijelim papirnim umetkom (300 kom 390 $, 500 kom 490 $), izrada 5 dana | 280 $ | upitano; i jesu li naljepnice uključene |
 | MY Packaging (Kina) | sklopiva kutija za jednu bočicu + 180 naljepnica, poslali render s našim dizajnom | 280 $ | upitano |
@@ -21,8 +24,8 @@ Cilj: 100 kutija (1 dizajn) + umetak + 180 naljepnica (6 dizajna × 30), oko 300
 ## Samo naljepnice
 | Dobavljač | Šta nudi | Cijena |
 |---|---|---|
-| Sticker Printing China | 6 × 100 = 600 kom, BOPP + mat plastifikacija | **169 $ s avionskom dostavom** |
-| 1Etiket (Turska) | 6 × 1000 kom | 120 $ + dostava |
+| Sticker Printing China | 6 × 100 = 600 kom, BOPP + mat plastifikacija | 214 $ s dostavom u Cazin (udaljeno područje) |
+| 1Etiket (Turska) | 6 × 1000 kom | 120 $ + dostava; standardno ljepilo, ne garantuju za frižider |
 | MGM Zagreb | 180 kom | oko 83 € s PDV-om |
 | FlexLabel (Moldavija) | minimalna narudžba | 300 € |
 
