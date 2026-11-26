@@ -59,6 +59,7 @@ export function Statistika() {
           <a href="#/ai" className="ai-plocica"><Ikona ime="iskra" /><strong>Pametni alati</strong><span>plan, izvještaj, zapisnik, letak</span></a>
           <a href="#/izvjestaj"><Ikona ime="kalendar" /><strong>Dnevni / sedmični</strong><span>izvještaj šta sam radio/la</span></a>
           <a href={`#/print/dnevnik/${danasIso().slice(0, 7)}`}><Ikona ime="print" /><strong>Dnevnik rada</strong><span>ovaj mjesec, za print</span></a>
+          <a href="#/print/spiskovi"><Ikona ime="ucenici" /><strong>Spiskovi odjeljenja</strong><span>svako odjeljenje s razrednikom</span></a>
           <a href={`#/plan?godina=${izabrana}`}><Ikona ime="aktivnost" /><strong>Plan rada</strong><span>godišnji i mjesečni</span></a>
           <a href={`#/print/izvjestaj/${izabrana}/${period !== 'godina' ? period : new Date().getMonth() < 8 ? 'II' : 'I'}`}><Ikona ime="print" /><strong>Polugodišnji</strong><span>izvještaj o radu</span></a>
           <a href={`#/print/izvjestaj/${izabrana}/godina`}><Ikona ime="print" /><strong>Godišnji</strong><span>izvještaj o radu</span></a>

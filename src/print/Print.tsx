@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Ikona } from '../components/Ikona';
@@ -13,7 +13,7 @@ import { radnihSedmica } from '../screens/PlanRada';
 import { definicija, popuniUvod } from '../lib/obrasci';
 import { brojPerioda, nazivDana, naslovIzvjestaja, opisPerioda, sazetakPerioda, stavkePerioda, vrstaPerioda } from '../lib/periodIzvjestaj';
 import { procitajTekst } from '../screens/IzvjestajPeriod';
-import { punoIme, type Aktivnost, type Analiza, type PopunjenObrazac, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
+import { punoIme, type Ucenik, type Aktivnost, type Analiza, type PopunjenObrazac, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
 import { GRUPE } from '../lib/dokumentacija';
 import { useKontrola } from '../lib/useKontrola';
 import './print.css';
@@ -812,5 +812,94 @@ export function PrintUvidUcenici({ od, do: doD }: { od: string; do: string }) {
       )}
       <p style={{ fontSize: '8.5pt' }}>Evidencija pokazuje obim i vrstu rada. Bilješke iz razgovora, zaključci, nalazi i testovi su povjerljiva dokumentacija psihologa i čuvaju se odvojeno (Etički kodeks psihologa; propisi o zaštiti ličnih podataka). Ključ šifri učenika je kod psihologa.</p>
     </Dokument>
+  );
+}
+
+// ---------- Spiskovi odjeljenja (svako odjeljenje na svojoj stranici) ----------
+
+const RIMSKI = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+/** "7-1" → "VII-1" */
+export const rimskiRazred = (r: string) => r.replace(/^(\d)(?=\D)/, (_, d: string) => RIMSKI[Number(d)] || d);
+const porediRazred = (a: string, b: string) => a.localeCompare(b, 'bs', { numeric: true });
+
+export function PrintSpiskovi({ razred }: { razred?: string }) {
+  const postavke = usePostavke();
+  const [sifre, setSifre] = useState(true);
+  const p = useLiveQuery(async () => {
+    const [ucenici, razredi] = await Promise.all([db.ucenici.toArray(), db.razredi.toArray()]);
+    return { ucenici, razredi };
+  }, []);
+  useEffect(() => {
+    const stari = document.title;
+    document.title = razred ? `Spisak_ucenika_${razred}` : 'Spiskovi_odjeljenja';
+    return () => { document.title = stari; };
+  }, [razred]);
+  if (!p) return <Ucitavanje />;
+  const razrednik = new Map(p.razredi.map((r) => [r.razred, r.razrednik]));
+  const grupe = new Map<string, Ucenik[]>();
+  for (const u of p.ucenici) {
+    if (u.status && u.status !== 'Aktivan') continue;
+    if (!u.razred || (razred && u.razred !== razred)) continue;
+    grupe.set(u.razred, [...(grupe.get(u.razred) ?? []), u]);
+  }
+  const redoslijed = [...grupe.keys()].sort(porediRazred);
+  const sg = nazivSkolskeGodine(postavke.skolskaGodinaPocetak);
+  const poPrezimenu = (a: Ucenik, b: Ucenik) => (a.prezime || '').localeCompare(b.prezime || '', 'bs') || (a.ime || '').localeCompare(b.ime || '', 'bs') || a.sifra.localeCompare(b.sifra, 'bs', { numeric: true });
+
+  return (
+    <div className="print-omot">
+      <div className="print-alati">
+        <button type="button" className="dugme" onClick={() => nazad('/ucenici')}><Ikona ime="nazad" /> Nazad</button>
+        <button type="button" className="dugme primarno" style={{ background: '#fff', color: '#17556b' }} onClick={() => window.print()}>
+          <Ikona ime="print" /> Štampaj / Sačuvaj kao PDF
+        </button>
+        <label className="prekidac" style={{ color: 'inherit' }}>
+          <input type="checkbox" role="switch" checked={sifre} onChange={(e) => setSifre(e.target.checked)} /> Šifre učenika
+        </label>
+        <span className="napomena">{redoslijed.length} {redoslijed.length === 1 ? 'odjeljenje' : 'odjeljenja'} · svako na svojoj stranici. Šifre isključi ako spisak daješ drugima.</span>
+      </div>
+      <div className="print-pozadina">
+        {redoslijed.length === 0 && <p style={{ color: '#fff', textAlign: 'center' }}>Nema učenika za prikaz.</p>}
+        {redoslijed.map((r) => {
+          const lista = (grupe.get(r) ?? []).sort(poPrezimenu);
+          const rz = razrednik.get(r);
+          return (
+            <article key={r} className="print-stranica spisak">
+              <div className="spisak-vrh">
+                <span className="skola">{postavke.nazivSkole}</span>
+                <span>Školska {sg}. godina</span>
+              </div>
+              <div className="spisak-naslov">
+                <div className="spisak-oznaka">Spisak učenika</div>
+                <div className="spisak-odjeljenje">Odjeljenje {rimskiRazred(r)}</div>
+              </div>
+              <div className="spisak-razrednik">
+                <span>Razrednik/ca:</span>
+                {rz ? <strong>{rz}</strong> : <span className="crta" />}
+              </div>
+              <table className="spisak-tabela">
+                <thead>
+                  <tr><th className="rb">Br.</th><th>Ime i prezime</th>{sifre && <th className="sf">Šifra</th>}<th className="nap">Napomena</th></tr>
+                </thead>
+                <tbody>
+                  {lista.map((u, i) => (
+                    <tr key={u.id}>
+                      <td className="rb">{i + 1}.</td>
+                      <td className="ime">{punoIme(u) || <span className="blijedo-print">(ime nije upisano)</span>}</td>
+                      {sifre && <td className="sf">{u.sifra}</td>}
+                      <td className="nap" />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="spisak-dno">
+                <span>Ukupno učenika: <strong>{lista.length}</strong></span>
+                <span>Stanje na dan {prikaz(danasIso())}.</span>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
   );
 }

@@ -74,6 +74,7 @@ export function Ucenici({ pocetniFilter }: { pocetniFilter?: string }) {
           <button type="button" className="dugme" onClick={() => setNovi(true)}><Ikona ime="plus" /> Učenik</button>
           <button type="button" className="dugme" onClick={() => setUvoz(true)}><Ikona ime="posalji" /> Uvoz popisa</button>
           <button type="button" className="dugme" onClick={() => setRazrednici(true)}><Ikona ime="ucenici" /> Razrednici</button>
+          <a className="dugme" href={`#/print/spiskovi${razred ? `/${encodeURIComponent(razred)}` : ''}`}><Ikona ime="print" /> {razred ? `Spisak ${razred}` : 'Spiskovi odjeljenja'}</a>
         </div>
         {razred && razrednikRazreda.get(razred) && <p className="malo blijedo">Razrednik {razred}: <strong>{razrednikRazreda.get(razred)}</strong></p>}
 
