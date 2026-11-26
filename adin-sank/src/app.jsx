@@ -188,7 +188,12 @@ var Logika = (function () {
     return o;
   }
   /** Paket = karta (može i bez) + trener (može i bez). */
-  function paket(karta, trener, trenerIme, clan, danas) {
+  /** Prilagođena cijena (npr. "30,5") → broj ili null ako nije ispravna. */
+  function cijenaIzUnosa(t) {
+    var x = Number(String(t === undefined || t === null ? '' : t).replace(',', '.'));
+    return String(t).trim() !== '' && isFinite(x) && x > 0 && x <= 2000 ? Math.round(x * 100) / 100 : null;
+  }
+  function paket(karta, trener, trenerIme, clan, danas, trenerCijena) {
     var stavke = [], ukupno = 0;
     if (karta) {
       var pk = produzenje(clan && clan.istek, danas, karta.clanarina_mjeseci);
@@ -197,10 +202,12 @@ var Logika = (function () {
     }
     if (trener) {
       var pt = produzenje(clan && clan.trener_do, danas, trener.clanarina_mjeseci);
-      stavke.push({ p: trener, tekst: trener.naziv + (trenerIme ? ' — ' + trenerIme : ''), cijena: trener.cijena, do: pt.istek });
-      ukupno += trener.cijena;
+      var cn = trenerCijena === undefined || trenerCijena === '' ? trener.cijena : cijenaIzUnosa(trenerCijena);
+      stavke.push({ p: trener, tekst: trener.naziv + (trenerIme ? ' — ' + trenerIme : ''), cijena: cn === null ? 0 : cn, standardna: trener.cijena,
+        prilagodjena: cn !== null && cn !== trener.cijena, do: pt.istek });
+      ukupno += cn === null ? 0 : cn;
     }
-    var spreman = stavke.length > 0 && (!trener || !!trenerIme);
+    var spreman = stavke.length > 0 && (!trener || (!!trenerIme && (trenerCijena === undefined || trenerCijena === '' || cijenaIzUnosa(trenerCijena) !== null)));
     return { stavke: stavke, ukupno: Math.round(ukupno * 100) / 100, spreman: spreman };
   }
 
@@ -270,7 +277,7 @@ var Logika = (function () {
     dodajURed: dodajURed, ukloniIzReda: ukloniIzReda, sljedeciBatch: sljedeciBatch, pauza: pauza,
     spojiDogadjaje: spojiDogadjaje, dozvoliTap: dozvoliTap,
     dodajMjesece: dodajMjesece, produzenje: produzenje, normaliziraj: normaliziraj, traziClanove: traziClanove,
-    grupisi: grupisi, tekstIzvjestaja: tekstIzvjestaja, tip: tip, podijeli: podijeli, paket: paket,
+    grupisi: grupisi, tekstIzvjestaja: tekstIzvjestaja, tip: tip, podijeli: podijeli, paket: paket, cijenaIzUnosa: cijenaIzUnosa,
     DANI: DANI, DANI_IME: DANI_IME, danUSedmici: danUSedmici, zaDan: zaDan, termini: termini
   };
 })();
@@ -417,6 +424,7 @@ function App() {
         if (e.clan) o.clan = e.clan;
         if (e.osoba) o.osoba = e.osoba;
         if (e.iznos !== undefined) o.iznos = e.iznos;
+        if (e.cijena_override !== undefined) o.cijena_override = e.cijena_override;
         return o;
       });
       const rez = await api('pushEvents', batch.shift_id, ocisceni);
@@ -961,7 +969,8 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
           const azuriran = { ...clan };
           pk.stavke.forEach(st0 => {
             if (Logika.tip(st0.p) === 'trener') {
-              dodaj('SALE', st0.p.product_id, 1, '', { ...payload, trener: trenerIme });
+              dodaj('SALE', st0.p.product_id, 1, '', { ...payload, trener: trenerIme },
+                st0.prilagodjena ? { cijena_override: String(st0.cijena), ukupno: st0.cijena } : undefined);
               azuriran.trener = trenerIme; azuriran.trener_do = st0.do;
             } else {
               dodaj('SALE', st0.p.product_id, 1, '', payload);
@@ -1220,9 +1229,10 @@ function Clanarina({ clanarine, trenerProizvodi, treneri, clanovi, zatvori, potv
   const [karta, setKarta] = useState(null);
   const [trener, setTrener] = useState(null);
   const [trenerIme, setTrenerIme] = useState('');
+  const [trenerCijena, setTrenerCijena] = useState('');
   const danas = Logika.danasSarajevo();
   const lista = Logika.traziClanove(clanovi, upit).slice(0, 40);
-  const pk = Logika.paket(karta, trener, trenerIme, clan, danas);
+  const pk = Logika.paket(karta, trener, trenerIme, clan, danas, trenerCijena);
   const listaTrenera = treneri && treneri.length ? treneri : ['Kenan', 'Edin'];
 
   const izaberi = c => {
@@ -1297,7 +1307,7 @@ function Clanarina({ clanarine, trenerProizvodi, treneri, clanovi, zatvori, potv
                 return (
                   <button key={p.product_id} data-trener-paket={p.product_id} className={'pick' + (on ? ' on' : '')}
                     style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 56 }}
-                    onClick={() => setTrener(on ? null : p)}>
+                    onClick={() => { setTrener(on ? null : p); setTrenerCijena(on ? '' : String(p.cijena).replace('.', ',')); }}>
                     <span style={{ fontSize: 16 }}>{on ? '✓ ' : '+ '}{p.naziv}</span>
                     <span style={{ color: 'var(--gold)', fontSize: 17 }}>{km(p.cijena)}</span>
                   </button>
@@ -1309,10 +1319,22 @@ function Clanarina({ clanarine, trenerProizvodi, treneri, clanovi, zatvori, potv
                 {listaTrenera.map(t => <button key={t} data-trener={t} className={'chip' + (trenerIme === t ? ' on' : '')} style={{ flex: 1, minWidth: 90 }} onClick={() => setTrenerIme(t)}>{t}</button>)}
               </div>
             )}
+            {trener && (
+              <div style={{ marginTop: 12 }}>
+                <div className="lab">CIJENA TRENERA ZA OVOG ČLANA (KM) — MOŽEŠ PROMIJENITI</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input className="inp" data-testid="trener-cijena" inputMode="decimal" value={trenerCijena}
+                    style={{ fontSize: 22, fontWeight: 700, textAlign: 'center' }}
+                    onChange={e => setTrenerCijena(e.target.value.replace(/[^\d.,]/g, '').slice(0, 7))} />
+                  {Logika.cijenaIzUnosa(trenerCijena) !== trener.cijena && <button className="chip" onClick={() => setTrenerCijena(String(trener.cijena).replace('.', ','))}>standardno {km(trener.cijena)}</button>}
+                </div>
+                {Logika.cijenaIzUnosa(trenerCijena) === null && <div className="sit" style={{ color: 'var(--red)', marginTop: 6 }}>Upiši ispravnu cijenu.</div>}
+              </div>
+            )}
           </>}
           {pk.stavke.length > 0 && (
             <div className="card racun" style={{ marginTop: 16 }}>
-              {pk.stavke.map((x, i) => <div className="ln" key={i}><span>{x.tekst}<div className="sit">do {dT(x.do)}</div></span><b>{km(x.cijena)} KM</b></div>)}
+              {pk.stavke.map((x, i) => <div className="ln" key={i}><span>{x.tekst}<div className="sit">do {dT(x.do)}{x.prilagodjena ? ' · prilagođena cijena (standardno ' + km(x.standardna) + ')' : ''}</div></span><b>{km(x.cijena)} KM</b></div>)}
               <div className="ln" style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 10 }}>
                 <span style={{ fontWeight: 600 }}>UKUPNO</span><b style={{ color: 'var(--gold)', fontSize: 22 }} data-testid="paket-ukupno">{km(pk.ukupno)} KM</b>
               </div>

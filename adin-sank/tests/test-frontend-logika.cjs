@@ -169,3 +169,18 @@ test('raspored: dan u sedmici, termini za dan, grupisanje termina', () => {
   assert.equal(t.length, 2);
   assert.equal(JSON.stringify(t[0].dani), JSON.stringify({ pon: 'Prsa', uto: 'Leđa' }));
 });
+
+test('paket s prilagođenom cijenom trenera', () => {
+  const karta = { product_id: 'clan30', naziv: 'Karta', cijena: 40, clanarina_mjeseci: 1, tip: 'clanarina' };
+  const tr = { product_id: 'trener_plan', naziv: 'Plan', cijena: 40, clanarina_mjeseci: 1, tip: 'trener' };
+  const a = L.paket(karta, tr, 'Edin', { istek: '' }, '2026-11-21', '30,5');
+  assert.equal(a.ukupno, 70.5);
+  assert.equal(a.stavke[1].prilagodjena, true);
+  assert.equal(a.stavke[1].standardna, 40);
+  const b = L.paket(karta, tr, 'Edin', { istek: '' }, '2026-11-21', '40');
+  assert.equal(b.stavke[1].prilagodjena, false);
+  assert.equal(L.paket(karta, tr, 'Edin', {}, '2026-11-21', 'abc').spreman, false);
+  assert.equal(L.paket(karta, tr, 'Edin', {}, '2026-11-21', '0').spreman, false);
+  assert.equal(L.paket(karta, tr, 'Edin', {}, '2026-11-21').ukupno, 80);
+  assert.equal(L.cijenaIzUnosa('3000'), null);
+});

@@ -78,7 +78,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '9';
+var VERZIJA_SEME = '10';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -700,6 +700,32 @@ function osigurajTabele_(formatiraj) {
     }
   } catch (e) { /* */ }
 
+  // paketi trenera (vlasnik, 26.11.): plan 40, asistencija + plan 60, grupni 70, personalni 100 — sve DODATNO uz kartu
+  try {
+    if (!svojstva_().getProperty('SEED_TRENERI_1126')) {
+      var tt2 = tabela_(TAB.PROIZVODI);
+      var postoji2 = {};
+      tt2.redovi.forEach(function (r) {
+        postoji2[s_(r.product_id)] = true;
+        if (s_(r.product_id) === 'trener' && s_(r.naziv) === 'Lični trener (mjesečno)') {
+          azurirajRed_(tt2, r, { naziv: 'Asistencija + plan', kategorija: 'Trener' });
+          uradjeno.push('trener → Asistencija + plan');
+        }
+      });
+      [
+        ['trener_plan', 'Plan treninga ili ishrane', 40, 171],
+        ['trener_grupni', 'Grupni trening (termin)', 70, 172],
+        ['trener_personalni', 'Personalni trening', 100, 173]
+      ].forEach(function (n) {
+        if (postoji2[n[0]]) return;
+        dodajRedove_(tabela_(TAB.PROIZVODI), [{ product_id: n[0], kategorija: 'Trener', naziv: n[1], cijena: n[2], nabavna_cijena: n[2],
+          prati_zalihu: false, aktivan: true, redoslijed: n[3], minimum: 0, clanarina_mjeseci: 1, tip: 'trener', dodao: '' }]);
+        uradjeno.push('dodan paket ' + n[1]);
+      });
+      svojstva_().setProperty('SEED_TRENERI_1126', '1');
+    }
+  } catch (e) { /* */ }
+
   var pg = ss.getSheetByName(TAB.PREGLED);
   if (!pg) {
     pg = ss.insertSheet(TAB.PREGLED);
@@ -1126,11 +1152,18 @@ function obradiDogadjaje_(shiftId, events) {
     if (!isFinite(q) || Math.floor(q) !== q || q === 0) { odbij(id, 'KOLICINA', 'Neispravna količina.'); return; }
 
     var napomena = s_(e.napomena).slice(0, 200);
-    var ukupno = 0, osoba = '';
+    var ukupno = 0, osoba = '', cj = p.cijena;
     var kljuc = sid + '|' + p.product_id;
 
     if (tip === 'SALE') {
       if (q < 1 || q > 50) { odbij(id, 'KOLICINA', 'Neispravna količina.'); return; }
+      // prilagođena cijena (samo za trenera/ponude s trenerom): npr. popust ili dogovorena cijena za tog člana
+      if (jeTrener_(p) && e.cijena_override !== undefined && e.cijena_override !== null && s_(e.cijena_override) !== '') {
+        var ov = Number(s_(e.cijena_override).replace(',', '.'));
+        if (!isFinite(ov) || ov <= 0 || ov > 2000) { odbij(id, 'CIJENA', 'Neispravna cijena.'); return; }
+        cj = r2_(ov);
+        if (cj !== p.cijena) napomena = (napomena ? napomena + ' · ' : '') + 'Prilagođena cijena ' + cj + ' KM (standardno ' + p.cijena + ' KM)';
+      }
       if (trebaClana_(p)) {
         if (q !== 1) { odbij(id, 'KOLICINA', 'Članarina se prodaje jedna po jedna.'); return; }
         if (!tClan) tClan = tabela_(TAB.CLANOVI);
@@ -1139,7 +1172,7 @@ function obradiDogadjaje_(shiftId, events) {
         napomena = (napomena ? napomena + ' · ' : '') + rez.napomena;
         izlaz.clanovi.push(rez.clan);
       }
-      ukupno = r2_(q * p.cijena);
+      ukupno = r2_(q * cj);
     } else if (tip === 'UNDO_SALE') {
       q = -Math.abs(q);
       if (trebaClana_(p)) { odbij(id, 'CLAN_UNDO', 'Članarina se ne poništava ovdje. Javi vlasniku.'); return; }
@@ -1171,7 +1204,7 @@ function obradiDogadjaje_(shiftId, events) {
     postoji[id] = true;
     noviRedovi.push({
       event_id: id, shift_id: sid, datum: t.datum, timestamp: t.ts, radnik: s_(sm.radnik),
-      tip_dogadjaja: tip, product_id: p.product_id, proizvod: p.naziv, kolicina: q, cijena: p.cijena,
+      tip_dogadjaja: tip, product_id: p.product_id, proizvod: p.naziv, kolicina: q, cijena: cj,
       ukupno: ukupno, napomena: napomena, osoba: osoba
     });
     izlaz.primljeno.push(id);
@@ -1507,7 +1540,7 @@ function getAdminData(pin) {
       var d = datum_(r.datum), pid = s_(r.product_id);
       var p = poId[pid] || { nabavna: 0, prati_zalihu: false, naziv: s_(r.proizvod) };
       var q = num_(r.kolicina), uk = num_(r.ukupno);
-      var pr = uk - q * trosak_(p);
+      var pr = (p.tip === 'trener' && p.nabavna >= p.cijena) ? 0 : uk - q * trosak_(p);
       var dodaj = function (o) { o.promet += uk; o.profit += pr; o.kom += q; };
       var kt = p.tip ? karteGrupa_(p.tip) : null;
       if (kt) {

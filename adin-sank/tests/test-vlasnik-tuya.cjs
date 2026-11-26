@@ -395,3 +395,32 @@ test('svježa instalacija: prva upotreba odmah daje nove cijene', () => {
   const c = id => b.proizvodi.find(x => x.product_id === id).cijena;
   assert.deepEqual([c('powerade'), c('dnevna'), c('clan30'), c('redbull'), c('voda05')], [3, 4, 40, 4, 1]);
 });
+
+test('paketi trenera: plan 40, asistencija+plan 60, grupni 70, personalni 100 + prilagođena cijena; trenerov novac ne ulazi u profit', () => {
+  const g = napraviOkruzenje({ sada: SAT, treneri: true });
+  g.setupSpreadsheet();
+  const b = ok(g.getBootstrap());
+  const t = b.proizvodi.filter(p => p.tip === 'trener');
+  assert.deepEqual(t.map(p => p.naziv + ':' + p.cijena), ['Asistencija + plan:60', 'Plan treninga ili ishrane:40', 'Grupni trening (termin):70', 'Personalni trening:100']);
+  ok(g.startShift({ shift_id: 'T', radnik: 'Edin', pocetna: pocetno(g) }));
+  const clan = { member_id: 'M-T', ime: 'Lejla', telefon: '061', trener: 'Kenan' };
+  const r = ok(g.pushEvents('T', [
+    { event_id: 't1', shift_id: 'T', tip: 'SALE', product_id: 'clan30', kolicina: 1, clan },
+    { event_id: 't2', shift_id: 'T', tip: 'SALE', product_id: 'trener_personalni', kolicina: 1, clan },
+    { event_id: 't3', shift_id: 'T', tip: 'SALE', product_id: 'trener_plan', kolicina: 1, clan, cijena_override: '30,00' },
+    { event_id: 't4', shift_id: 'T', tip: 'SALE', product_id: 'trener_grupni', kolicina: 1, clan, cijena_override: '-5' },
+    { event_id: 't5', shift_id: 'T', tip: 'SALE', product_id: 'clan30', kolicina: 1, clan, cijena_override: '5' } // karta se ne može "prilagoditi" ovdje
+  ]));
+  assert.deepEqual(r.primljeno, ['t1', 't2', 't3', 't5']);
+  assert.equal(r.odbijeni[0].code, 'CIJENA');
+  const d = g.__tabela('DOGADJAJI');
+  const red = id => d.find(x => x.event_id === id);
+  assert.deepEqual([red('t2').cijena, red('t2').ukupno, red('t3').cijena, red('t3').ukupno], [100, 100, 30, 30]);
+  assert.match(red('t3').napomena, /Prilagođena cijena 30 KM \(standardno 40 KM\)/);
+  assert.equal(red('t5').ukupno, 30, 'za kartu se cijena ne prilagođava');
+  const z = ok(g.closeShift('T', pocetno(g), '190', ''));
+  assert.equal(z.izvjestaj.promet, 190);
+  const a = ok(g.getAdminData('2580'));
+  assert.equal(a.karte.mjesec.trener.promet, 130);
+  assert.equal(a.karte.mjesec.trener.profit, 0, 'sav novac za trenere ide treneru');
+});

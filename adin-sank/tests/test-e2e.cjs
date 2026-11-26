@@ -219,8 +219,11 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     assert.match(await page.getByRole('button', { name: /Izaberi trenera/ }).textContent(), /Izaberi trenera/);
     await page.locator('[data-trener="Edin"]').click();
     assert.match(await page.getByTestId('paket-ukupno').textContent(), /90,00/);
+    // prilagođena cijena trenera: 60 → 50
+    await page.getByTestId('trener-cijena').fill('50');
+    await page.getByTestId('paket-ukupno').filter({ hasText: '80,00' }).waitFor();
     await page.screenshot({ path: path.join(SLIKE, '6b-paket.png') });
-    await page.getByRole('button', { name: /NAPLAĆENO 90,00 KM/ }).click();
+    await page.getByRole('button', { name: /NAPLAĆENO 80,00 KM/ }).click();
     await cekajSync(page);
     const nermin = g.__tabela('CLANOVI').find(c => c.ime === 'Nermin Test');
     assert.equal(nermin.trener, 'Edin');
@@ -238,7 +241,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     const st2 = { offline: false, pozivi: [] };
     const t2 = await noviTelefon(browser, g, st2);
     await t2.page.getByTestId('radnik').filter({ hasText: 'Edin' }).waitFor();
-    await t2.page.getByTestId('promet').filter({ hasText: '98,00' }).waitFor();
+    await t2.page.getByTestId('promet').filter({ hasText: '88,00' }).waitFor();
 
     // potrošnja osoblja: Edin uzme Red Bull (ne ide u kasu), Kenan uzme 10 KM iz kase
     await page.getByRole('button', { name: '☕ Potrošnja osoblja' }).click();
@@ -248,7 +251,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByRole('button', { name: '💶 Uzeto iz kase' }).click();
     await page.getByTestId('uzeto-iznos').fill('10');
     await page.getByRole('button', { name: /Zapiši: Kenan uzeo 10,00 KM/ }).click();
-    await page.getByTestId('promet').filter({ hasText: '88,00' }).waitFor();
+    await page.getByTestId('promet').filter({ hasText: '78,00' }).waitFor();
     await cekajSync(page);
     const dd = g.__tabela('DOGADJAJI');
     assert.ok(dd.some(d => d.tip_dogadjaja === 'POTROSNJA' && d.osoba === 'Edin' && d.product_id === 'redbull'));

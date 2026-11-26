@@ -184,7 +184,7 @@
 <body>
 <div id="root"></div>
 <script>
-/* Generisano iz src/app.jsx (2026-11-26 00:46 UTC) — ne uređuj ručno, pokreni npm run build */
+/* Generisano iz src/app.jsx (2026-11-26 00:50 UTC) — ne uređuj ručno, pokreni npm run build */
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
@@ -404,7 +404,11 @@ var Logika = /* @__PURE__ */ function() {
     });
     return o;
   }
-  function paket(karta, trener, trenerIme, clan, danas) {
+  function cijenaIzUnosa(t) {
+    var x = Number(String(t === void 0 || t === null ? "" : t).replace(",", "."));
+    return String(t).trim() !== "" && isFinite(x) && x > 0 && x <= 2e3 ? Math.round(x * 100) / 100 : null;
+  }
+  function paket(karta, trener, trenerIme, clan, danas, trenerCijena) {
     var stavke = [], ukupno = 0;
     if (karta) {
       var pk = produzenje(clan && clan.istek, danas, karta.clanarina_mjeseci);
@@ -413,10 +417,18 @@ var Logika = /* @__PURE__ */ function() {
     }
     if (trener) {
       var pt = produzenje(clan && clan.trener_do, danas, trener.clanarina_mjeseci);
-      stavke.push({ p: trener, tekst: trener.naziv + (trenerIme ? " — " + trenerIme : ""), cijena: trener.cijena, do: pt.istek });
-      ukupno += trener.cijena;
+      var cn = trenerCijena === void 0 || trenerCijena === "" ? trener.cijena : cijenaIzUnosa(trenerCijena);
+      stavke.push({
+        p: trener,
+        tekst: trener.naziv + (trenerIme ? " — " + trenerIme : ""),
+        cijena: cn === null ? 0 : cn,
+        standardna: trener.cijena,
+        prilagodjena: cn !== null && cn !== trener.cijena,
+        do: pt.istek
+      });
+      ukupno += cn === null ? 0 : cn;
     }
-    var spreman = stavke.length > 0 && (!trener || !!trenerIme);
+    var spreman = stavke.length > 0 && (!trener || !!trenerIme && (trenerCijena === void 0 || trenerCijena === "" || cijenaIzUnosa(trenerCijena) !== null));
     return { stavke, ukupno: Math.round(ukupno * 100) / 100, spreman };
   }
   var DANI = ["pon", "uto", "sri", "cet", "pet", "sub", "ned"];
@@ -516,6 +528,7 @@ var Logika = /* @__PURE__ */ function() {
     tip,
     podijeli,
     paket,
+    cijenaIzUnosa,
     DANI,
     DANI_IME,
     danUSedmici,
@@ -699,6 +712,7 @@ function App() {
         if (e.clan) o.clan = e.clan;
         if (e.osoba) o.osoba = e.osoba;
         if (e.iznos !== void 0) o.iznos = e.iznos;
+        if (e.cijena_override !== void 0) o.cijena_override = e.cijena_override;
         return o;
       });
       const rez = await api("pushEvents", batch.shift_id, ocisceni);
@@ -974,7 +988,7 @@ function Radnik({ radnici, izabran, onDalje, onAdmin, raspored }) {
       onChange: (e) => setDrugi(e.target.value),
       placeholder: "Upiši ime"
     }
-  ), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !ime, onClick: () => onDalje(ime) }, "Dalje — prebroji robu"), /* @__PURE__ */ React.createElement(DanasTrening, { raspored }), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 30 } }, /* @__PURE__ */ React.createElement("button", { className: "linkbtn", onClick: onAdmin }, "Vlasnik ›")), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center", opacity: 0.5 } }, "verzija 26. 11. u 01:46"));
+  ), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !ime, onClick: () => onDalje(ime) }, "Dalje — prebroji robu"), /* @__PURE__ */ React.createElement(DanasTrening, { raspored }), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 30 } }, /* @__PURE__ */ React.createElement("button", { className: "linkbtn", onClick: onAdmin }, "Vlasnik ›")), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center", opacity: 0.5 } }, "verzija 26. 11. u 01:50"));
 }
 function Brojac({ pid, naziv, pod, prij, v, set }) {
   const n = v === "" || v === void 0 ? null : Number(v);
@@ -1209,7 +1223,14 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
         const azuriran = __spreadValues({}, clan);
         pk.stavke.forEach((st0) => {
           if (Logika.tip(st0.p) === "trener") {
-            dodaj("SALE", st0.p.product_id, 1, "", __spreadProps(__spreadValues({}, payload), { trener: trenerIme }));
+            dodaj(
+              "SALE",
+              st0.p.product_id,
+              1,
+              "",
+              __spreadProps(__spreadValues({}, payload), { trener: trenerIme }),
+              st0.prilagodjena ? { cijena_override: String(st0.cijena), ukupno: st0.cijena } : void 0
+            );
             azuriran.trener = trenerIme;
             azuriran.trener_do = st0.do;
           } else {
@@ -1381,9 +1402,10 @@ function Clanarina({ clanarine, trenerProizvodi, treneri, clanovi, zatvori, potv
   const [karta, setKarta] = useState(null);
   const [trener, setTrener] = useState(null);
   const [trenerIme, setTrenerIme] = useState("");
+  const [trenerCijena, setTrenerCijena] = useState("");
   const danas = Logika.danasSarajevo();
   const lista = Logika.traziClanove(clanovi, upit).slice(0, 40);
-  const pk = Logika.paket(karta, trener, trenerIme, clan, danas);
+  const pk = Logika.paket(karta, trener, trenerIme, clan, danas, trenerCijena);
   const listaTrenera = treneri && treneri.length ? treneri : ["Kenan", "Edin"];
   const izaberi = (c) => {
     setClan(c);
@@ -1436,12 +1458,25 @@ function Clanarina({ clanarine, trenerProizvodi, treneri, clanovi, zatvori, potv
         "data-trener-paket": p.product_id,
         className: "pick" + (on ? " on" : ""),
         style: { textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 56 },
-        onClick: () => setTrener(on ? null : p)
+        onClick: () => {
+          setTrener(on ? null : p);
+          setTrenerCijena(on ? "" : String(p.cijena).replace(".", ","));
+        }
       },
       /* @__PURE__ */ React.createElement("span", { style: { fontSize: 16 } }, on ? "✓ " : "+ ", p.naziv),
       /* @__PURE__ */ React.createElement("span", { style: { color: "var(--gold)", fontSize: 17 } }, km(p.cijena))
     );
-  })), trener && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 } }, listaTrenera.map((t) => /* @__PURE__ */ React.createElement("button", { key: t, "data-trener": t, className: "chip" + (trenerIme === t ? " on" : ""), style: { flex: 1, minWidth: 90 }, onClick: () => setTrenerIme(t) }, t)))), pk.stavke.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card racun", style: { marginTop: 16 } }, pk.stavke.map((x, i) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: i }, /* @__PURE__ */ React.createElement("span", null, x.tekst, /* @__PURE__ */ React.createElement("div", { className: "sit" }, "do ", dT(x.do))), /* @__PURE__ */ React.createElement("b", null, km(x.cijena), " KM"))), /* @__PURE__ */ React.createElement("div", { className: "ln", style: { borderTop: "1px solid var(--line)", marginTop: 4, paddingTop: 10 } }, /* @__PURE__ */ React.createElement("span", { style: { fontWeight: 600 } }, "UKUPNO"), /* @__PURE__ */ React.createElement("b", { style: { color: "var(--gold)", fontSize: 22 }, "data-testid": "paket-ukupno" }, km(pk.ukupno), " KM"))), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 14 }, disabled: !pk.spreman, onClick: () => potvrdi(clan, pk, trener ? trenerIme : "") }, !pk.stavke.length ? "Izaberi kartu ili trenera" : trener && !trenerIme ? "Izaberi trenera" : "NAPLAĆENO " + km(pk.ukupno) + " KM"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setKorak(clan.novi ? "novi" : "clan") }, "Nazad")));
+  })), trener && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 } }, listaTrenera.map((t) => /* @__PURE__ */ React.createElement("button", { key: t, "data-trener": t, className: "chip" + (trenerIme === t ? " on" : ""), style: { flex: 1, minWidth: 90 }, onClick: () => setTrenerIme(t) }, t))), trener && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "CIJENA TRENERA ZA OVOG ČLANA (KM) — MOŽEŠ PROMIJENITI"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      className: "inp",
+      "data-testid": "trener-cijena",
+      inputMode: "decimal",
+      value: trenerCijena,
+      style: { fontSize: 22, fontWeight: 700, textAlign: "center" },
+      onChange: (e) => setTrenerCijena(e.target.value.replace(/[^\d.,]/g, "").slice(0, 7))
+    }
+  ), Logika.cijenaIzUnosa(trenerCijena) !== trener.cijena && /* @__PURE__ */ React.createElement("button", { className: "chip", onClick: () => setTrenerCijena(String(trener.cijena).replace(".", ",")) }, "standardno ", km(trener.cijena))), Logika.cijenaIzUnosa(trenerCijena) === null && /* @__PURE__ */ React.createElement("div", { className: "sit", style: { color: "var(--red)", marginTop: 6 } }, "Upiši ispravnu cijenu."))), pk.stavke.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card racun", style: { marginTop: 16 } }, pk.stavke.map((x, i) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: i }, /* @__PURE__ */ React.createElement("span", null, x.tekst, /* @__PURE__ */ React.createElement("div", { className: "sit" }, "do ", dT(x.do), x.prilagodjena ? " · prilagođena cijena (standardno " + km(x.standardna) + ")" : "")), /* @__PURE__ */ React.createElement("b", null, km(x.cijena), " KM"))), /* @__PURE__ */ React.createElement("div", { className: "ln", style: { borderTop: "1px solid var(--line)", marginTop: 4, paddingTop: 10 } }, /* @__PURE__ */ React.createElement("span", { style: { fontWeight: 600 } }, "UKUPNO"), /* @__PURE__ */ React.createElement("b", { style: { color: "var(--gold)", fontSize: 22 }, "data-testid": "paket-ukupno" }, km(pk.ukupno), " KM"))), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { marginTop: 14 }, disabled: !pk.spreman, onClick: () => potvrdi(clan, pk, trener ? trenerIme : "") }, !pk.stavke.length ? "Izaberi kartu ili trenera" : trener && !trenerIme ? "Izaberi trenera" : "NAPLAĆENO " + km(pk.ukupno) + " KM"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setKorak(clan.novi ? "novi" : "clan") }, "Nazad")));
 }
 function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGotovo }) {
   const poId = {};

@@ -189,7 +189,8 @@ function napraviOkruzenje(opcije = {}) {
     }
   };
   const props = {}, kes = {};
-  if (!opcije.cijene) props.SEED_CIJENE_1126 = '1'; // testovi rade sa starim početnim cijenama; migracija cijena ima vlastiti test
+  if (!opcije.cijene) props.SEED_CIJENE_1126 = '1';
+  if (!opcije.treneri) props.SEED_TRENERI_1126 = '1'; // testovi rade sa starim početnim cijenama; migracija cijena ima vlastiti test
   let okidaci = [];
   const opcije_ok = { fetch: opcije.fetch || null };
   vm.createContext(ctx);
