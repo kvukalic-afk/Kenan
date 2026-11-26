@@ -78,7 +78,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '8';
+var VERZIJA_SEME = '9';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -676,6 +676,27 @@ function osigurajTabele_(formatiraj) {
         if (mapa.mega_watt === 71) { mapa.mega_watt = 66; svojstva_().setProperty('PRIJAVLJENO_STANJE', JSON.stringify(mapa)); uradjeno.push('Mega Watt javljeno stanje: 66'); }
       }
       svojstva_().setProperty('SEED_KOREKCIJA_MEGAWATT', '1');
+    }
+  } catch (e) { /* */ }
+
+  // nove cijene (vlasnik, 26.11.): mijenja se samo ono što je još na staroj vrijednosti — ručne izmjene u aplikaciji se ne gaze
+  try {
+    if (!svojstva_().getProperty('SEED_CIJENE_1126')) {
+      var tc = tabela_(TAB.PROIZVODI);
+      var promjene = [
+        ['voda05', 'nabavna_cijena', 0.5, 0.6], ['voda1', 'nabavna_cijena', 0.8, 0.9], ['redbull', 'nabavna_cijena', 2.3, 2.35],
+        ['powerade', 'cijena', 2.5, 3.0], ['powerade', 'nabavna_cijena', 1.7, 1.79],
+        ['dnevna', 'cijena', 3.0, 4.0], ['clan30', 'cijena', 30.0, 40.0]
+      ];
+      promjene.forEach(function (c) {
+        tc.redovi.forEach(function (r) {
+          if (s_(r.product_id) !== c[0] || Math.abs(num_(r[c[1]]) - c[2]) > 0.001) return;
+          var izm = {}; izm[c[1]] = c[3];
+          azurirajRed_(tc, r, izm);
+          uradjeno.push(c[0] + ' ' + c[1] + ' → ' + c[3]);
+        });
+      });
+      svojstva_().setProperty('SEED_CIJENE_1126', '1');
     }
   } catch (e) { /* */ }
 

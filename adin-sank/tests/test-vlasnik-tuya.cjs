@@ -369,3 +369,29 @@ test('nova pića (Mega Watt, Hell, Monster) i stanje koje je javio vlasnik: pods
   ok(g.startShift({ shift_id: 'Z', radnik: 'Kenan', pocetna: pocetno(g, { mega_watt: 70, monster: 4 }) }));
   assert.deepEqual(JSON.parse(JSON.stringify(ok(g.getBootstrap()).prijavljeno)), {});
 });
+
+test('nove cijene vlasnika (26.11.) se primjenjuju jednom, a ručne izmjene se ne gaze', () => {
+  const g = napraviOkruzenje({ sada: SAT, cijene: true });
+  g.setupSpreadsheet();
+  // vlasnik je prije toga ručno promijenio samo Red Bull nabavnu (2,40) — ta vrijednost ostaje
+  g.__ss.getSheetByName('PROIZVODI').getRange(4, 5).setValue(2.4);
+  g.__props.SEED_CIJENE_1126 = '';
+  delete g.__props.SEED_CIJENE_1126;
+  g.setupSpreadsheet();
+  const p = id => g.__tabela('PROIZVODI').find(x => x.product_id === id);
+  assert.deepEqual([p('voda05').nabavna_cijena, p('voda1').nabavna_cijena, p('powerade').cijena, p('powerade').nabavna_cijena, p('dnevna').cijena, p('clan30').cijena],
+    [0.6, 0.9, 3, 1.79, 4, 40]);
+  assert.equal(p('redbull').nabavna_cijena, 2.4, 'ručna izmjena ostaje');
+  assert.equal(p('redbull').cijena, 4);
+  // drugi put se ne dira ništa
+  g.__ss.getSheetByName('PROIZVODI').getRange(2, 4).setValue(1.5);
+  g.setupSpreadsheet();
+  assert.equal(p('voda05').cijena, 1.5);
+});
+
+test('svježa instalacija: prva upotreba odmah daje nove cijene', () => {
+  const g = napraviOkruzenje({ sada: SAT, cijene: true });
+  const b = ok(g.getBootstrap());
+  const c = id => b.proizvodi.find(x => x.product_id === id).cijena;
+  assert.deepEqual([c('powerade'), c('dnevna'), c('clan30'), c('redbull'), c('voda05')], [3, 4, 40, 4, 1]);
+});
