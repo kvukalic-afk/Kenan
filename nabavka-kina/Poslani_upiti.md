@@ -72,3 +72,6 @@ Montcarton (ME) montcarton@t-com.me · ID Print (BG) office@idprint.bg · OpenPr
 ## 25.11.2026: masovno slanje RFQ-HV-003 (jedna kutija + 6 naljepnica, cilj ~300 $)
 Spisak svih adresa je u `posiljaoci_v3.csv`, a PDF upit u `RFQ_HELVERA_box_labels_v3_EN.pdf`.
 Vraćeno kao nepostojeća adresa: Weiqi, no KACHI, QinPrinting, Kailiou, Tianshi.
+
+## 26.11.2026: adresa za dostavu
+Adresa isporuke (Cazin) poslana na 15 dobavljača uz zahtjev za tačnu cijenu dostave, doplatu za udaljeno područje i rok: PackPro, MY Packaging, Yellow, Zhengyang, Pakoro, JHua, Sticker Printing China, Fine Packing, Glee, Xinyi, Gentlever, Huaqiang, Hengxinmao, 1Etiket, MGM.
