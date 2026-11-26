@@ -91,6 +91,7 @@ const POLJA: Record<TipBloka, Record<string, string>> = {
   aktivnost: {
     datum: 'datum', vrsta: 'vrsta', razred: 'razred', cas: 'cas', umjesto: 'umjestoKoga', 'umjesto koga': 'umjestoKoga',
     predmet: 'predmet', tema: 'tema', sadrzaj: 'tema', opis: 'tema', zapazanja: 'zapazanja', napomena: 'napomena', trajanje: 'trajanjeMin', 'trajanje min': 'trajanjeMin',
+    podrucje: 'podrucje', 'podrucje rada': 'podrucje',
   },
 };
 
@@ -295,12 +296,20 @@ export function parsirajTekst(tekst: string, k: Kontekst): ParsiranUnos[] {
     }
     const vrsta = p.vrsta ? sel('vrstaAktivnosti', 'vrsta', 'Vrsta aktivnosti') : b.vrstaAktivnosti ?? '';
     if (!vrsta) greske.push('Nedostaje „vrsta:“ aktivnosti.');
+    // područje rada po USK standardima (1–11), npr. „podrucje: 5“ ili „5. Stručni rad sa djecom“
+    let podrucje: number | undefined;
+    if (p.podrucje) {
+      const n = Number(/\d+/.exec(p.podrucje)?.[0]);
+      if (Number.isInteger(n) && n >= 0 && n <= 11) podrucje = n;
+      else upozorenja.push(`Područje „${p.podrucje}“ nije broj 1–11 – određuje se automatski.`);
+    }
     return {
       tip: 'aktivnost', ...meta,
       podaci: {
         datum: d, vrsta, razred: normalizujRazred(p.razred ?? ''), cas: p.cas ? String(broj(p.cas) ?? p.cas) : '',
         umjestoKoga: p.umjestoKoga ?? '', predmet: p.predmet ?? (/odjeljensk/i.test(vrsta) ? 'Čas odjeljenske zajednice' : ''),
         tema: p.tema ?? '', zapazanja: p.zapazanja ?? '', napomena: p.napomena ?? '', trajanjeMin: p.trajanjeMin ? broj(p.trajanjeMin) : 45,
+        ...(podrucje !== undefined ? { podrucje } : {}),
       },
     };
   });
@@ -376,6 +385,7 @@ predmet: …
 tema: …
 zapazanja: …
 trajanje: minuta (ako kažem)
+podrucje: broj područja rada 1–11 po USK standardima (samo za vrstu „Ostalo“, npr. 5 za rad s učenicima)
 
 Potvrdi da si razumio/la, pa čekaj moj opis.`;
 }

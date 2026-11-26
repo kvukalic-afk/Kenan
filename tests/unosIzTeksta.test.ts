@@ -109,4 +109,10 @@ tekst: grupa djece se svađala`, k);
     expect(r[1]).toMatchObject({ tip: 'biljeska', greske: [], podaci: { kategorija: 'Hodnik / u prolazu', sifra: '' } });
     expect(parsirajTekst('### BILJEŠKA\nvrsta: Opservacija', k)[0].greske[0]).toContain('tekst');
   });
+  it('aktivnost: područje rada se može zadati', () => {
+    const [a, b] = parsirajTekst('### AKTIVNOST\nvrsta: Ostalo\npodrucje: 5\ntema: Razgovor s odjeljenjem\n\n### AKTIVNOST\nvrsta: Ostalo\npodrucje: dvanaest\ntema: x', k);
+    expect(a.podaci).toMatchObject({ vrsta: 'Ostalo', podrucje: 5 });
+    expect((b.podaci as { podrucje?: number }).podrucje).toBeUndefined();
+    expect(b.upozorenja.join(' ')).toContain('nije broj');
+  });
 });
