@@ -1,18 +1,30 @@
-# Pregled ponuda (stanje 26.11.2026)
+# Pregled ponuda (stanje 26.11.2026, popodne)
 
 Cilj: 100 kutija (1 dizajn) + umetak + 180 naljepnica (6 dizajna × 30), oko 300 $ s dostavom u BiH.
 
-| Dobavljač | Šta nudi | Ukupno do BiH | Napomena |
+## Kutija + naljepnice
+| Dobavljač | Šta nudi | Cijena | Dostava |
 |---|---|---|---|
-| PackPro (Kina) | 100 kutija + umetak (bijeli valoviti karton) | **„300 $ je izvodljivo“** | Provjeravamo jesu li uključeni naljepnice i dostava |
-| MGM Studio (Zagreb) | vertikalna kutija 25×25×65 + štanca + 180 naljepnica | 283,25 € s PDV-om + dostava | Bez umetka; dostava upitana |
-| Fine Packing (Kina) | kutija 38×23×68 s prozirnim plastičnim uloškom + 180 naljepnica + FedEx | 380 $ | Tražili 320 $ |
-| Fine Packing (Kina) | kutija 72×52×25 poklopac+dno + papirni umetak | 460 $ + 120 $ naljepnice + 80 $ FedEx | Preskupo |
-| Hengxinmao (Kina) | 100 kompleta, 6 dizajna | 400 $ (320 + 80 avion) | Ranija specifikacija |
-| Yucai (Kina) | tvrda kutija s EVA umetkom | 380 $ + naljepnice 110 $ + dostava | Preskupo |
-| 1Etiket (Turska) | samo naljepnice 45×20, 6 × 1000 kom | 120 $ + dostava | Odlično za veće količine |
-| FlexLabel (Moldavija) | samo naljepnice, imaju gotov nož 19×45 | čeka se cijena | |
+| PackPro (Kina) | sklopiva kutija 72×52×25 (350 g) + umetak od valovitog kartona + naljepnice; besplatan digitalni uzorak | 300 $ | posebno, upitano |
+| Yellow Printing (Kina) | 100 kompleta s bijelim papirnim umetkom (300 kom 390 $, 500 kom 490 $), izrada 5 dana | 280 $ | upitano; i jesu li naljepnice uključene |
+| MY Packaging (Kina) | sklopiva kutija za jednu bočicu + 180 naljepnica, poslali render s našim dizajnom | 280 $ | upitano |
+| Fine Packing (Kina) | kutija 38×23×68 s plastičnim uloškom + naljepnice + FedEx | 350 $ ukupno | uključena |
+| MGM Studio (Zagreb) | uspravna kutija 25×25×65 + štanca + 180 naljepnica; može i kartonski umetak | 283 € s PDV-om | upitano |
+| Xinpeng (Kina) | kutija 1,20 $/kom + naljepnice 162 $ + uzorak 50 $ | 512 $ ukupno | 180 $ uključeno |
 
-Čekaju odgovor na dopunu: Jinguan (pita avion/brod), Huaqiang (pita detalje), 5P (rade ako dostavimo gotove fajlove s linijama reza).
+## Samo kutija
+| Dobavljač | Šta nudi | Cijena |
+|---|---|---|
+| Zhengyang (Kina) | kutija s preklopima na oba kraja + bijeli papirni uložak, 300 g, mat plastifikacija | 100 kom 165 $, 500 kom 195 $ + dostava |
+| Pakoro (Kina) | kutija poklopac+dno + EVA umetak | 300 kom 258 $, 500 kom 310 $ (EXW) |
 
-Odbili ili ne odgovaraju (MOQ, nema izvoza, nema BiH): Tunart, Sitoprint, QinPrinting (MOQ 500), Injectorpen (MOQ 1000), Fuyang (MOQ 1000, 0,20 $/komplet za veće serije), Sarpet, Ebifine, Kutuevi, Omex, 1200dpi, Contrast (tek poslije Nove godine), Pressia, MJC Pack, Pakendikeskus (budžet), Demago (samo isporuka u Hrvatskoj).
+## Samo naljepnice
+| Dobavljač | Šta nudi | Cijena |
+|---|---|---|
+| Sticker Printing China | 6 × 100 = 600 kom, BOPP + mat plastifikacija | **169 $ s avionskom dostavom** |
+| 1Etiket (Turska) | 6 × 1000 kom | 120 $ + dostava |
+| MGM Zagreb | 180 kom | oko 83 € s PDV-om |
+| FlexLabel (Moldavija) | minimalna narudžba | 300 € |
+
+## Odbili
+Tunart, Sitoprint, QinPrinting, Injectorpen, Fuyang, Sarpet, Ebifine, Kutuevi, Omex, 1200dpi, Contrast, Pressia, MJC, Pakendikeskus, Demago (samo HR), Jinguan (MOQ 500), Chief Color, Ecopaperbox (min. 600 $), Guanchi (MOQ 500), Stickersmanufacturer i Labelprintingchina (ne šalju u BiH), JinZCai (420 $), Data Print EE, Digitala Pele, Mouse Studio (CG), Stojkov (ne prodaje fizičkim licima).
