@@ -852,3 +852,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .biljeska a { text-decoration: none; }
 .tagovi.mali .tag { background: color-mix(in srgb, var(--primarna) 10%, transparent); }
 .obavjestenje .red-dugmadi > .dugme { flex: 0 1 auto; min-width: 120px; }
+.etapa-uredi { display: grid; gap: 6px; padding: 10px; margin-bottom: 10px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--rub) 85%, transparent); background: var(--povrsina-2); }
+.etapa-uredi textarea { min-height: 56px; }
+.upozorenje-tekst { color: var(--narandzasta); font-weight: 600; }

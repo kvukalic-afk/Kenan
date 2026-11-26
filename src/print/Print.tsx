@@ -15,6 +15,7 @@ import { brojPerioda, nazivDana, naslovIzvjestaja, opisPerioda, sazetakPerioda, 
 import { procitajTekst } from '../screens/IzvjestajPeriod';
 import { punoIme, type Ucenik, type Aktivnost, type Analiza, type PopunjenObrazac, type Postavke, type Radionica, type Razgovor, type Saradnja } from '../types';
 import { GRUPE } from '../lib/dokumentacija';
+import { ucitajPripremu, type PripremaRadionice } from '../lib/aiAlati';
 import { useKontrola } from '../lib/useKontrola';
 import './print.css';
 
@@ -688,6 +689,8 @@ export function PrintAnaliza({ id }: { id: string }) {
     );
   }
   if (a.vrsta === 'priprema-radionice') {
+    const pr = ucitajPripremu(a.tekst);
+    if (pr) return <PrintPriprema p={pr} postavke={postavke} datum={a.datum} />;
     return (
       <Dokument javno naslov="PRIPREMA ZA RADIONICU" podnaslov={a.naslov} nazivFajla={`Priprema_radionice_${a.datum}`} postavke={postavke}>
         <table className="podaci-tab"><tbody><Red o="Datum pripreme" v={prikaz(a.datum)} /><Red o="Razred / grupa" v={a.opseg} /></tbody></table>
@@ -901,5 +904,99 @@ export function PrintSpiskovi({ razred }: { razred?: string }) {
         })}
       </div>
     </div>
+  );
+}
+
+const PODRUCJE_GRUPE: Record<string, number> = { 'Učenici': 5, 'Roditelji': 8, 'Nastavnici': 4 };
+
+function PrintPriprema({ p, postavke, datum }: { p: PripremaRadionice; postavke: Postavke; datum: string }) {
+  const pod = PODRUCJA.find((x) => x.kod === (PODRUCJE_GRUPE[p.grupa ?? 'Učenici'] ?? 5));
+  const ukupno = p.tok.reduce((s, e) => s + (e.minuta || 0), 0);
+  const crta = '______________________';
+  const ishodi = p.ishodi.map((x) => x.trim()).filter(Boolean);
+  return (
+    <Dokument javno naslov="PISANA PRIPREMA ZA RADIONICU" podnaslov={p.tema} nazivFajla={`Priprema_radionice_${p.datum || datum}`} postavke={postavke}>
+      <table className="podaci-tab">
+        <tbody>
+          <Red o="Stručni saradnik" v={`Psiholog${postavke.imePsihologa ? ` ${postavke.imePsihologa}` : ''}`} />
+          <Red o="Razred / odjeljenje" v={p.razred ? rimskiRazred(p.razred) : crta} />
+          <Red o="Ciljna grupa" v={p.grupa ?? 'Učenici'} />
+          <Red o="Datum realizacije" v={p.datum ? prikaz(p.datum) : crta} />
+          <Red o="Trajanje" v={`${p.trajanje ?? ukupno} minuta`} />
+          {pod && <Red o="Područje rada (Ped. standardi USK, čl. 13)" v={`${pod.kod}. ${pod.naziv}`} />}
+        </tbody>
+      </table>
+
+      <h2>Cilj radionice</h2>
+      <p>{p.cilj}</p>
+
+      <h2>Zadaci</h2>
+      <table className="podaci-tab">
+        <tbody>
+          <Red o="Obrazovni" v={<span className="tekst-celija">{p.zadaci.obrazovni}</span>} />
+          <Red o="Odgojni" v={<span className="tekst-celija">{p.zadaci.odgojni}</span>} />
+          <Red o="Funkcionalni" v={<span className="tekst-celija">{p.zadaci.funkcionalni}</span>} />
+        </tbody>
+      </table>
+
+      {ishodi.length > 0 && (
+        <>
+          <h2>Očekivani ishodi</h2>
+          <p style={{ marginBottom: 3 }}>Nakon radionice učenici će moći:</p>
+          <ul className="letak-lista">{ishodi.map((x, i) => <li key={i}>{x.replace(/^Učeni(k\/ca|ci) će moći\s*/i, '')}</li>)}</ul>
+        </>
+      )}
+
+      <table className="podaci-tab" style={{ marginTop: 8 }}>
+        <tbody>
+          <Red o="Oblici rada" v={p.obliciRada} />
+          <Red o="Metode i tehnike" v={p.metode} />
+          <Red o="Sredstva i materijal" v={p.sredstva} />
+          {p.korelacija && <Red o="Korelacija" v={p.korelacija} />}
+        </tbody>
+      </table>
+
+      <h2>Tok radionice</h2>
+      <table className="lista-tab tok-tabela">
+        <thead><tr><th style={{ width: '22%' }}>Etapa i vrijeme</th><th>Aktivnosti psihologa</th><th style={{ width: '32%' }}>Aktivnosti učenika</th></tr></thead>
+        <tbody>
+          {p.tok.map((e, i) => (
+            <tr key={i}>
+              <td><strong>{e.etapa}</strong>{e.minuta ? <><br />{e.minuta} min</> : null}</td>
+              <td className="tekst-celija">{e.voditelj}</td>
+              <td className="tekst-celija">{e.ucenici}</td>
+            </tr>
+          ))}
+          {ukupno > 0 && <tr><td colSpan={3} style={{ textAlign: 'right' }}><strong>Ukupno: {ukupno} minuta</strong></td></tr>}
+        </tbody>
+      </table>
+
+      <h2>Evaluacija</h2>
+      <p className="tekst-celija">{p.evaluacija}</p>
+      {p.literatura && <><h2>Literatura</h2><p className="tekst-celija">{p.literatura}</p></>}
+      {p.napomena && <><h2>Napomena za voditelja</h2><p className="tekst-celija">{p.napomena}</p></>}
+
+      <div className="blok refleksija">
+        <h2>Zapažanja nakon realizacije (refleksija)</h2>
+        <div className="crte">{Array.from({ length: 6 }, (_, i) => <div key={i} className="crta-red" />)}</div>
+      </div>
+
+      {p.listic && (
+        <div className="listici">
+          {[0, 1].map((k) => (
+            <div key={k} className="listic">
+              <div className="listic-naslov">Evaluacijski listić</div>
+              <div className="listic-tema">Radionica: {p.tema}{p.datum ? ` · ${prikaz(p.datum)}` : ''}</div>
+              <p className="listic-pitanje">Kako ti je bilo na radionici? Zaokruži:</p>
+              <div className="listic-skala">{['Nije mi se svidjelo', 'Bilo je u redu', 'Svidjelo mi se', 'Odlično!'].map((x, i) => <span key={x}><b>{i + 1}</b>{x}</span>)}</div>
+              <p className="listic-pitanje">Danas sam naučio/la:</p><div className="crte"><div className="crta-red" /><div className="crta-red" /></div>
+              <p className="listic-pitanje">Najviše mi se svidjelo:</p><div className="crte"><div className="crta-red" /><div className="crta-red" /></div>
+              <p className="listic-pitanje">Promijenio/la bih:</p><div className="crte"><div className="crta-red" /></div>
+              <div className="listic-napomena">Listić je anoniman – ne piši svoje ime.</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Dokument>
   );
 }

@@ -114,3 +114,26 @@ table.dokument > thead > tr > td, table.dokument > tfoot > tr > td, table.dokume
   .print-stranica.spisak:last-child { break-after: auto; page-break-after: auto; }
 }
 .spisak-tabela th.rb, .spisak-tabela th.sf { color: #fff; white-space: nowrap; }
+
+/* pisana priprema za radionicu */
+.tok-tabela td { font-size: 10pt; }
+.refleksija { margin-top: 12pt; break-inside: avoid; }
+.sadrzaj-bloka.linije { min-height: 34mm !important; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 7.2mm, #bbb 7.2mm, #bbb calc(7.2mm + 0.6pt)); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.listici { break-before: page; page-break-before: always; display: grid; gap: 0; }
+.listic { border: 1pt dashed #777; padding: 9pt 12pt; height: 118mm; display: flex; flex-direction: column; font-family: Arial, Helvetica, sans-serif; break-inside: avoid; }
+.listic + .listic { margin-top: 6mm; }
+.listic-naslov { font-size: 13pt; font-weight: bold; color: #10465a; text-align: center; letter-spacing: 0.04em; text-transform: uppercase; }
+.listic-tema { text-align: center; font-size: 9.5pt; color: #444; margin: 2pt 0 8pt; }
+.listic-pitanje { font-size: 10.5pt; font-weight: bold; margin: 6pt 0 3pt !important; }
+.listic-skala { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6pt; text-align: center; font-size: 8.5pt; }
+.listic-skala span { display: flex; flex-direction: column; align-items: center; gap: 2pt; }
+.listic-skala b { width: 20pt; height: 20pt; border: 1pt solid #333; border-radius: 50%; display: grid; place-items: center; font-size: 10pt; }
+.listic-linije { height: 16mm; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 7.4mm, #999 7.4mm, #999 calc(7.4mm + 0.6pt)); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.listic-linije.kratko { height: 8mm; }
+.listic-napomena { margin-top: auto; font-size: 8pt; color: #666; text-align: center; font-style: italic; }
+.crte { margin-bottom: 2pt; }
+.crta-red { height: 7mm; border-bottom: 0.7pt solid #8a8a8a; }
+.refleksija .crte { border: 0.8pt solid #444; padding: 0 8pt 6pt; }
+.listic { height: 112mm; padding: 8pt 12pt; }
+.listic + .listic { margin-top: 5mm; }
+.listic .crta-red { height: 6.5mm; }

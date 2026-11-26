@@ -115,22 +115,75 @@ export function procitajObrazac(def: DefinicijaObrasca, odgovor: string): Record
   return out;
 }
 
-// ---------- 8. Prijedlog radionice ----------
+// ---------- 8. Priprema za radionicu ----------
+// Struktura prema uobičajenoj pisanoj pripremi u školama (BiH): zadaci (obrazovni, odgojni,
+// funkcionalni), očekivani ishodi, oblici i metode rada, sredstva, korelacija, tok po etapama
+// s vremenom (aktivnosti voditelja i učenika), evaluacija i literatura.
 
-export const RADIONICA_SISTEM = `Ti si iskusan školski psiholog koji vodi radionice u osnovnoj školi u BiH. Na osnovu razreda, teme i trajanja osmisli radionicu primjerenu uzrastu.
+export const RADIONICA_SISTEM = `Ti si iskusan školski psiholog koji vodi psihološke radionice u osnovnoj školi u BiH. Na osnovu razreda, teme i trajanja napiši PISANU PRIPREMU za radionicu primjerenu uzrastu, u obliku uobičajenom za pripreme u školama.
 
 Vrati ISKLJUČIVO JSON objekat:
-{"tema": "naziv radionice", "cilj": "1–3 rečenice", "tokAktivnosti": "uvod, glavni dio i završetak s vremenom u minutama; aktivnosti numerisane", "materijal": "potreban materijal", "evaluacija": "kako provjeriti postignuće cilja", "napomena": "savjeti za voditelja i prilagodbe"}
+{
+ "tema": "naziv radionice",
+ "cilj": "opći cilj, 1–2 rečenice",
+ "zadaci": {"obrazovni": "…", "odgojni": "…", "funkcionalni": "…"},
+ "ishodi": ["Učenik/ca će moći …", "…"],
+ "obliciRada": "npr. frontalni, grupni, rad u paru, individualni",
+ "metode": "npr. razgovor, oluja ideja, igra uloga, demonstracija",
+ "sredstva": "materijal i pomagala",
+ "korelacija": "povezanost s predmetima ili ČOZ-om",
+ "tok": [
+  {"etapa": "Uvodni dio", "minuta": 5, "voditelj": "šta radi psiholog", "ucenici": "šta rade učenici"},
+  {"etapa": "Glavni dio", "minuta": 30, "voditelj": "…", "ucenici": "…"},
+  {"etapa": "Završni dio", "minuta": 10, "voditelj": "…", "ucenici": "…"}
+ ],
+ "evaluacija": "kako se provjerava postignuće ishoda",
+ "literatura": "izvori (priručnici, programi) – samo stvarni, opšte poznati; ako nisi siguran, ostavi prazno",
+ "napomena": "prilagodbe i savjeti za voditelja"
+}
 
-${JEZIK} Aktivnosti moraju biti izvodive u učionici, bez troškova i bez osjetljivih ličnih otkrivanja pred razredom.`;
+Pravila: ${JEZIK} Zbir minuta u toku mora odgovarati trajanju. Glavni dio može imati više etapa (npr. „Glavni dio – aktivnost 1“). 3–5 konkretnih, provjerljivih ishoda. Aktivnosti izvodive u učionici, bez troškova i bez osjetljivih ličnih otkrivanja pred razredom.`;
 
-export interface PrijedlogRadionice { tema: string; cilj: string; tokAktivnosti: string; materijal: string; evaluacija: string; napomena: string }
+export interface EtapaToka { etapa: string; minuta: number; voditelj: string; ucenici: string }
+export interface PripremaRadionice {
+  tema: string; cilj: string;
+  zadaci: { obrazovni: string; odgojni: string; funkcionalni: string };
+  ishodi: string[]; obliciRada: string; metode: string; sredstva: string; korelacija: string;
+  tok: EtapaToka[]; evaluacija: string; literatura: string; napomena: string;
+  /** podaci o realizaciji (popunjava psiholog) */
+  razred?: string; grupa?: string; trajanje?: number; datum?: string; listic?: boolean;
+}
 
-export function procitajRadionicu(odgovor: string): PrijedlogRadionice | null {
+const tekstPolja = (v: unknown): string => (Array.isArray(v) ? v.map(String).join('\n') : v == null ? '' : String(v)).trim();
+
+export function procitajRadionicu(odgovor: string): PripremaRadionice | null {
   const o = izvuciJSON<Record<string, unknown>>(odgovor);
   if (!o || Array.isArray(o) || !o.tema) return null;
-  const s = (k: string) => (Array.isArray(o[k]) ? (o[k] as unknown[]).map(String).join('\n') : String(o[k] ?? '')).trim();
-  return { tema: s('tema'), cilj: s('cilj'), tokAktivnosti: s('tokAktivnosti'), materijal: s('materijal'), evaluacija: s('evaluacija'), napomena: s('napomena') };
+  const z = (o.zadaci && typeof o.zadaci === 'object' && !Array.isArray(o.zadaci) ? o.zadaci : {}) as Record<string, unknown>;
+  let tok: EtapaToka[] = Array.isArray(o.tok)
+    ? (o.tok as unknown[]).filter((x) => x && typeof x === 'object').map((x) => {
+      const e = x as Record<string, unknown>;
+      return { etapa: tekstPolja(e.etapa) || 'Etapa', minuta: Math.max(0, Math.round(Number(e.minuta) || 0)), voditelj: tekstPolja(e.voditelj), ucenici: tekstPolja(e.ucenici) };
+    })
+    : [];
+  // stariji oblik odgovora: tok kao tekst
+  if (!tok.length && o.tokAktivnosti) tok = [{ etapa: 'Tok radionice', minuta: 0, voditelj: tekstPolja(o.tokAktivnosti), ucenici: '' }];
+  const ishodi = Array.isArray(o.ishodi) ? (o.ishodi as unknown[]).map((x) => String(x).trim()).filter(Boolean) : tekstPolja(o.ishodi).split('\n').map((x) => x.replace(/^[-•*]\s*/, '').trim()).filter(Boolean);
+  return {
+    tema: tekstPolja(o.tema), cilj: tekstPolja(o.cilj),
+    zadaci: { obrazovni: tekstPolja(z.obrazovni), odgojni: tekstPolja(z.odgojni), funkcionalni: tekstPolja(z.funkcionalni) },
+    ishodi, obliciRada: tekstPolja(o.obliciRada), metode: tekstPolja(o.metode), sredstva: tekstPolja(o.sredstva ?? o.materijal), korelacija: tekstPolja(o.korelacija),
+    tok, evaluacija: tekstPolja(o.evaluacija), literatura: tekstPolja(o.literatura), napomena: tekstPolja(o.napomena),
+  };
+}
+
+/** Tok kao jedan tekst (za evidenciju održane radionice). */
+export const tokKaoTekst = (p: PripremaRadionice) => p.tok.map((e) => `${e.etapa}${e.minuta ? ` (${e.minuta} min)` : ''}: ${[e.voditelj, e.ucenici && `Učenici: ${e.ucenici}`].filter(Boolean).join(' ')}`).join('\n');
+
+/** Sačuvana priprema: JSON u tekstu dokumenta (stare pripreme su običan tekst). */
+export function ucitajPripremu(tekst: string): PripremaRadionice | null {
+  if (!tekst.trim().startsWith('{')) return null;
+  try { const p = JSON.parse(tekst) as PripremaRadionice; return p && p.tema && Array.isArray(p.tok) ? p : null; } catch { return null; }
 }
 
 // ---------- 9. Letak za roditelje / nastavnike ----------

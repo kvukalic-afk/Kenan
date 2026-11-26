@@ -225,7 +225,7 @@ Otvaraju se preko kartice **Pametni alati** na Početnoj, iz **+ menija** ili iz
 - **🗂 Plan rada s AI** (Plan rada → „Napravi plan s AI“): opišeš dogovore stručne službe, a AI predloži stavke po 11 područja od mjeseca tvog dolaska. Ti biraš šta ulazi u plan.
 - **📝 Popuni iz diktata:** u svakom obrascu (npr. novi **Zapisnik sa sastanka** za vijeća, aktive i roditeljske sastanke) AI popuni polja iz tvog opisa.
 - **📊 Izvještaj jednim klikom:** u Izvještaju za period biraš „Prošli mjesec“, „I polugodište“ ili „Školska godina“ i klikneš **Napiši izvještaj**. Za duže periode tekst je po 11 područja.
-- **🎲 Osmisli radionicu:** razred, tema i trajanje, a AI predloži cilj, tok, materijal i evaluaciju. Sačuvaš pripremu za print ili je odmah evidentiraš kao održanu radionicu.
+- **🎲 Priprema za radionicu:** pisana priprema u obliku uobičajenom u školama: podaci o realizaciji i području rada (USK standardi), cilj, obrazovni, odgojni i funkcionalni zadaci, očekivani ishodi, oblici rada, metode, sredstva, korelacija, tok po etapama s vremenom (aktivnosti psihologa i učenika), evaluacija, literatura, prostor za zapažanja nakon realizacije i, po želji, evaluacijski listić za učenike (dva na stranici). Sve se uređuje prije printa. Zvanični obrazac Pedagoškog zavoda USK nije javno objavljen; kad ga dobiješ, priprema se usklađuje s njim.
 - **📄 Letak** za roditelje, nastavnike ili učenike na jednoj A4 strani (bez oznake POVJERLJIVO).
 
 ### AI asistent

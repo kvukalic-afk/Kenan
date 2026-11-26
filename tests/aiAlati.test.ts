@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { izvuciJSON, procitajObrazac, procitajPlan, procitajRadionicu, sistemObrasca } from '../src/lib/aiAlati';
+import { izvuciJSON, procitajObrazac, procitajPlan, procitajRadionicu, sistemObrasca, ucitajPripremu } from '../src/lib/aiAlati';
 import { definicija } from '../src/lib/obrasci';
 import { brifingZaAI, napraviBrifing, raniZnakovi, stanjeSati } from '../src/lib/brifing';
 import type { BrzaBiljeska, Razgovor, Ucenik } from '../src/types';
@@ -27,7 +27,14 @@ describe('obrada AI odgovora', () => {
   });
   it('radionica: traži temu', () => {
     expect(procitajRadionicu('{"cilj":"x"}')).toBeNull();
-    expect(procitajRadionicu('{"tema":"T","cilj":"C","tokAktivnosti":["1. a","2. b"]}')?.tokAktivnosti).toBe('1. a\n2. b');
+    expect(procitajRadionicu('{"tema":"T","cilj":"C","tokAktivnosti":["1. a","2. b"]}')?.tok[0].voditelj).toBe('1. a\n2. b');
+    const p = procitajRadionicu('{"tema":"T","zadaci":{"obrazovni":"O"},"ishodi":["a","b"],"tok":[{"etapa":"Uvodni dio","minuta":"5","voditelj":"V","ucenici":"U"},{"etapa":"Glavni dio","minuta":30}],"materijal":"papir"}')!;
+    expect(p.zadaci).toEqual({ obrazovni: 'O', odgojni: '', funkcionalni: '' });
+    expect(p.ishodi).toEqual(['a', 'b']);
+    expect(p.tok.map((e) => e.minuta)).toEqual([5, 30]);
+    expect(p.sredstva).toBe('papir');
+    expect(ucitajPripremu(JSON.stringify(p))?.tema).toBe('T');
+    expect(ucitajPripremu('Cilj: stari tekst')).toBeNull();
   });
 });
 
