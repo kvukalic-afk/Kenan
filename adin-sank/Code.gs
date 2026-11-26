@@ -78,7 +78,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '11';
+var VERZIJA_SEME = '12';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -749,6 +749,20 @@ function osigurajTabele_(formatiraj) {
       uradjeno.push('postavljen nalog vlasnika Kenan');
     }
     svojstva_().setProperty('SEED_PIN_KENAN', '1');
+  } catch (e) { /* */ }
+
+  // korekcija javljenog stanja (vlasnik, 26.11.): Red Bull −1 (9 → 8), Voda 0,5 L −1 (73 → 72). Podsjetnik se vraća da ga Edin vidi pri početnom brojanju.
+  try {
+    if (!svojstva_().getProperty('SEED_KOREKCIJA_1126B')) {
+      var stanje2 = prijavljenoStanje_();
+      var osnova = { powerade: 2, voda1: 23, voda05: 73, redbull: 9, sultan_kola: 12, mega_watt: 66, hell_0_5_l: 10, monster: 4 };
+      var izvor = Object.keys(stanje2).length ? stanje2 : osnova;
+      izvor.redbull = Math.max(0, num_(izvor.redbull) - 1);
+      izvor.voda05 = Math.max(0, num_(izvor.voda05) - 1);
+      svojstva_().setProperty('PRIJAVLJENO_STANJE', JSON.stringify(izvor));
+      svojstva_().setProperty('SEED_KOREKCIJA_1126B', '1');
+      uradjeno.push('javljeno stanje: Red Bull ' + izvor.redbull + ', Voda 0,5 L ' + izvor.voda05);
+    }
   } catch (e) { /* */ }
 
   var pg = ss.getSheetByName(TAB.PREGLED);

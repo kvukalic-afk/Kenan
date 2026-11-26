@@ -545,3 +545,20 @@ test('statistika po danima (samo Kenan): pregled dana + detalji dana', () => {
   assert.equal(dan.napomene[0].tekst, 'Radi frižider');
   assert.equal(g.getDan('2308', 'sutra').code, 'DATUM');
 });
+
+test('korekcija javljenog stanja: Red Bull 8, Voda 0,5 L 72 — i kad je podsjetnik već iskorišten', () => {
+  const g = napraviOkruzenje({ sada: SAT, korekcija: true });
+  g.setupSpreadsheet();
+  assert.deepEqual(JSON.parse(JSON.stringify(ok(g.getBootstrap()).prijavljeno)), { powerade: 2, voda1: 23, voda05: 72, redbull: 8, sultan_kola: 12, mega_watt: 66, hell_0_5_l: 10, monster: 4 });
+  g.setupSpreadsheet(); // drugi put se ne oduzima ponovo
+  assert.equal(ok(g.getBootstrap()).prijavljeno.redbull, 8);
+  // podsjetnik se gasi čim se smjena započne
+  ok(g.startShift({ shift_id: 'K1', radnik: 'Edin', pocetna: pocetno(g) }));
+  assert.deepEqual(JSON.parse(JSON.stringify(ok(g.getBootstrap()).prijavljeno)), {});
+  // ako je podsjetnik već bio iskorišten (smjena u toku), vraća se korigiran
+  const g2 = napraviOkruzenje({ sada: SAT, korekcija: true });
+  g2.setupSpreadsheet(); g2.__props.PRIJAVLJENO_STANJE = ''; delete g2.__props.PRIJAVLJENO_STANJE; delete g2.__props.SEED_KOREKCIJA_1126B;
+  g2.setupSpreadsheet();
+  const p = ok(g2.getBootstrap()).prijavljeno;
+  assert.deepEqual([p.redbull, p.voda05, p.mega_watt], [8, 72, 66]);
+});
