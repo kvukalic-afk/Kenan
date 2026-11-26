@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<title>Karusel — Paketi: pogodi cijenu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Lora:ital,wght@1,500;1,600&family=Cinzel:wght@500;600;700&display=block" rel="stylesheet">
+<style>
+  :root{--ivory:#F6F1E8;--gold:#D6B67C;--ink:#0E0D0B}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050504;font-family:Poppins,sans-serif;color:var(--ivory)}
+  .slide{position:relative;width:1080px;height:1350px;overflow:hidden;margin-bottom:40px;
+    background:
+      radial-gradient(700px 520px at 50% 34%, rgba(214,182,124,.16), transparent 70%),
+      radial-gradient(900px 700px at 0% 0%, rgba(107,31,28,.35), transparent 60%),
+      radial-gradient(1400px 1100px at 50% 50%, #17150F, #070706 75%)}
+  .tall .slide{height:1920px}
+  .slide::before{content:"";position:absolute;inset:-50%;pointer-events:none;z-index:30;opacity:.10;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
+  .frame{position:absolute;inset:44px;border:1.5px solid rgba(214,182,124,.42);z-index:31;pointer-events:none}
+  .frame::after{content:"";position:absolute;inset:10px;border:1px solid rgba(214,182,124,.16)}
+  .c{position:absolute;width:46px;height:46px;border:0 solid var(--gold)}
+  .c.tl{top:-4px;left:-4px;border-top-width:4px;border-left-width:4px}
+  .c.tr{top:-4px;right:-4px;border-top-width:4px;border-right-width:4px}
+  .c.bl{bottom:-4px;left:-4px;border-bottom-width:4px;border-left-width:4px}
+  .c.br{bottom:-4px;right:-4px;border-bottom-width:4px;border-right-width:4px}
+  .inner{position:absolute;inset:44px;z-index:32;padding:74px 84px 70px;display:flex;flex-direction:column}
+  .tall .inner{padding:290px 84px 460px}
+  .top{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:22px;letter-spacing:.32em;color:var(--gold);text-transform:uppercase}
+  .tall .top{position:absolute;top:96px;left:84px;right:84px}
+  .top .n{letter-spacing:.12em;color:rgba(246,241,232,.55);font-weight:500}
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+  .label{font-weight:600;font-size:24px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);margin-bottom:22px}
+  .foil{background:linear-gradient(115deg,#8a6a32 0%,#f6e3ae 28%,#b8924f 46%,#fff0c4 62%,#a07c3f 82%,#e9cf8f 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  h1{font-weight:800;font-size:96px;line-height:1.02;letter-spacing:-.03em}
+  h1.serif{font-family:Cinzel,serif;font-weight:700;letter-spacing:.04em;font-size:104px}
+  p.sub{margin-top:26px;font-weight:500;font-size:36px;line-height:1.35;color:rgba(246,241,232,.82)}
+  em{font-family:Lora,serif;font-style:italic;font-weight:600;color:var(--gold)}
+
+  /* kartica */
+  .card{position:relative;width:880px;height:520px;border-radius:30px;overflow:hidden;flex:none;
+    box-shadow:0 50px 90px -30px rgba(0,0,0,.9),0 0 0 1.5px rgba(214,182,124,.55) inset,0 0 60px -10px rgba(214,182,124,.18);text-align:left}
+  .card::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,rgba(255,255,255,.025) 0 2px,transparent 2px 5px)}
+  .card::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.10) 45%,transparent 60%)}
+  .card .in{position:absolute;inset:0;padding:44px 52px;display:flex;flex-direction:column;z-index:2}
+  .card .row1{display:flex;justify-content:space-between;align-items:center;font-size:20px;letter-spacing:.34em;font-weight:600;text-transform:uppercase}
+  .card .tier{font-family:Cinzel,serif;font-weight:700;font-size:118px;letter-spacing:.10em;margin-top:44px;line-height:1}
+  .card .row3{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end}
+  .card .price{font-weight:800;font-size:96px;letter-spacing:-.02em;line-height:.9}
+  .card .price small{font-size:34px;font-weight:700;margin-left:10px;letter-spacing:.04em}
+  .card .per{font-size:22px;letter-spacing:.24em;text-transform:uppercase;margin-top:12px;opacity:.75}
+  .card .seal{font-family:Lora,serif;font-style:italic;font-size:26px;opacity:.9}
+  .m-black{background:linear-gradient(135deg,#1d1b17 0%,#0b0a08 55%,#1a1813 100%);color:var(--gold)}
+  .m-graphite{background:linear-gradient(135deg,#3a3833 0%,#1c1b18 55%,#34322d 100%);color:#EBD9AE}
+  .m-oxblood{background:linear-gradient(135deg,#5a1d19 0%,#2a0d0b 55%,#4e1a16 100%);color:#F0D9A6}
+  .m-ivory{background:linear-gradient(135deg,#F7F1E4 0%,#E6DAC2 55%,#F3EBDA 100%);color:#6E5428}
+  .m-steel{background:linear-gradient(135deg,#5b5d60 0%,#2f3133 55%,#55575a 100%);color:#E9E6DE}
+  .m-ivory{box-shadow:0 50px 90px -30px rgba(0,0,0,.9),0 0 0 1.5px rgba(156,122,63,.6) inset}
+
+  .list{margin-top:54px;width:880px;display:grid;grid-template-columns:1fr;gap:16px;text-align:left}
+  .list div{font-size:36px;font-weight:600;line-height:1.25;padding-left:52px;position:relative;color:var(--ivory)}
+  .list div::before{content:"";position:absolute;left:4px;top:.36em;width:20px;height:20px;border:2.5px solid var(--gold);transform:rotate(45deg)}
+  .list div.no{color:rgba(246,241,232,.42);font-weight:500}
+  .list div.no::before{border-color:rgba(246,241,232,.28)}
+  .list div b{color:var(--gold);font-weight:700}
+
+  .fan{position:relative;width:880px;height:600px;margin-top:10px;transform:scale(.76);transform-origin:50% 10%;margin-bottom:-150px}
+  .fan .card{position:absolute;left:0;top:60px;transform-origin:50% 120%}
+  .fan .card .tier{font-size:92px}
+  .kw{display:inline-block;background:linear-gradient(115deg,#b8924f,#f6e3ae 50%,#b8924f);color:var(--ink);padding:0 22px 6px;border-radius:8px;font-weight:800}
+  .foot{display:flex;justify-content:space-between;align-items:flex-end;font-size:24px;color:rgba(246,241,232,.6);font-weight:500}
+  .tall .foot{position:absolute;left:84px;right:84px;bottom:380px}
+  .swipe{font-weight:600;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-size:24px}
+  .swipe b{font-size:34px;margin-left:8px;letter-spacing:0}
+  .slogan{font-family:Lora,serif;font-style:italic;font-size:30px;color:var(--gold)}
+  .note{margin-top:40px;font-size:30px;color:rgba(246,241,232,.7);line-height:1.45}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ---------- PAKETI (nazive i stavke lahko mijenjaš ovdje) ----------
+const TIERS=[
+ {name:'ELITE',   m:'m-black',    price:'??', inc:['<b>Lični trener</b> na svakom treningu','Praćenje napretka','Plan treninga i ishrane po mjeri','Peškir i voda na svakom treningu','Članarina']},
+ {name:'PREMIUM', m:'m-graphite', price:'??', inc:['<b>Asistencija</b> trenera na treninzima','Peškir na svakom treningu','Članarina'], no:['Bez vode i ličnog trenera']},
+ {name:'EKIPA',   m:'m-oxblood',  price:'??', inc:['<b>Grupni treninzi</b> s trenerom','Energija ekipe','Članarina']},
+ {name:'PLAN',    m:'m-ivory',    price:'??', per:'paket', inc:['<b>Plan treninga i ishrane</b> po mjeri','Konsultacije s trenerom','Treniraš sam, po svom planu'], no:['Bez vođenja treninga']},
+ {name:'START',   m:'m-steel',    price:'40', inc:['<b>Članarina</b>','Sve sprave i cijela sala','Ti, tvoja volja i čiste patike']},
+];
+const card=(t,i,cls='')=>`<div class="card ${t.m} ${cls}"><div class="in">
+  <div class="row1"><span>Fitness Club Adin</span><span>0${i+1}</span></div>
+  <div class="tier">${t.name}</div>
+  <div class="row3"><div><div class="price">${t.price}<small>KM</small></div><div class="per">${t.per||'mjesečno'}</div></div><div class="seal">Jači od jučer.</div></div>
+</div></div>`;
+
+const S=[];
+// 1 HOOK
+S.push({html:`<div class="label">Paketi Fitness Club Adin</div>
+  <h1 class="serif foil">Pogodi cijenu.</h1>
+  <p class="sub">5 paketa. Od članarine do <em>ličnog trenera.</em></p>
+  <div class="fan">
+    ${TIERS.slice().reverse().map((t,j)=>{const i=4-j;const r=(i-2)*-7;const x=(i-2)*-18;
+      return card(t,i).replace('class="card','style="transform:translateX('+x+'px) rotate('+r+'deg)" class="card');}).join('')}
+  </div>`, foot:'swipe'});
+// 2–6 PAKETI
+TIERS.forEach((t,i)=>{
+  S.push({html:`<div class="label">${i===0?'Najviši nivo':i===4?'Osnova':'Paket '+(i+1)+' / 5'}</div>
+    ${card(t,i)}
+    <div class="list">${t.inc.map(x=>`<div>${x}</div>`).join('')}${(t.no||[]).map(x=>`<div class="no">${x}</div>`).join('')}</div>
+    ${t.price==='40'?'<p class="note">Ovu cijenu već znaš 😉 <em>A ostale?</em></p>':''}`, foot:'swipe'});
+});
+// 7 CTA
+S.push({html:`<div class="label">Tvoj potez</div>
+  <h1 class="serif foil" style="font-size:92px">Koliko koštaju?</h1>
+  <p class="sub" style="font-size:40px;margin-top:40px">U komentar napiši <b style="color:var(--gold)">paket i cijenu</b><br>za koju misliš da je tačna.</p>
+  <p class="sub" style="font-size:40px">Npr. <span class="kw">ELITE · ?? KM</span></p>
+  <p class="note">Tačne cijene otkrivamo za <em>48 sati.</em><br>Najbliži pogodak dobija priznanje cijele sale 😄</p>`, foot:'end'});
+
+if(new URLSearchParams(location.search).get('f')==='tall') document.body.classList.add('tall');
+const root=document.getElementById('root'), N=S.length;
+S.forEach((s,i)=>{
+  const foot=s.foot==='swipe'?`<span>@fitnesadin</span><span class="swipe">prevuci<b>»</b></span>`
+    :`<span>Fitness Club Adin · Stijena · 060 307 1722</span><span class="slogan">Jači od jučer.</span>`;
+  root.insertAdjacentHTML('beforeend',`<section class="slide" id="s${i+1}">
+    <div class="frame"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i></div>
+    <div class="inner"><div class="top"><span>Fitness Club Adin</span><span class="n">0${i+1} / 0${N}</span></div>
+    <div class="body">${s.html}</div><div class="foot">${foot}</div></div></section>`);
+});
+</script>
+</body>
+</html>
