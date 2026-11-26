@@ -325,6 +325,15 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByText('Noge + core').first().waitFor();
     await page.screenshot({ path: path.join(SLIKE, '8c-raspored.png'), fullPage: true });
 
+    // provjera sistema: nova pića postoje
+    await page.locator('[data-tab="postavke"]').click();
+    await page.getByTestId('provjeri').click();
+    await page.getByTestId('provjera-rezultat').waitFor();
+    const rez = await page.getByTestId('provjera-rezultat').textContent();
+    assert.ok(/Mega Watt✓/.test(rez) && /Hell 0,5 L✓/.test(rez) && /Monster✓/.test(rez), rez);
+    await page.screenshot({ path: path.join(SLIKE, '8d-provjera.png'), fullPage: true });
+    await page.locator('[data-tab="danas"]').click();
+
     // vlasnik dodaje novi proizvod
     await page.getByRole('button', { name: 'Proizvodi', exact: true }).click();
     await page.getByRole('button', { name: '+ Novi proizvod / ponuda' }).click();

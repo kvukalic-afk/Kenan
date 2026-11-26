@@ -463,3 +463,17 @@ test('nova verzija koda sama nadogradi tabele (bez ručnog setupSpreadsheet)', (
   assert.equal(g.__stats.lockovi, n, 'drugi put se ne radi ništa');
   assert.equal(g.__tabela('PROIZVODI').find(p => p.product_id === 'redbull').cijena, 4, 'podaci netaknuti');
 });
+
+test('ako nadogradnja tabela zakaže, aplikacija i dalje radi, a greška se zapiše', () => {
+  const g = napraviOkruzenje({ sada: SAT });
+  g.setupSpreadsheet();
+  delete g.__props.VERZIJA_SEME;
+  g.osigurajTabele_ = () => { throw new Error('Sheets je pao'); };
+  const b = g.getBootstrap();
+  assert.equal(b.ok, true, 'bootstrap radi i bez nadogradnje');
+  assert.ok(b.proizvodi.length > 10);
+  assert.match(g.__props.MIGRACIJE_GRESKE, /nadogradnja: Sheets je pao/);
+  const n = g.__stats.lockovi;
+  g.getBootstrap();
+  assert.equal(g.__stats.lockovi, n, 'ne pokušava ponovo svaki put');
+});

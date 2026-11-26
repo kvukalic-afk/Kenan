@@ -78,7 +78,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '12';
+var VERZIJA_SEME = '13';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -638,7 +638,7 @@ function osigurajTabele_(formatiraj) {
       }
       svojstva_().setProperty('SEED_TRENER', '1');
     }
-  } catch (e) { /* */ }
+  } catch (e) { logMigracija_('SEED_TRENER', e); }
 
   // primjer termina iz dogovora s vlasnikom (jednom; poslije se uređuje u Vlasnik → Raspored)
   try {
@@ -652,36 +652,15 @@ function osigurajTabele_(formatiraj) {
       }
       svojstva_().setProperty('SEED_RASPORED', '1');
     }
-  } catch (e) { /* */ }
+  } catch (e) { logMigracija_('SEED_RASPORED', e); }
 
   // nova pića + ukupno stanje koje je vlasnik javio (jednom). Stanje je samo PODSJETNIK pri sljedećem početnom brojanju.
   try {
     if (!svojstva_().getProperty('SEED_PICA_1125')) {
-      var tpr = tabela_(TAB.PROIZVODI);
-      var nova = [
-        { naziv: 'Mega Watt', kat: 'Energy', cijena: 2.00, nabavna: 1.00 },
-        { naziv: 'Hell 0,5 L', kat: 'Energy', cijena: 3.00, nabavna: 1.65 },
-        { naziv: 'Monster', kat: 'Energy', cijena: 4.00, nabavna: 2.80 }
-      ];
-      var ima = {}, maxR = 0;
-      tpr.redovi.forEach(function (r) { ima[normaliziraj_(r.naziv).replace(/[^a-z0-9]/g, '')] = s_(r.product_id); maxR = Math.max(maxR, num_(r.redoslijed)); });
-      var ids = {};
-      nova.forEach(function (n) {
-        var kljuc = normaliziraj_(n.naziv).replace(/[^a-z0-9]/g, '');
-        if (ima[kljuc]) { ids[n.naziv] = ima[kljuc]; return; }
-        var pid = slug_(n.naziv); maxR += 10;
-        dodajRedove_(tpr, [{ product_id: pid, kategorija: n.kat, naziv: n.naziv, cijena: n.cijena, nabavna_cijena: n.nabavna,
-          prati_zalihu: true, aktivan: true, redoslijed: maxR, minimum: 4, clanarina_mjeseci: 0, tip: 'roba', dodao: '' }]);
-        ids[n.naziv] = pid;
-        uradjeno.push('dodano piće ' + n.naziv);
-      });
-      var stanje = {};
-      stanje.powerade = 2; stanje.voda1 = 23; stanje.voda05 = 73; stanje.redbull = 9; stanje.sultan_kola = 12;
-      stanje[ids['Mega Watt']] = 71; stanje[ids['Hell 0,5 L']] = 10; stanje[ids['Monster']] = 4;
-      svojstva_().setProperty('PRIJAVLJENO_STANJE', JSON.stringify(stanje));
+      osigurajNovaPica_(uradjeno);
       svojstva_().setProperty('SEED_PICA_1125', '1');
     }
-  } catch (e) { /* */ }
+  } catch (e) { logMigracija_('SEED_PICA_1125', e); }
 
   // korekcija javljenog stanja: Mega Watt −5 (71 → 66). Radi samo dok je podsjetnik još aktivan (prije prvog brojanja).
   try {
@@ -693,7 +672,7 @@ function osigurajTabele_(formatiraj) {
       }
       svojstva_().setProperty('SEED_KOREKCIJA_MEGAWATT', '1');
     }
-  } catch (e) { /* */ }
+  } catch (e) { logMigracija_('SEED_KOREKCIJA_MEGAWATT', e); }
 
   // nove cijene (vlasnik, 26.11.): mijenja se samo ono što je još na staroj vrijednosti — ručne izmjene u aplikaciji se ne gaze
   try {
@@ -714,7 +693,7 @@ function osigurajTabele_(formatiraj) {
       });
       svojstva_().setProperty('SEED_CIJENE_1126', '1');
     }
-  } catch (e) { /* */ }
+  } catch (e) { logMigracija_('SEED_CIJENE_1126', e); }
 
   // paketi trenera (vlasnik, 26.11.): plan 40, asistencija + plan 60, grupni 70, personalni 100 — sve DODATNO uz kartu
   try {
@@ -740,7 +719,7 @@ function osigurajTabele_(formatiraj) {
       });
       svojstva_().setProperty('SEED_TRENERI_1126', '1');
     }
-  } catch (e) { /* */ }
+  } catch (e) { logMigracija_('SEED_TRENERI_1126', e); }
 
   // nalog vlasnika Kenana: vlastiti PIN (postavlja se jednom; poslije ga Kenan mijenja u Vlasnik → Postavke)
   try {
@@ -749,7 +728,7 @@ function osigurajTabele_(formatiraj) {
       uradjeno.push('postavljen nalog vlasnika Kenan');
     }
     svojstva_().setProperty('SEED_PIN_KENAN', '1');
-  } catch (e) { /* */ }
+  } catch (e) { logMigracija_('PIN_KENAN', e); }
 
   // korekcija javljenog stanja (vlasnik, 26.11.): Red Bull −1 (9 → 8), Voda 0,5 L −1 (73 → 72). Podsjetnik se vraća da ga Edin vidi pri početnom brojanju.
   try {
@@ -763,7 +742,7 @@ function osigurajTabele_(formatiraj) {
       svojstva_().setProperty('SEED_KOREKCIJA_1126B', '1');
       uradjeno.push('javljeno stanje: Red Bull ' + izvor.redbull + ', Voda 0,5 L ' + izvor.voda05);
     }
-  } catch (e) { /* */ }
+  } catch (e) { logMigracija_('SEED_KOREKCIJA_1126B', e); }
 
   var pg = ss.getSheetByName(TAB.PREGLED);
   if (!pg) {
@@ -784,6 +763,48 @@ function osigurajTabele_(formatiraj) {
   });
 
   return uradjeno.length ? 'Gotovo: ' + uradjeno.join('; ') + '.' : 'Sve tabele već postoje. Ništa nije mijenjano.';
+}
+
+/** Potrebna nova pića (Mega Watt, Hell, Monster) — dodaje samo ona kojih nema (po nazivu), i javljeno stanje ako ga nema. Idempotentno. */
+var NOVA_PICA = [
+  { naziv: 'Mega Watt', kat: 'Energy', cijena: 2.00, nabavna: 1.00, stanje: 66 },
+  { naziv: 'Hell 0,5 L', kat: 'Energy', cijena: 3.00, nabavna: 1.65, stanje: 10 },
+  { naziv: 'Monster', kat: 'Energy', cijena: 4.00, nabavna: 2.80, stanje: 4 }
+];
+
+function osigurajNovaPica_(uradjeno) {
+  var tpr = tabela_(TAB.PROIZVODI);
+  var ima = {}, maxR = 0;
+  tpr.redovi.forEach(function (r) { ima[normaliziraj_(r.naziv).replace(/[^a-z0-9]/g, '')] = s_(r.product_id); maxR = Math.max(maxR, num_(r.redoslijed)); });
+  var ids = {};
+  NOVA_PICA.forEach(function (n) {
+    var kljuc = normaliziraj_(n.naziv).replace(/[^a-z0-9]/g, '');
+    if (ima[kljuc]) { ids[n.naziv] = ima[kljuc]; return; }
+    var pid = slug_(n.naziv); maxR += 10;
+    dodajRedove_(tpr, [{ product_id: pid, kategorija: n.kat, naziv: n.naziv, cijena: n.cijena, nabavna_cijena: n.nabavna,
+      prati_zalihu: true, aktivan: true, redoslijed: maxR, minimum: 4, clanarina_mjeseci: 0, tip: 'roba', dodao: '' }]);
+    ids[n.naziv] = pid;
+    uradjeno.push('dodano piće ' + n.naziv);
+  });
+  if (!Object.keys(prijavljenoStanje_()).length) {
+    var stanje = { powerade: 2, voda1: 23, voda05: 72, redbull: 8, sultan_kola: 12 };
+    NOVA_PICA.forEach(function (n) { stanje[ids[n.naziv]] = n.stanje; });
+    svojstva_().setProperty('PRIJAVLJENO_STANJE', JSON.stringify(stanje));
+    // ovo su već konačni brojevi (sa svim korekcijama), pa starije korekcije ne smiju oduzimati ponovo
+    svojstva_().setProperty('SEED_KOREKCIJA_MEGAWATT', '1');
+    svojstva_().setProperty('SEED_KOREKCIJA_1126B', '1');
+    uradjeno.push('upisano javljeno stanje');
+  }
+  return ids;
+}
+
+/** Greške u migracijama se više ne gutaju tiho: upisuju se i vidljive su u Vlasnik → Postavke → Provjera sistema. */
+function logMigracija_(ime, e) {
+  try {
+    var staro = svojstva_().getProperty('MIGRACIJE_GRESKE') || '';
+    var red = fmt_(nowDate_(), 'dd.MM. HH:mm') + ' ' + ime + ': ' + String(e && e.message ? e.message : e).slice(0, 160);
+    svojstva_().setProperty('MIGRACIJE_GRESKE', (staro ? staro + '\n' : '').concat(red).slice(-1500));
+  } catch (x) { /* */ }
 }
 
 function formatirajTabelu_(sh, ime) {
@@ -1021,6 +1042,15 @@ function izvjestaj_(red, proizvodi, pocetna, dogadjaji, brojanje) {
 /** Nakon ažuriranja koda: tabele se same nadograde (nove kolone/proizvodi), bez ručnog setupSpreadsheet. */
 function nadogradiAkoTreba_() {
   if (svojstva_().getProperty('VERZIJA_SEME') === VERZIJA_SEME) return;
+  var kes = CacheService.getScriptCache();
+  if (kes.get('nadogradnja_zakazala')) return; // nakon kvara ne pokušavaj ponovo svaki put (10 min pauze)
+  try { nadogradiOdmah_(); } catch (e) {
+    logMigracija_('nadogradnja', e);
+    kes.put('nadogradnja_zakazala', '1', 600);
+  }
+}
+
+function nadogradiOdmah_() {
   zakljucano_(function () {
     if (svojstva_().getProperty('VERZIJA_SEME') === VERZIJA_SEME) return;
     osigurajTabele_(true);
@@ -1082,7 +1112,6 @@ function startShift(podaci) {
         kasaPocetna = r2_(kasaPocetna);
       }
       var t = sada_();
-      svojstva_().deleteProperty('PRIJAVLJENO_STANJE'); // podsjetnik je iskorišten — od sada važi samo stvarno brojanje
       dodajRedove_(sm, [{
         shift_id: shiftId, datum: t.datum, radnik: radnik, vrijeme_pocetka: t.vrijeme, vrijeme_kraja: '',
         status: 'OPEN', created_at: t.ts, updated_at: t.ts, kasa_pocetna: kasaPocetna
@@ -1381,6 +1410,7 @@ function closeShift(shiftId, brojanje, kasaStvarno, razlog) {
         kasa_razlog: (kasaRazlika !== 0 || ob.broj_razlika > 0) ? razlogTxt : '',
         broj_razlika: ob.broj_razlika, vrijednost_razlike: ob.vrijednost_razlike, updated_at: t.ts
       });
+      svojstva_().deleteProperty('PRIJAVLJENO_STANJE'); // podsjetnik je iskorišten tek kad je smjena zatvorena s pravim brojanjem
       return { vec_zatvorena: false, izvjestaj: izvjestaj_(red, proizvodi, ps.pocetna, dog, broj) };
     });
   });
@@ -2207,5 +2237,52 @@ function getDan(pin, datum) {
       kasa_izlazi: izlazi, napomene: napomene, greske: greske,
       raspored: raspored_().filter(function (x) { return x.dan === danUSedmici_(d); })
     };
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ *  PROVJERA SISTEMA (Kenan): šta je u tabeli, šta fali, šta je pošlo po zlu — i popravka jednim klikom
+ * ═══════════════════════════════════════════════════════════════ */
+function stanjeSistema_() {
+  var ss = ss_();
+  var tabele = ss.getSheets().map(function (x) { return x.getName(); });
+  var pr = tabela_(TAB.PROIZVODI);
+  var po = {};
+  pr.redovi.forEach(function (r) { po[normaliziraj_(r.naziv).replace(/[^a-z0-9]/g, '')] = r; });
+  var pica = NOVA_PICA.map(function (n) {
+    var r = po[normaliziraj_(n.naziv).replace(/[^a-z0-9]/g, '')];
+    return { naziv: n.naziv, postoji: !!r, cijena: r ? r2_(num_(r.cijena)) : null, nabavna: r ? r2_(num_(r.nabavna_cijena)) : null,
+      aktivan: r ? (s_(r.aktivan) === '' ? true : bool_(r.aktivan)) : null, ocekivana_cijena: n.cijena };
+  });
+  var kljucni = ['voda05', 'voda1', 'redbull', 'powerade', 'dnevna', 'clan30', 'trener', 'trener_plan', 'trener_grupni', 'trener_personalni'];
+  var imaId = {};
+  pr.redovi.forEach(function (r) { imaId[s_(r.product_id)] = r; });
+  var cijene = kljucni.map(function (id) { var r = imaId[id]; return { id: id, naziv: r ? s_(r.naziv) : '', cijena: r ? r2_(num_(r.cijena)) : null, postoji: !!r }; });
+  return {
+    verzija_koda: VERZIJA_SEME, verzija_tabele: s_(svojstva_().getProperty('VERZIJA_SEME')) || '—',
+    tabele: tabele, proizvoda: pr.redovi.filter(function (r) { return s_(r.product_id); }).length,
+    pica: pica, cijene: cijene, prijavljeno: prijavljenoStanje_(), greske_migracija: s_(svojstva_().getProperty('MIGRACIJE_GRESKE'))
+  };
+}
+
+function provjeraSistema(pin) {
+  return api_(function () { samoKenan_(pin); return stanjeSistema_(); });
+}
+
+/** Dodaje sve što fali (nova pića, tabele, kolone), pokreće sve migracije iznova i vraća šta je urađeno. */
+function popraviSistem(pin) {
+  return api_(function () {
+    samoKenan_(pin);
+    var poruke = [];
+    zakljucano_(function () {
+      svojstva_().deleteProperty('MIGRACIJE_GRESKE');
+      var uradjeno = [];
+      try { osigurajNovaPica_(uradjeno); } catch (e) { logMigracija_('popravka pića', e); poruke.push('Pića: ' + (e && e.message ? e.message : e)); }
+      ['SEED_TRENERI_1126', 'SEED_CIJENE_1126', 'SEED_RASPORED', 'SEED_PICA_1125'].forEach(function (k) { if (k !== 'SEED_PICA_1125') svojstva_().deleteProperty(k); });
+      try { poruke.push(osigurajTabele_(true)); } catch (e) { logMigracija_('osigurajTabele', e); poruke.push('Tabele: ' + (e && e.message ? e.message : e)); }
+      svojstva_().setProperty('VERZIJA_SEME', VERZIJA_SEME);
+      uradjeno.forEach(function (u) { poruke.push(u); });
+    });
+    return { poruke: poruke, stanje: stanjeSistema_() };
   });
 }

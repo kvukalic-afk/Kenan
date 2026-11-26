@@ -2349,9 +2349,55 @@ function TuyaForma({ post, pin, gotovo }) {
 function AdminPostavke({ d, osvjezi, pin, setPin, pokaziToast }) {
   return (
     <>
+      {d.ja === 'Kenan' && <ProvjeraSistema pin={pin} osvjezi={osvjezi} pokaziToast={pokaziToast} />}
       {d.ja === 'Kenan' && <AdminListe d={d} pin={pin} osvjezi={osvjezi} pokaziToast={pokaziToast} />}
       <AdminPin pin={pin} setPin={setPin} pokaziToast={pokaziToast} />
     </>
+  );
+}
+
+/** Provjera sistema: šta je u tabeli, šta fali, i popravka jednim klikom. */
+function ProvjeraSistema({ pin, osvjezi, pokaziToast }) {
+  const [x, setX] = useState(null);
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState('');
+  const [poruke, setPoruke] = useState([]);
+  const provjeri = async () => {
+    setRadi(true); setGr('');
+    try { setX(await api('provjeraSistema', pin)); } catch (e) { setGr(e.message); } finally { setRadi(false); }
+  };
+  const popravi = async () => {
+    setRadi(true); setGr('');
+    try { const r = await api('popraviSistem', pin); setX(r.stanje); setPoruke(r.poruke || []); pokaziToast('✓ Provjera i popravka završene.', 'ok'); osvjezi(); }
+    catch (e) { setGr(e.message); } finally { setRadi(false); }
+  };
+  const fali = x ? x.pica.filter(p => !p.postoji).length : 0;
+  const staro = x && x.verzija_tabele !== x.verzija_koda;
+  return (
+    <div className="card">
+      <div className="lab">PROVJERA SISTEMA</div>
+      <div className="sit">Pokaže šta je u tabeli i šta fali (nova pića, cijene, paketi trenera), i jednim klikom doda ono što nedostaje. Ništa postojeće se ne briše.</div>
+      {gr && <div className="err" style={{ marginTop: 10 }}>{gr}</div>}
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <button className="btn2" style={{ flex: 1 }} disabled={radi} onClick={provjeri} data-testid="provjeri">{radi ? '…' : 'Provjeri'}</button>
+        <button className="btn" style={{ flex: 1, marginTop: 0, minHeight: 50 }} disabled={radi} onClick={popravi} data-testid="popravi">Popravi / dodaj što fali</button>
+      </div>
+      {x && (
+        <div style={{ marginTop: 12 }} data-testid="provjera-rezultat">
+          <div className="ln"><span>Verzija koda / tabele</span><b style={{ color: staro ? 'var(--red)' : 'var(--green)' }}>{x.verzija_koda} / {x.verzija_tabele}{staro ? ' ⚠' : ' ✓'}</b></div>
+          <div className="ln"><span>Proizvoda u tabeli</span><b>{x.proizvoda}</b></div>
+          {x.pica.map(p => (
+            <div className="ln" key={p.naziv}><span>{p.naziv}</span>
+              <b style={{ color: p.postoji ? 'var(--green)' : 'var(--red)' }}>{p.postoji ? '✓ ' + km(p.cijena) + ' KM' + (p.aktivan === false ? ' (isključen)' : '') : '✕ NEMA'}</b></div>
+          ))}
+          {x.cijene.filter(c => !c.postoji).length > 0 && <div className="warn" style={{ marginTop: 8 }}>Fali: {x.cijene.filter(c => !c.postoji).map(c => c.id).join(', ')}</div>}
+          <div className="ln"><span>Javljeno stanje (podsjetnik)</span><b style={{ fontSize: 12.5, textAlign: 'right' }}>{Object.keys(x.prijavljeno || {}).length ? Object.keys(x.prijavljeno).length + ' pića' : 'nema'}</b></div>
+          {x.greske_migracija && <div className="err" style={{ marginTop: 8, whiteSpace: 'pre-wrap', fontSize: 12 }}>Greške pri nadogradnji:{'\n'}{x.greske_migracija}</div>}
+          {fali > 0 && <div className="warn" style={{ marginTop: 8 }}>Fali {fali} {fali === 1 ? 'piće' : 'pića'}. Klikni „Popravi / dodaj što fali".</div>}
+          {poruke.length > 0 && <div className="good" style={{ marginTop: 8, fontSize: 12.5 }}>{poruke.map((m, i) => <div key={i}>• {m}</div>)}</div>}
+        </div>
+      )}
+    </div>
   );
 }
 

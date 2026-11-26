@@ -360,13 +360,15 @@ test('nova pića (Mega Watt, Hell, Monster) i stanje koje je javio vlasnik: pods
   assert.ok(['mega_watt', 'hell_0_5_l', 'monster'].every(id => prod(id).prati_zalihu && prod(id).kategorija === 'Energy'));
   const pr = g.__tabela('PROIZVODI');
   assert.deepEqual([pr.find(p => p.product_id === 'mega_watt').nabavna_cijena, pr.find(p => p.product_id === 'hell_0_5_l').nabavna_cijena, pr.find(p => p.product_id === 'monster').nabavna_cijena], [1, 1.65, 2.8]);
-  assert.deepEqual(JSON.parse(JSON.stringify(b.prijavljeno)), { powerade: 2, voda1: 23, voda05: 73, redbull: 9, sultan_kola: 12, mega_watt: 66, hell_0_5_l: 10, monster: 4 });
+  assert.deepEqual(JSON.parse(JSON.stringify(b.prijavljeno)), { powerade: 2, voda1: 23, voda05: 72, redbull: 8, sultan_kola: 12, mega_watt: 66, hell_0_5_l: 10, monster: 4 });
   // ponovni setup ne dodaje duplikate
   g.setupSpreadsheet();
   assert.equal(g.__tabela('PROIZVODI').filter(p => p.naziv === 'Monster').length, 1);
-  // podsjetnik ne popunjava brojanje: smjena traži prave brojeve, a poslije starta podsjetnik nestaje
+  // podsjetnik ne popunjava brojanje: smjena traži prave brojeve; ne nestaje pri startu, nego tek kad se smjena zatvori s brojanjem
   assert.equal(g.startShift({ shift_id: 'Z', radnik: 'Kenan', pocetna: {} }).code, 'NIJE_SVE_PREBROJANO');
   ok(g.startShift({ shift_id: 'Z', radnik: 'Kenan', pocetna: pocetno(g, { mega_watt: 70, monster: 4 }) }));
+  assert.equal(ok(g.getBootstrap()).prijavljeno.mega_watt, 66, 'podsjetnik ostaje dok smjena traje');
+  ok(g.closeShift('Z', pocetno(g, { mega_watt: 70, monster: 4 }), '0', 'Ne znam'));
   assert.deepEqual(JSON.parse(JSON.stringify(ok(g.getBootstrap()).prijavljeno)), {});
 });
 
@@ -552,8 +554,10 @@ test('korekcija javljenog stanja: Red Bull 8, Voda 0,5 L 72 — i kad je podsjet
   assert.deepEqual(JSON.parse(JSON.stringify(ok(g.getBootstrap()).prijavljeno)), { powerade: 2, voda1: 23, voda05: 72, redbull: 8, sultan_kola: 12, mega_watt: 66, hell_0_5_l: 10, monster: 4 });
   g.setupSpreadsheet(); // drugi put se ne oduzima ponovo
   assert.equal(ok(g.getBootstrap()).prijavljeno.redbull, 8);
-  // podsjetnik se gasi čim se smjena započne
+  // podsjetnik ostaje i nakon starta, a gasi se kad se smjena zatvori s brojanjem
   ok(g.startShift({ shift_id: 'K1', radnik: 'Edin', pocetna: pocetno(g) }));
+  assert.equal(ok(g.getBootstrap()).prijavljeno.redbull, 8);
+  ok(g.closeShift('K1', pocetno(g), '0', 'Ne znam'));
   assert.deepEqual(JSON.parse(JSON.stringify(ok(g.getBootstrap()).prijavljeno)), {});
   // ako je podsjetnik već bio iskorišten (smjena u toku), vraća se korigiran
   const g2 = napraviOkruzenje({ sada: SAT, korekcija: true });
@@ -561,4 +565,28 @@ test('korekcija javljenog stanja: Red Bull 8, Voda 0,5 L 72 — i kad je podsjet
   g2.setupSpreadsheet();
   const p = ok(g2.getBootstrap()).prijavljeno;
   assert.deepEqual([p.redbull, p.voda05, p.mega_watt], [8, 72, 66]);
+});
+
+test('provjera sistema i popravka: pokaže šta fali i jednim klikom doda nova pića (i kad je migracija ranije zakazala)', () => {
+  const g = napraviOkruzenje({ sada: SAT });
+  g.setupSpreadsheet();
+  // simulacija kvara: pića nikad nisu stigla u tabelu, a podsjetnik je potrošen
+  const sh = g.__ss.getSheetByName('PROIZVODI');
+  const v = sh.getDataRange().getValues();
+  const idx = v.map((r, i) => (['Mega Watt', 'Hell 0,5 L', 'Monster'].includes(r[2]) ? i + 1 : 0)).filter(Boolean);
+  idx.forEach(i => { for (let c = 1; c <= 13; c++) sh.getRange(i, c).setValue(''); });
+  delete g.__props.PRIJAVLJENO_STANJE;
+  assert.equal(g.provjeraSistema('2580').code, 'DOZVOLA');
+  const prije = ok(g.provjeraSistema('2308'));
+  assert.deepEqual(prije.pica.map(p => p.postoji), [false, false, false]);
+  const r = ok(g.popraviSistem('2308'));
+  assert.deepEqual(r.stanje.pica.map(p => p.postoji + ':' + p.cijena), ['true:2', 'true:3', 'true:4']);
+  assert.deepEqual(JSON.parse(JSON.stringify(r.stanje.prijavljeno)).mega_watt, 66);
+  assert.ok(r.poruke.some(m => /dodano piće Monster/.test(m)));
+  assert.equal(r.stanje.verzija_tabele, r.stanje.verzija_koda);
+  const b = ok(g.getBootstrap());
+  assert.ok(['mega_watt', 'hell_0_5_l', 'monster'].every(id => b.proizvodi.some(p => p.product_id === id)));
+  // ponovna popravka ne pravi duplikate
+  ok(g.popraviSistem('2308'));
+  assert.equal(g.__tabela('PROIZVODI').filter(p => p.naziv === 'Monster').length, 1);
 });

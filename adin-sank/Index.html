@@ -193,7 +193,7 @@
 <body>
 <div id="root"></div>
 <script>
-/* Generisano iz src/app.jsx (2026-11-26 15:13 UTC) — ne uređuj ručno, pokreni npm run build */
+/* Generisano iz src/app.jsx (2026-11-26 15:22 UTC) — ne uređuj ručno, pokreni npm run build */
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
@@ -997,7 +997,7 @@ function Radnik({ radnici, izabran, onDalje, onAdmin, raspored }) {
       onChange: (e) => setDrugi(e.target.value),
       placeholder: "Upiši ime"
     }
-  ), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !ime, onClick: () => onDalje(ime) }, "Dalje — prebroji robu"), /* @__PURE__ */ React.createElement(DanasTrening, { raspored }), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 30 } }, /* @__PURE__ */ React.createElement("button", { className: "linkbtn", onClick: onAdmin }, "Vlasnik ›")), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center", opacity: 0.5 } }, "verzija 26. 11. u 16:13"));
+  ), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !ime, onClick: () => onDalje(ime) }, "Dalje — prebroji robu"), /* @__PURE__ */ React.createElement(DanasTrening, { raspored }), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 30 } }, /* @__PURE__ */ React.createElement("button", { className: "linkbtn", onClick: onAdmin }, "Vlasnik ›")), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center", opacity: 0.5 } }, "verzija 26. 11. u 16:22"));
 }
 function Brojac({ pid, naziv, pod, prij, v, set }) {
   const n = v === "" || v === void 0 ? null : Number(v);
@@ -2034,7 +2034,42 @@ function TuyaForma({ post, pin, gotovo }) {
   } }, radi ? "Provjeravam vezu…" : "Sačuvaj i provjeri vezu"));
 }
 function AdminPostavke({ d, osvjezi, pin, setPin, pokaziToast }) {
-  return /* @__PURE__ */ React.createElement(React.Fragment, null, d.ja === "Kenan" && /* @__PURE__ */ React.createElement(AdminListe, { d, pin, osvjezi, pokaziToast }), /* @__PURE__ */ React.createElement(AdminPin, { pin, setPin, pokaziToast }));
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, d.ja === "Kenan" && /* @__PURE__ */ React.createElement(ProvjeraSistema, { pin, osvjezi, pokaziToast }), d.ja === "Kenan" && /* @__PURE__ */ React.createElement(AdminListe, { d, pin, osvjezi, pokaziToast }), /* @__PURE__ */ React.createElement(AdminPin, { pin, setPin, pokaziToast }));
+}
+function ProvjeraSistema({ pin, osvjezi, pokaziToast }) {
+  const [x, setX] = useState(null);
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState("");
+  const [poruke, setPoruke] = useState([]);
+  const provjeri = async () => {
+    setRadi(true);
+    setGr("");
+    try {
+      setX(await api("provjeraSistema", pin));
+    } catch (e) {
+      setGr(e.message);
+    } finally {
+      setRadi(false);
+    }
+  };
+  const popravi = async () => {
+    setRadi(true);
+    setGr("");
+    try {
+      const r = await api("popraviSistem", pin);
+      setX(r.stanje);
+      setPoruke(r.poruke || []);
+      pokaziToast("✓ Provjera i popravka završene.", "ok");
+      osvjezi();
+    } catch (e) {
+      setGr(e.message);
+    } finally {
+      setRadi(false);
+    }
+  };
+  const fali = x ? x.pica.filter((p) => !p.postoji).length : 0;
+  const staro = x && x.verzija_tabele !== x.verzija_koda;
+  return /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PROVJERA SISTEMA"), /* @__PURE__ */ React.createElement("div", { className: "sit" }, "Pokaže šta je u tabeli i šta fali (nova pića, cijene, paketi trenera), i jednim klikom doda ono što nedostaje. Ništa postojeće se ne briše."), gr && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 10 } }, gr), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 12 } }, /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, disabled: radi, onClick: provjeri, "data-testid": "provjeri" }, radi ? "…" : "Provjeri"), /* @__PURE__ */ React.createElement("button", { className: "btn", style: { flex: 1, marginTop: 0, minHeight: 50 }, disabled: radi, onClick: popravi, "data-testid": "popravi" }, "Popravi / dodaj što fali")), x && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12 }, "data-testid": "provjera-rezultat" }, /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Verzija koda / tabele"), /* @__PURE__ */ React.createElement("b", { style: { color: staro ? "var(--red)" : "var(--green)" } }, x.verzija_koda, " / ", x.verzija_tabele, staro ? " ⚠" : " ✓")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Proizvoda u tabeli"), /* @__PURE__ */ React.createElement("b", null, x.proizvoda)), x.pica.map((p) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: p.naziv }, /* @__PURE__ */ React.createElement("span", null, p.naziv), /* @__PURE__ */ React.createElement("b", { style: { color: p.postoji ? "var(--green)" : "var(--red)" } }, p.postoji ? "✓ " + km(p.cijena) + " KM" + (p.aktivan === false ? " (isključen)" : "") : "✕ NEMA"))), x.cijene.filter((c) => !c.postoji).length > 0 && /* @__PURE__ */ React.createElement("div", { className: "warn", style: { marginTop: 8 } }, "Fali: ", x.cijene.filter((c) => !c.postoji).map((c) => c.id).join(", ")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Javljeno stanje (podsjetnik)"), /* @__PURE__ */ React.createElement("b", { style: { fontSize: 12.5, textAlign: "right" } }, Object.keys(x.prijavljeno || {}).length ? Object.keys(x.prijavljeno).length + " pića" : "nema")), x.greske_migracija && /* @__PURE__ */ React.createElement("div", { className: "err", style: { marginTop: 8, whiteSpace: "pre-wrap", fontSize: 12 } }, "Greške pri nadogradnji:", "\n", x.greske_migracija), fali > 0 && /* @__PURE__ */ React.createElement("div", { className: "warn", style: { marginTop: 8 } }, "Fali ", fali, " ", fali === 1 ? "piće" : "pića", '. Klikni „Popravi / dodaj što fali".'), poruke.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "good", style: { marginTop: 8, fontSize: 12.5 } }, poruke.map((m, i) => /* @__PURE__ */ React.createElement("div", { key: i }, "• ", m)))));
 }
 function AdminListe({ d, pin, osvjezi, pokaziToast }) {
   const [radnici, setRadnici] = useState((d.radnici || []).join(", "));
