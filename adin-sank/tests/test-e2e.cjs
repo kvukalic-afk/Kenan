@@ -277,10 +277,29 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.locator('input[type="password"]').fill('1111');
     await page.getByRole('button', { name: 'Uđi' }).click();
     await page.getByText('Pogrešan PIN.').waitFor();
-    await page.locator('input[type="password"]').fill('2580');
+    await page.locator('input[type="password"]').fill('2308');
     await page.getByRole('button', { name: 'Uđi' }).click();
+    // Kenan: odmah upozorenje na greške (manjak Red Bulla iz probne smjene) — gdje je i kako provjeriti
+    await page.getByText('Kenane, pronađene su greške').waitFor();
+    await page.screenshot({ path: path.join(SLIKE, '7a-greske-modal.png') });
+    await page.getByRole('button', { name: 'Vidi sve greške' }).click();
+    await page.locator('[data-greska="manjak_robe"]').filter({ hasText: 'Manjak robe: Red Bull' }).first().waitFor();
+    assert.ok((await page.locator('[data-greska="manjak_robe"]').first().textContent()).includes('KAKO PROVJERITI'));
+    await page.screenshot({ path: path.join(SLIKE, '7b-greske.png'), fullPage: true });
+    await page.getByRole('button', { name: 'Danas', exact: true }).click();
     await page.getByText('PLATA RADNIKA', { exact: false }).waitFor();
     await page.screenshot({ path: path.join(SLIKE, '7-vlasnik.png'), fullPage: true });
+    // statistika po danima
+    await page.locator('[data-tab="dani"]').click();
+    await page.locator('[data-dan-red]').first().click();
+    await page.locator('.grp', { hasText: /^PROMET PO SATU$/ }).waitFor();
+    await page.screenshot({ path: path.join(SLIKE, '7c-dan.png'), fullPage: true });
+    // prozor mora biti unutar ekrana (ne "zalijepljen" za dno duge stranice)
+    await pauza(600);
+    const kutija = await page.locator('.sheet').boundingBox();
+    assert.ok(kutija.y >= 0 && kutija.y + kutija.height <= 844 + 1, 'prozor je u vidljivom dijelu ekrana: ' + JSON.stringify(kutija));
+    await page.getByRole('button', { name: 'Zatvori', exact: true }).click();
+    await page.getByRole('button', { name: 'Danas', exact: true }).click();
     await page.getByRole('button', { name: 'Smjene' }).click();
     await page.getByText('Kenan').first().waitFor();
     await page.locator('.listbtn').last().click();
@@ -341,6 +360,16 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.screenshot({ path: path.join(SLIKE, '9-vrata.png'), fullPage: true });
     assert.equal(tuya.stanje.losPotpis, 0);
 
+    // Edin: samo evidencija i rad — nema statistike, cijena, vrata
+    await page.getByRole('button', { name: 'Izađi iz pregleda' }).click();
+    await page.getByRole('button', { name: 'Vlasnik ›' }).click();
+    await page.locator('input[type="password"]').fill('2580');
+    await page.getByRole('button', { name: 'Uđi' }).click();
+    await page.getByText('evidencija i rad').first().waitFor();
+    for (const tab of ['dani', 'karte', 'vrata', 'proizvodi', 'mjesec']) assert.equal(await page.locator(`[data-tab="${tab}"]`).count(), 0, tab);
+    for (const tab of ['danas', 'greske', 'raspored', 'smjene', 'clanovi', 'zalihe', 'postavke']) assert.equal(await page.locator(`[data-tab="${tab}"]`).count(), 1, tab);
+    assert.ok(!/PROMET DANAS|PLATA RADNIKA|PROFIT/.test(await page.locator('#root').textContent()), 'Edin ne vidi novac');
+    await page.screenshot({ path: path.join(SLIKE, '7d-edin.png'), fullPage: true });
     await page.getByRole('button', { name: 'Izađi iz pregleda' }).click();
     await page.getByTestId('danas-trening').filter({ hasText: 'Noge + core' }).waitFor();
     await page.screenshot({ path: path.join(SLIKE, '1b-radnik-trening.png') });

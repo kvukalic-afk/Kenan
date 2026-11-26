@@ -1462,7 +1462,7 @@ function DetaljRazlike({ s }) {
       <div className="ln"><span>Prodano po inventuri</span><b>{s.prodano_inventura}</b></div>
       <div className="ln" style={{ borderTop: '1px solid var(--line)', marginTop: 6, paddingTop: 9 }}>
         <span style={{ color: 'var(--red)' }}>Razlika</span>
-        <b style={{ color: 'var(--red)' }} data-testid={'razlika-' + s.product_id}>{s.razlika_kom > 0 ? '+' : ''}{s.razlika_kom} kom · {km(s.razlika_km)} KM</b>
+        <b style={{ color: 'var(--red)' }} data-testid={'razlika-' + s.product_id}>{s.razlika_kom > 0 ? '+' : ''}{s.razlika_kom} kom{s.razlika_km !== undefined ? ' · ' + km(s.razlika_km) + ' KM' : ''}</b>
       </div>
       <div className="sit" style={{ marginTop: 8, lineHeight: 1.5 }}>
         {s.razlika_kom < 0
@@ -1509,10 +1509,10 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
           <div className="lab">PRODANO</div>
           <div className="big">{izv.prodano_kom}<span style={{ fontSize: 12, color: 'var(--dim)', marginLeft: 4 }}>kom</span></div>
         </div>
-        <div className="box">
+        {!izv.ograniceno && <div className="box">
           <div className="lab">PROMET</div>
           <div className="big" style={{ color: 'var(--gold)' }} data-testid="izv-promet"><AnimBroj v={izv.promet} /><span style={{ fontSize: 12, color: 'var(--dim)', marginLeft: 4 }}>KM</span></div>
-        </div>
+        </div>}
       </div>
 
       {izv.kasa_stvarno !== null && izv.kasa_stvarno !== undefined && (
@@ -1567,7 +1567,7 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
         </div>
       )}
 
-      <button className="btn2" onClick={kopiraj}>Kopiraj izvještaj (Viber / WhatsApp)</button>
+      {!izv.ograniceno && <button className="btn2" onClick={kopiraj}>Kopiraj izvještaj (Viber / WhatsApp)</button>}
       {pokaziTekst && <textarea className="inp" readOnly value={tekst} style={{ minHeight: 180, fontSize: 13 }} onFocus={e => e.target.select()} />}
       {!uAdminu && <button className="btn" onClick={onNovo}>Gotovo</button>}
     </div>
@@ -1583,12 +1583,19 @@ function Admin({ nazad, pokaziToast }) {
   const [tab, setTab] = useState('danas');
   const [d, setD] = useState(null);
   const [radi, setRadi] = useState(false);
+  const [modal, setModal] = useState(false);
+  const modalPokazan = useRef(false);
 
   const ucitaj = useCallback(async (p) => {
     setRadi(true); setGreska('');
     try {
       const r = await api('getAdminData', p);
       setD(r); setUlogovan(true); setPin(p);
+      // Kenan: odmah pri ulasku upozorenje na greške (minus robe/para) — jednom po prijavi
+      if (!modalPokazan.current) {
+        modalPokazan.current = true;
+        if (r.ja === 'Kenan' && (r.greske || []).some(g => !g.pregledano)) { setModal(true); vibriraj([20, 60, 20]); }
+      }
       try { sessionStorage.setItem('adin_pin', p); } catch (e) { /* */ }
     } catch (e) {
       if (e.code === 'PIN') { setUlogovan(false); try { sessionStorage.removeItem('adin_pin'); } catch (x) { /* */ } }
@@ -1597,6 +1604,12 @@ function Admin({ nazad, pokaziToast }) {
   }, []);
 
   useEffect(() => { if (pin) ucitaj(pin); }, []); // eslint-disable-line
+
+  const nepregledane = d ? (d.greske || []).filter(g => !g.pregledano).length : 0;
+  const kenan = !!(d && d.ja === 'Kenan');
+  const tabovi = kenan
+    ? [['danas', 'Danas'], ['greske', 'Greške'], ['dani', 'Dani'], ['raspored', 'Raspored'], ['karte', 'Karte'], ['vrata', 'Vrata'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['proizvodi', 'Proizvodi'], ['mjesec', 'Mjesec'], ['postavke', 'Postavke']]
+    : [['danas', 'Danas'], ['greske', 'Greške'], ['raspored', 'Raspored'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['postavke', 'Postavke']];
 
   if (!ulogovan) {
     return (
@@ -1618,26 +1631,31 @@ function Admin({ nazad, pokaziToast }) {
     <div className="wrap">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div className="lab" style={{ marginBottom: 2 }}>DOBRO DOŠLI</div>
-          <div className="h1" style={{ fontSize: 21 }}>{(d && d.vlasnici) || 'Vlasnici'}</div>
+          <div className="lab" style={{ marginBottom: 2 }}>DOBRO DOŠAO{d && d.ja ? ' · ' + d.ja.toUpperCase() : ''}</div>
+          <div className="h1" style={{ fontSize: 21 }}>{d && d.ja ? d.ja : 'Vlasnik'}{d && d.ograniceno ? <span className="sit" style={{ fontSize: 12, marginLeft: 8 }}>evidencija i rad</span> : null}</div>
         </div>
         <button className="chip" onClick={() => ucitaj(pin)} disabled={radi}>{radi ? '…' : '↻ Osvježi'}</button>
       </div>
       <div className="tabs">
-        {[['danas', 'Danas'], ['raspored', 'Raspored'], ['karte', 'Karte'], ['vrata', 'Vrata'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['proizvodi', 'Proizvodi'], ['mjesec', 'Mjesec'], ['postavke', 'Postavke']].map(([k, n]) =>
-          <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>)}
+        {tabovi.map(([k, n]) =>
+          <button key={k} data-tab={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}{k === 'greske' && nepregledane > 0 ? <span className="tbadge">{nepregledane}</span> : null}</button>)}
       </div>
       {greska && <div className="err">{greska}</div>}
       {d && tab === 'danas' && <AdminDanas d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
+      {d && tab === 'greske' && <AdminGreske d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
+      {d && kenan && tab === 'dani' && <AdminDani pin={pin} />}
       {d && tab === 'zalihe' && <AdminZalihe d={d} />}
-      {d && tab === 'karte' && <AdminKarte d={d} />}
+      {d && kenan && tab === 'karte' && <AdminKarte d={d} />}
       {d && tab === 'raspored' && <AdminRaspored d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'clanovi' && <AdminClanovi d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
-      {d && tab === 'proizvodi' && <AdminProizvodi d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
-      {d && tab === 'vrata' && <AdminVrata pin={pin} pokaziToast={pokaziToast} />}
+      {d && kenan && tab === 'proizvodi' && <AdminProizvodi d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
+      {d && kenan && tab === 'vrata' && <AdminVrata pin={pin} pokaziToast={pokaziToast} />}
       {d && tab === 'postavke' && <AdminPostavke d={d} osvjezi={() => ucitaj(pin)} pin={pin} setPin={p => { setPin(p); try { sessionStorage.setItem('adin_pin', p); } catch (e) { /* */ } }} pokaziToast={pokaziToast} />}
       {d && tab === 'smjene' && <AdminSmjene pin={pin} pokaziToast={pokaziToast} />}
-      {d && tab === 'mjesec' && <AdminMjesec d={d} />}
+      {d && kenan && tab === 'mjesec' && <AdminMjesec d={d} />}
+      {modal && d && <GreskeModal greske={(d.greske || []).filter(g => !g.pregledano)} zatvori={() => setModal(false)}
+        vidiSve={() => { setModal(false); setTab('greske'); }}
+        pregledano={async ids => { try { await api('ackGreske', pin, ids); } catch (e) { /* */ } setModal(false); ucitaj(pin); }} />}
       <button className="btn2" style={{ marginTop: 10 }} onClick={() => { try { sessionStorage.removeItem('adin_pin'); } catch (e) { /* */ } nazad(); }}>Izađi iz pregleda</button>
     </div>
   );
@@ -1670,7 +1688,7 @@ function AdminDanas({ d, pin, osvjezi, pokaziToast }) {
         <div className={o.stara ? 'err' : 'card'} style={o.stara ? {} : { borderColor: 'var(--gold)' }}>
           <div className="lab" style={{ color: o.stara ? 'var(--red)' : 'var(--gold)' }}>{o.stara ? '⚠ SMJENA OTVORENA PREDUGO' : 'SMJENA U TOKU'}</div>
           <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)' }}>{o.radnik} · od {o.od} ({dT(o.datum)})</div>
-          <div className="sit">{o.sati} h · {o.kom} kom · promet {km(o.promet)} KM</div>
+          <div className="sit">{o.sati} h · {o.kom} kom{o.promet !== undefined ? ' · promet ' + km(o.promet) + ' KM' : ''}</div>
           {o.kasa_treba !== undefined && <div style={{ marginTop: 6, color: 'var(--text)', fontSize: 14 }}>💶 U kasi sada treba biti <b style={{ color: 'var(--gold)' }}>{km(o.kasa_treba)} KM</b> <span className="sit">(početno {km(o.kasa_pocetna)}{o.uzeto_iz_kase ? ', uzeto ' + km(o.uzeto_iz_kase) : ''})</span></div>}
           {o.stara && <div style={{ marginTop: 8, color: 'var(--text)', fontSize: 13 }}>Vjerovatno je zaboravljeno zatvaranje. Najbolje je da radnik sam završi smjenu s brojanjem. Ako to nije moguće, zatvori je ovdje.</div>}
           {!zatvaranje && <button className="btn2" style={{ marginTop: 10 }} onClick={() => setZatvaranje(true)}>Zatvori bez brojanja…</button>}
@@ -1681,27 +1699,186 @@ function AdminDanas({ d, pin, osvjezi, pokaziToast }) {
           </>}
         </div>
       ) : <div className="info">Trenutno nema otvorene smjene.</div>}
-      <div className="two">
+      {d.ograniceno && <div className="info">Ovdje vidiš evidenciju i rad: smjene, zalihe, članove i raspored. Promet, zarada i statistika su samo za Kenana.</div>}
+      {(d.greske || []).filter(g => !g.pregledano).length > 0 && (
+        <div className="err">⚠ {(d.greske || []).filter(g => !g.pregledano).length} {(d.greske || []).filter(g => !g.pregledano).length === 1 ? 'greška za provjeru' : 'grešaka za provjeru'}. Otvori tab „Greške" i vidi gdje i kako provjeriti.</div>
+      )}
+      {!d.ograniceno && <div className="two">
         <Broj lab="PROMET DANAS" v={km(d.danas.promet)} boja="var(--gold)" sit={d.danas.kom + ' kom'} />
         <Broj lab="PROFIT DANAS" v={km(d.danas.profit)} boja="var(--green)" />
-      </div>
-      <div className="two">
+      </div>}
+      {!d.ograniceno && <div className="two">
         <Broj lab="PROFIT OVE SEDMICE" v={km(d.sedmica.profit)} sit={'promet ' + km(d.sedmica.promet) + ' KM'} />
         <Broj lab="ZADNJIH 7 DANA" v={km(d.d7.promet)} sit="promet KM" />
-      </div>
-      <div className="card" style={{ borderColor: 'var(--gold)' }}>
+      </div>}
+      {!d.ograniceno && <div className="card" style={{ borderColor: 'var(--gold)' }}>
         <div className="lab">PLATA RADNIKA ({Math.round(d.plata.udio * 100)}% SEDMIČNOG PROFITA)</div>
         <div className="ln"><span>Za prošlu sedmicu ({dT(d.periodi.proslaOd)}–{dT(d.periodi.proslaDo)}) — isplata u ponedjeljak</span><b style={{ color: 'var(--gold)', fontSize: 18 }}>{km(d.plata.prosla)} KM</b></div>
         <div className="ln"><span>Ova sedmica do sada</span><b>{km(d.plata.ova_do_sada)} KM</b></div>
         <div className="sit">Profit prošle sedmice: {km(d.prosla.profit)} KM (promet {km(d.prosla.promet)} KM)</div>
-      </div>
+      </div>}
       {(d.clanovi.istice.length > 0 || d.clanovi.istekli.length > 0) && (
         <div className="warn">Članarine: {d.clanovi.istice.length} ističe u narednih 5 dana, {d.clanovi.istekli.length} isteklo. Vidi tab „Članovi".</div>
       )}
-      <AdminOsoblje d={d} />
+      {!d.ograniceno && <AdminOsoblje d={d} />}
       {(d.proizvodi || []).some(p => p.dodao) && <div className="warn">★ Radnik je dodao novi proizvod: {(d.proizvodi || []).filter(p => p.dodao).map(p => p.naziv).join(', ')}. Provjeri cijenu i upiši nabavnu u tabu „Proizvodi".</div>}
       {d.zalihe.some(z => z.nisko) && <div className="warn">Nisko na zalihi: {d.zalihe.filter(z => z.nisko).map(z => z.naziv + ' (' + z.kolicina + ')').join(', ')}</div>}
     </>
+  );
+}
+
+/* ═══════ DETEKTOR GREŠAKA ═══════ */
+function GreskaKartica({ g, pregledano, mala }) {
+  return (
+    <div className="card greska" data-greska={g.vrsta} style={{ borderColor: g.ozbiljnost === 'kriticno' ? 'var(--red)' : 'rgba(232,163,61,.55)', opacity: g.pregledano ? .6 : 1 }}>
+      <div style={{ fontSize: 15.5, fontWeight: 700, color: g.ozbiljnost === 'kriticno' ? 'var(--red)' : 'var(--gold)' }}>{g.ozbiljnost === 'kriticno' ? '⛔ ' : '⚠ '}{g.naslov}</div>
+      <div className="lab" style={{ margin: '10px 0 3px' }}>GDJE</div>
+      <div style={{ fontSize: 14 }}>{g.gdje}</div>
+      <div className="lab" style={{ margin: '10px 0 3px' }}>KAKO PROVJERITI</div>
+      <div style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--text)' }}>{g.kako}</div>
+      {pregledano && !g.pregledano && <button className="btn2" style={{ marginTop: 10 }} onClick={() => pregledano(g)}>✓ Pregledao sam</button>}
+    </div>
+  );
+}
+
+/** Odmah pri prijavi vlasnika Kenana: šta ne štima, gdje i kako provjeriti. */
+function GreskeModal({ greske, zatvori, vidiSve, pregledano }) {
+  const prvi = greske.slice(0, 3);
+  return (
+    <Sheet naslov="⚠ Kenane, pronađene su greške" zatvori={zatvori}>
+      <div className="sit" style={{ marginBottom: 10 }}>{greske.length} {greske.length === 1 ? 'stvar ne štima' : 'stvari ne štima'}. Evo prvih {prvi.length} (gdje je i kako provjeriti):</div>
+      {prvi.map(g => <GreskaKartica key={g.id} g={g} />)}
+      {greske.length > prvi.length && <div className="sit" style={{ textAlign: 'center', margin: '6px 0' }}>… i još {greske.length - prvi.length}</div>}
+      <button className="btn" onClick={vidiSve}>Vidi sve greške</button>
+      <button className="btn2" style={{ marginTop: 10 }} onClick={() => pregledano(greske.map(g => g.id))}>Sve sam pregledao</button>
+      <button className="linkbtn" style={{ width: '100%' }} onClick={zatvori}>Podsjeti me kasnije</button>
+    </Sheet>
+  );
+}
+
+function AdminGreske({ d, pin, osvjezi, pokaziToast }) {
+  const sve = d.greske || [];
+  const nove = sve.filter(g => !g.pregledano), stare = sve.filter(g => g.pregledano);
+  const [radi, setRadi] = useState(false);
+  const potvrdi = async ids => {
+    setRadi(true);
+    try { await api('ackGreske', pin, ids); pokaziToast('✓ Označeno kao pregledano.', 'ok'); osvjezi(); } catch (e) { pokaziToast(e.message, 'err'); } finally { setRadi(false); }
+  };
+  return (
+    <>
+      <div className="info">Detektor traži <b style={{ color: 'var(--text)' }}>minus robe</b> (manjak, ili više prodano nego što je bilo) i <b style={{ color: 'var(--text)' }}>minus para</b> (manjak u kasi), u smjeni koja je u toku i u smjenama zadnjih 30 dana. Uz svaku grešku piše gdje je i kako provjeriti.</div>
+      {!nove.length && <div className="good" data-testid="nema-gresaka">✓ Nema neprovjerenih grešaka. Sve štima.</div>}
+      {nove.map(g => <GreskaKartica key={g.id} g={g} pregledano={g1 => potvrdi([g1.id])} />)}
+      {nove.length > 1 && <button className="btn2" disabled={radi} onClick={() => potvrdi(nove.map(g => g.id))}>✓ Sve sam pregledao</button>}
+      {stare.length > 0 && <>
+        <div className="grp">VEĆ PREGLEDANO ({stare.length})</div>
+        {stare.map(g => <GreskaKartica key={g.id} g={g} />)}
+      </>}
+    </>
+  );
+}
+
+/* ═══════ STATISTIKA PO DANIMA (Kenan) ═══════ */
+const DAN_KRATKO = { pon: 'pon', uto: 'uto', sri: 'sri', cet: 'čet', pet: 'pet', sub: 'sub', ned: 'ned' };
+
+function AdminDani({ pin }) {
+  const [r, setR] = useState(null);
+  const [gr, setGr] = useState('');
+  const [dan, setDan] = useState(null);
+  useEffect(() => { api('getDani', pin, 30).then(setR).catch(e => setGr(e.message)); }, [pin]);
+  if (gr) return <div className="err">{gr}</div>;
+  if (!r) return <div className="info">Učitavam…</div>;
+  const radni = r.dani.filter(x => x.promet !== 0 || x.smjena > 0);
+  const max = Math.max(1, ...radni.map(x => x.promet));
+  return (
+    <>
+      <div className="two">
+        <Broj lab="PROSJEK PO DANU" v={km(r.prosjek_promet)} boja="var(--gold)" sit="promet, zadnjih 30 dana" />
+        <Broj lab="NAJBOLJI DAN" v={r.najbolji ? km(r.najbolji.promet) : '—'} boja="var(--green)" sit={r.najbolji ? dT(r.najbolji.datum) : ''} />
+      </div>
+      <div className="sit">Klikni dan za sve detalje: smjene, prodaja po proizvodu, promet po satu, osoblje, napomene i greške.</div>
+      <div className="card0">
+        {!radni.length && <div className="info" style={{ border: 'none' }}>Još nema podataka.</div>}
+        {radni.map(x => (
+          <button key={x.datum} className="listbtn dan" data-dan-red={x.datum} onClick={() => setDan(x.datum)} style={{ display: 'block' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ fontSize: 15, fontWeight: 600 }}>{DAN_KRATKO[x.dan]} {dT(x.datum).slice(0, 6)}</span>
+              <span style={{ color: 'var(--gold)', fontWeight: 700 }}>{km(x.promet)} KM</span>
+            </div>
+            <div className="stub"><i style={{ width: Math.max(2, Math.round(x.promet / max * 100)) + '%' }} /></div>
+            <div className="sit" style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 10px' }}>
+              <span>zarada {km(x.profit)}</span>
+              <span>{x.smjena} {x.smjena === 1 ? 'smjena' : 'smjene'}{x.radnici.length ? ' · ' + x.radnici.join(', ') : ''}</span>
+              {x.dnevne + x.mjesecne + x.treneri > 0 && <span>🎫 {x.dnevne} · 🏋️ {x.mjesecne} · 💪 {x.treneri}</span>}
+              {x.razlika_km < 0 && <span style={{ color: 'var(--red)' }}>manjak robe {km(x.razlika_km)}</span>}
+              {x.kasa_razlika !== 0 && <span style={{ color: x.kasa_razlika < 0 ? 'var(--red)' : 'var(--gold)' }}>kasa {x.kasa_razlika > 0 ? '+' : ''}{km(x.kasa_razlika)}</span>}
+            </div>
+          </button>
+        ))}
+      </div>
+      {dan && <DanDetalj datum={dan} pin={pin} zatvori={() => setDan(null)} />}
+    </>
+  );
+}
+
+function DanDetalj({ datum, pin, zatvori }) {
+  const [x, setX] = useState(null);
+  const [gr, setGr] = useState('');
+  useEffect(() => { api('getDan', pin, datum).then(setX).catch(e => setGr(e.message)); }, [pin, datum]);
+  const prvi = x ? x.sati.findIndex(v => v !== 0) : -1;
+  const zadnji = x ? x.sati.length - 1 - [...x.sati].reverse().findIndex(v => v !== 0) : -1;
+  const sMax = x ? Math.max(1, ...x.sati) : 1;
+  return (
+    <Sheet naslov={x ? Logika.DANI_IME[x.dan] + ', ' + dT(datum) : dT(datum)} zatvori={zatvori}>
+      {gr && <div className="err">{gr}</div>}
+      {!x && !gr && <div className="info">Učitavam…</div>}
+      {x && <>
+        <div className="two">
+          <Broj lab="PROMET" v={km(x.promet)} boja="var(--gold)" sit={x.kom + ' kom'} />
+          <Broj lab="ZARADA" v={km(x.profit)} boja="var(--green)" />
+        </div>
+        {x.greske.length > 0 && x.greske.map(g => <GreskaKartica key={g.id} g={g} />)}
+        <div className="grp">SMJENE</div>
+        <div className="card0">
+          {!x.smjene.length && <div className="info" style={{ border: 'none' }}>Nije bilo smjena.</div>}
+          {x.smjene.map(s => (
+            <div className="row" key={s.shift_id} style={{ display: 'block' }}>
+              <div className="ln" style={{ padding: 0 }}><b>{s.radnik} · {s.od}–{s.do || '…'}</b><b style={{ color: 'var(--gold)' }}>{km(s.promet)} KM</b></div>
+              <div className="sit">kasa: početno {km(s.kasa_pocetna)}{s.kasa_stvarno !== null ? ', na kraju ' + km(s.kasa_stvarno) : ''}{s.kasa_razlika ? ' · razlika ' + km(s.kasa_razlika) : s.status === 'CLOSED' ? ' · ✓ poklapa se' : ''}</div>
+              {(s.broj_razlika > 0 || s.kasa_razlog) && <div className="sit" style={{ color: 'var(--red)' }}>{s.broj_razlika > 0 ? s.broj_razlika + ' razlika robe (' + km(s.vrijednost_razlike) + ' KM)' : ''}{s.kasa_razlog ? ' · razlog: ' + s.kasa_razlog : ''}</div>}
+            </div>
+          ))}
+        </div>
+        {prvi >= 0 && <>
+          <div className="grp">PROMET PO SATU</div>
+          <div className="card sati">
+            {x.sati.slice(prvi, zadnji + 1).map((v, i) => (
+              <div key={i} className="stupac" title={km(v) + ' KM'}><i style={{ height: Math.max(3, Math.round(v / sMax * 70)) + 'px' }} /><span>{prvi + i}</span></div>
+            ))}
+          </div>
+        </>}
+        {x.proizvodi.length > 0 && <>
+          <div className="grp">ŠTA SE PRODALO</div>
+          <div className="card0">
+            {x.proizvodi.map(p => <div className="row" key={p.naziv}><span style={{ fontSize: 14.5 }}>{p.naziv}</span><b style={{ fontSize: 14 }}>{p.kom} kom · {km(p.promet)} <span className="sit">({km(p.profit)})</span></b></div>)}
+          </div>
+        </>}
+        {x.osoblje.length > 0 && <>
+          <div className="grp">OSOBLJE I VLASNICI</div>
+          <div className="card">
+            {x.osoblje.map(o => <div className="ln" key={o.osoba} style={{ display: 'block' }}><b>{o.osoba}</b> <span className="sit">{o.stavke.map(i => i.kom + '× ' + i.naziv).join(', ')}{o.nabavna ? ' · ' + km(o.nabavna) + ' KM nab.' : ''}{o.uzeto ? ' · uzeo iz kase ' + km(o.uzeto) + ' KM' : ''}</span></div>)}
+          </div>
+        </>}
+        {x.napomene.length > 0 && <>
+          <div className="grp">NAPOMENE RADNIKA</div>
+          <div className="card">{x.napomene.map((n, i) => <div className="ln" key={i} style={{ justifyContent: 'flex-start' }}><span className="sit" style={{ marginTop: 0, minWidth: 44 }}>{n.vrijeme}</span><span>{n.tekst} <span className="sit">({n.radnik})</span></span></div>)}</div>
+        </>}
+        {x.raspored.length > 0 && <>
+          <div className="grp">RASPORED TRENINGA</div>
+          <div className="card">{x.raspored.map((t, i) => <div className="ln" key={i} style={{ justifyContent: 'flex-start', gap: 12 }}><b style={{ color: 'var(--gold)' }}>{t.vrijeme}</b><span>{t.osobe}<div className="sit">{t.trening || 'plan nije upisan'}</div></span></div>)}</div>
+        </>}
+      </>}
+    </Sheet>
   );
 }
 
@@ -2172,7 +2349,7 @@ function TuyaForma({ post, pin, gotovo }) {
 function AdminPostavke({ d, osvjezi, pin, setPin, pokaziToast }) {
   return (
     <>
-      <AdminListe d={d} pin={pin} osvjezi={osvjezi} pokaziToast={pokaziToast} />
+      {d.ja === 'Kenan' && <AdminListe d={d} pin={pin} osvjezi={osvjezi} pokaziToast={pokaziToast} />}
       <AdminPin pin={pin} setPin={setPin} pokaziToast={pokaziToast} />
     </>
   );
@@ -2249,7 +2426,7 @@ function AdminSmjene({ pin, pokaziToast }) {
               <div className="sit">{s.pocetak}–{s.kraj || '…'} · {s.prodano} kom{s.status === 'OPEN' ? ' · U TOKU' : ''}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ color: 'var(--gold)', fontWeight: 700 }}>{km(s.promet)} KM</div>
+              {s.promet !== undefined && <div style={{ color: 'var(--gold)', fontWeight: 700 }}>{km(s.promet)} KM</div>}
               <div className="sit" style={{ color: s.broj_razlika || s.kasa_razlika ? 'var(--red)' : 'var(--green)' }}>
                 {s.status === 'OPEN' ? '' : s.broj_razlika || s.kasa_razlika
                   ? [s.broj_razlika ? s.broj_razlika + ' razl. ' + km(s.vrijednost_razlike) : '', s.kasa_razlika ? 'kasa ' + km(s.kasa_razlika) : ''].filter(Boolean).join(' · ')

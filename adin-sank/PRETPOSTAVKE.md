@@ -24,6 +24,11 @@
 | 19 | Mjesečna karta i dalje stoji na **30 KM** (i 24/7 na 50) jer cijenu nisi potvrdio. Ako je sada 40, promijeni je u Vlasnik → Proizvodi | Vlasnik → Proizvodi |
 | 20 | Vlasnici u pozdravu: **Edin & Kenan**; radnici na prvom ekranu: Kenan, Edin | `CONFIG` / Vlasnik → Postavke |
 
+| 21 | **Kenan** ima vlastiti PIN **2308** (promijeni ga u Postavkama); **Edin** koristi raniji zajednički PIN (početno 2580) | Vlasnik → Postavke |
+| 22 | Edin vidi **evidenciju i rad** (smjene, zalihe, članovi, raspored, greške s robom), a ne vidi promet, zaradu, platu, statistiku, cijene nabave ni vrata | — |
+| 23 | Greška je „kritična" ako je minus u evidenciji ili manjak ≥ 5 KM; manji manjak i višak su „upozorenje" | — |
+| 24 | Upozorenje na greške Kenan dobija **kad se prijavi** (nema SMS-a/e-maila). Ako želiš poruku na telefon, treba dodati e-mail obavještenja | — |
+
 ## Ograničenja koja trebaš znati
 
 - Aplikacija se mora **otvoriti** dok ima interneta (Google je servira). Kad je jednom otvorena, prodaja radi i bez interneta, a sinhronizuje se kasnije.

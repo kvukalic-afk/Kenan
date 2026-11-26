@@ -341,7 +341,7 @@ test('vlasnik: PIN, pregled (profit, plata, zalihe, članovi), historija, detalj
   const g = okruzenje();
   assert.equal(g.getAdminData('0000').code, 'PIN');
   assert.equal(g.checkPin('0000').ok, false);
-  ok(g.checkPin('2580'));
+  ok(g.checkPin('2308'));
 
   // prošla sedmica: ponedjeljak 16.11. smjena s 2 Red Bulla i jednom članarinom 24/7
   g.__postaviSat(new Date('2026-11-12T09:00:00Z'));
@@ -354,7 +354,7 @@ test('vlasnik: PIN, pregled (profit, plata, zalihe, članovi), historija, detalj
   ok(g.startShift({ shift_id: 'P2', radnik: 'Kenan', pocetna: pocetnoSve(g, { redbull: 7, voda05: 4 }) }));
   ok(g.pushEvents('P2', [ev('P2', 'SALE', 'voda05'), ev('P2', 'SALE', 'dnevna')]));
 
-  const a = ok(g.getAdminData('2580'));
+  const a = ok(g.getAdminData('2308'));
   // Red Bull profit = 4 − 2,30×1,03 = 1,631 ; ×2 = 3,262 ; clan50 profit = 30 → 33,26
   assert.equal(a.prosla.promet, 58);
   assert.equal(a.prosla.profit, 33.26);
@@ -377,24 +377,24 @@ test('vlasnik: PIN, pregled (profit, plata, zalihe, članovi), historija, detalj
 
   // članarina ističe za 3 dana / istekla prije 2 dana
   g.__ss.getSheetByName('CLANOVI').getRange(2, 6).setValue('2026-11-24');
-  let c = ok(g.getExpiringMembers('2580'));
+  let c = ok(g.getExpiringMembers('2308'));
   assert.equal(c.istice.length, 1);
   assert.equal(c.istice[0].dana, 3);
   assert.equal(c.istice[0].telefon, '062');
   g.__ss.getSheetByName('CLANOVI').getRange(2, 6).setValue('2026-11-19');
-  c = ok(g.getExpiringMembers('2580'));
+  c = ok(g.getExpiringMembers('2308'));
   assert.equal(c.istekli.length, 1);
 
   // vlasnik mijenja telefon člana
-  const sm = ok(g.saveMember('2580', { member_id: 'M-9', ime: 'Mirza M.', telefon: '062 333' }));
+  const sm = ok(g.saveMember('2308', { member_id: 'M-9', ime: 'Mirza M.', telefon: '062 333' }));
   assert.equal(sm.clan.telefon, '062 333');
   assert.equal(g.__tabela('CLANOVI').length, 1);
 
-  const h = ok(g.getHistory('2580', 30));
+  const h = ok(g.getHistory('2308', 30));
   assert.equal(h.smjene.length, 2);
   assert.equal(h.smjene[0].shift_id, 'P2', 'najnovija prva');
   assert.equal(h.smjene[1].broj_razlika, 1);
-  const d = ok(g.getShiftDetails('2580', 'P1'));
+  const d = ok(g.getShiftDetails('2308', 'P1'));
   assert.equal(d.izvjestaj.stavke.find(s => s.product_id === 'redbull').razlika_kom, -1);
   assert.equal(d.izvjestaj.usluge[0].km, 50);
   assert.equal(g.getShiftDetails('1111', 'P1').code, 'PIN');
@@ -405,11 +405,11 @@ test('zaboravljena smjena: upozorenje nakon 14 h, vlasnik zatvara bez izmišljan
   ok(g.startShift({ shift_id: 'Z', radnik: 'Edin', pocetna: pocetnoSve(g, { kong: 4 }) }));
   ok(g.pushEvents('Z', [ev('Z', 'SALE', 'kong')]));
   g.__postaviSat(new Date(SAT.getTime() + 15 * 3600000));
-  const a = ok(g.getAdminData('2580'));
+  const a = ok(g.getAdminData('2308'));
   assert.equal(a.otvorena.stara, true);
   assert.equal(a.otvorena.sati, 15);
-  assert.equal(g.adminCloseShift('2580', 'Z', '').code, 'NAPOMENA');
-  const z = ok(g.adminCloseShift('2580', 'Z', 'Edin zaboravio zatvoriti'));
+  assert.equal(g.adminCloseShift('2308', 'Z', '').code, 'NAPOMENA');
+  const z = ok(g.adminCloseShift('2308', 'Z', 'Edin zaboravio zatvoriti'));
   assert.equal(z.izvjestaj.bez_brojanja, true);
   assert.equal(z.izvjestaj.promet, 2);
   const sm = g.__tabela('SMJENE')[0];
@@ -424,7 +424,7 @@ test('zaboravljena smjena: upozorenje nakon 14 h, vlasnik zatvara bez izmišljan
   // telefon koji još ima neposlane promjene dobija jasno odbijanje
   const kasno = ok(g.pushEvents('Z', [ev('Z', 'SALE', 'kong')]));
   assert.equal(kasno.odbijeni[0].code, 'SMJENA_ZATVORENA');
-  assert.equal(g.adminCloseShift('2580', 'Z', 'opet').code, 'SMJENA_ZATVORENA');
+  assert.equal(g.adminCloseShift('2308', 'Z', 'opet').code, 'SMJENA_ZATVORENA');
 });
 
 test('PREGLED: formule upisane, bez XLOOKUP/FILTER', () => {

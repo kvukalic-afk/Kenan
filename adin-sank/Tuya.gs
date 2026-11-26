@@ -105,7 +105,7 @@ function tuyaZahtjev_(metoda, putanja, tijelo) {
 /* ═══════ JAVNI API (vlasnik) ═══════ */
 function getTuyaSettings(pin) {
   return api_(function () {
-    provjeriPin_(pin);
+    samoKenan_(pin);
     var s = tuyaPostavke_();
     return {
       postavljeno: tuyaPostavljeno_(s),
@@ -120,7 +120,7 @@ function getTuyaSettings(pin) {
 
 function saveTuyaSettings(pin, n) {
   return api_(function () {
-    provjeriPin_(pin);
+    samoKenan_(pin);
     n = n || {};
     var region = s_(n.region) || 'eu';
     if (!TUYA_HOSTOVI[region]) throw greska_('REGION', 'Nepoznat region.');
@@ -151,7 +151,7 @@ function uredjaj_(id) {
 
 function tuyaStatus(pin) {
   return api_(function () {
-    provjeriPin_(pin);
+    samoKenan_(pin);
     var s = tuyaPostavke_();
     if (!tuyaPostavljeno_(s)) return { postavljeno: false };
     var brava = uredjaj_(s.bravaId), svjetla = uredjaj_(s.svjetlaId);
@@ -175,7 +175,7 @@ function tuyaStatus(pin) {
 /** Daljinsko otključavanje (brava mora podržavati "otključavanje bez šifre" preko oblaka). */
 function tuyaOtkljucaj(pin) {
   return api_(function () {
-    provjeriPin_(pin);
+    samoKenan_(pin);
     var s = tuyaPostavke_();
     if (!s.bravaId) throw greska_('NEMA_BRAVE', 'Nije upisan ID brave.');
     var baza = '/v1.0/devices/' + encodeURIComponent(s.bravaId) + '/door-lock';
@@ -195,7 +195,7 @@ function tuyaOtkljucaj(pin) {
 
 function tuyaSvjetla(pin, upali) {
   return api_(function () {
-    provjeriPin_(pin);
+    samoKenan_(pin);
     var s = tuyaPostavke_();
     if (!s.svjetlaId) throw greska_('NEMA_SVJETLA', 'Nije upisan ID prekidača za svjetla.');
     tuyaZahtjev_('POST', '/v1.0/devices/' + encodeURIComponent(s.svjetlaId) + '/commands',
@@ -288,7 +288,7 @@ function sinhronizujUlaze() {
 /** Vlasnik: ulazi za zadnjih N dana (+ odmah povuče nove s brave). */
 function getUlazi(pin, dana, osvjezi) {
   return api_(function () {
-    provjeriPin_(pin);
+    samoKenan_(pin);
     var poruka = '';
     if (osvjezi) {
       try { var r = sinhronizujUlaze(); poruka = r.novih ? 'Povučeno ' + r.novih + ' novih ulaza.' : 'Nema novih ulaza.'; }
@@ -324,7 +324,7 @@ function automatikaUkljucena_() {
 
 function tuyaAutomatika(pin, ukljuci) {
   return api_(function () {
-    provjeriPin_(pin);
+    samoKenan_(pin);
     ScriptApp.getProjectTriggers().forEach(function (t) {
       if (t.getHandlerFunction() === 'sinhronizujUlaze') ScriptApp.deleteTrigger(t);
     });

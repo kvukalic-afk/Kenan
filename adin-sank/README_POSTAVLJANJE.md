@@ -110,6 +110,14 @@ Najlakše u aplikaciji: **Vlasnik › → Proizvodi** (+ Novi proizvod, klik na 
 - **💶 Uzeto iz kase**: ko je uzeo koliko novca i zašto.
 - Vlasnik → **Danas**: kartica "Potrošnja i uzeto" po osobi, danas i ovaj mjesec (vrijednost po nabavnoj cijeni).
 
+## 10d. Dva naloga vlasnika, detektor grešaka i statistika po danima
+
+- **Kenan** (šifra **2308**): vidi sve — Danas, Greške, Dani (statistika za svaki dan), Raspored, Karte, Vrata, Smjene, Članovi, Zalihe, Proizvodi, Mjesec, Postavke.
+- **Edin** (raniji PIN vlasnika, početno 2580): samo evidencija i rad — Danas (bez novca), Greške (samo roba), Raspored, Smjene (bez prometa), Članovi, Zalihe i svoj PIN u Postavkama. Ograničenje radi na serveru, ne samo u prikazu.
+- Svako mijenja **svoj** PIN u Vlasnik → Postavke. Dva naloga ne mogu imati isti PIN.
+- **Detektor grešaka**: traži minus robe (manjak ili više prodano nego što je bilo) i minus para (manjak u kasi, ili kasa u minusu) u smjeni u toku i u smjenama zadnjih 30 dana. Uz svaku grešku piše **gdje** je i **kako provjeriti**. Kad se Kenan prijavi, odmah iskoči upozorenje; „Pregledao sam" gasi grešku.
+- **Dani**: lista zadnjih 30 dana (promet, zarada, smjene, razlike), klik na dan daje sve: smjene, prodaju po proizvodu, promet po satu, osoblje, napomene, greške i raspored.
+
 ## 11. Provjera da sve radi (5 minuta)
 
 Uradi ovo jednom nakon postavljanja (poslije možeš obrisati redove testa iz SMJENE/DOGADJAJI/INVENTURA):
