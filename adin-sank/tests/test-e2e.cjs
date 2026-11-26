@@ -332,6 +332,17 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     const rez = await page.getByTestId('provjera-rezultat').textContent();
     assert.ok(/Mega Watt✓/.test(rez) && /Hell 0,5 L✓/.test(rez) && /Monster✓/.test(rez), rez);
     await page.screenshot({ path: path.join(SLIKE, '8d-provjera.png'), fullPage: true });
+    // početak od nule: samo uz potvrdu, a staro ostaje u arhivi
+    await page.getByTestId('reset-otvori').click();
+    assert.equal(await page.getByTestId('reset-potvrdi').isDisabled(), true);
+    await page.getByTestId('reset-rijec').fill('nula');
+    await page.screenshot({ path: path.join(SLIKE, '8e-reset.png'), fullPage: true });
+    await page.getByTestId('reset-potvrdi').click();
+    await page.getByTestId('reset-gotovo').waitFor();
+    assert.equal(g.__tabela('SMJENE').length, 0);
+    assert.equal(g.__tabela('DOGADJAJI').length, 0);
+    assert.ok(g.__ss.getSheets().some(x => /^ARHIVA .* DOGADJAJI$/.test(x.getName())));
+    assert.ok(g.__tabela('PROIZVODI').length > 15, 'proizvodi ostaju');
     await page.locator('[data-tab="danas"]').click();
 
     // vlasnik dodaje novi proizvod

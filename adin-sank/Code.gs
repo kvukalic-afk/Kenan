@@ -786,7 +786,7 @@ function osigurajNovaPica_(uradjeno) {
     ids[n.naziv] = pid;
     uradjeno.push('dodano piće ' + n.naziv);
   });
-  if (!Object.keys(prijavljenoStanje_()).length) {
+  if (!Object.keys(prijavljenoStanje_()).length && !svojstva_().getProperty('BEZ_PODSJETNIKA')) {
     var stanje = { powerade: 2, voda1: 23, voda05: 72, redbull: 8, sultan_kola: 12 };
     NOVA_PICA.forEach(function (n) { stanje[ids[n.naziv]] = n.stanje; });
     svojstva_().setProperty('PRIJAVLJENO_STANJE', JSON.stringify(stanje));
@@ -2284,5 +2284,35 @@ function popraviSistem(pin) {
       uradjeno.forEach(function (u) { poruke.push(u); });
     });
     return { poruke: poruke, stanje: stanjeSistema_() };
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ *  POČETAK OD NULE (Kenan): arhivira smjene/događaje/inventuru/ulaze i čisti ih; proizvodi, cijene, članovi i raspored ostaju
+ * ═══════════════════════════════════════════════════════════════ */
+function resetNaNulu(pin, potvrda) {
+  return api_(function () {
+    samoKenan_(pin);
+    if (s_(potvrda).toUpperCase() !== 'NULA') throw greska_('POTVRDA', 'Za potvrdu upiši riječ NULA.');
+    return zakljucano_(function () {
+      var ss = ss_();
+      var oznaka = fmt_(nowDate_(), 'yyyy-MM-dd HH-mm');
+      var rezultat = { arhivirano: {}, oznaka: oznaka };
+      [TAB.SMJENE, TAB.DOGADJAJI, TAB.INVENTURA, TAB.ULAZI].forEach(function (ime) {
+        var sh = list_(ime);
+        var lr = sh.getLastRow(), lc = sh.getLastColumn();
+        if (lr < 2 || lc < 1) { rezultat.arhivirano[ime] = 0; return; }
+        var podaci = sh.getRange(1, 1, lr, lc).getValues();
+        var arh = ss.insertSheet('ARHIVA ' + oznaka + ' ' + ime);
+        arh.getRange(1, 1, podaci.length, lc).setValues(podaci);   // prvo sačuvaj kopiju
+        var provjera = arh.getLastRow();
+        if (provjera !== podaci.length) throw greska_('ARHIVA', 'Arhiviranje ' + ime + ' nije uspjelo. Ništa nije obrisano.');
+        sh.getRange(2, 1, lr - 1, lc).clearContent();               // tek onda očisti (zaglavlje ostaje)
+        rezultat.arhivirano[ime] = lr - 1;
+      });
+      ['PRIJAVLJENO_STANJE', 'GRESKE_PREGLEDANE', 'MIGRACIJE_GRESKE'].forEach(function (k) { svojstva_().deleteProperty(k); });
+      svojstva_().setProperty('BEZ_PODSJETNIKA', '1');   // nikakvi podsjetnici stanja: radnik broji sve od nule
+      return rezultat;
+    });
   });
 }

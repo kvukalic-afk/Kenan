@@ -590,3 +590,40 @@ test('provjera sistema i popravka: pokaže šta fali i jednim klikom doda nova p
   ok(g.popraviSistem('2308'));
   assert.equal(g.__tabela('PROIZVODI').filter(p => p.naziv === 'Monster').length, 1);
 });
+
+test('POČETAK OD NULE: arhivira i čisti smjene/događaje/inventuru/ulaze; proizvodi, članovi, raspored ostaju; novi start bez podsjetnika', () => {
+  const g = okruzenje();
+  ok(g.startShift({ shift_id: 'R1', radnik: 'Kenan', pocetna: pocetno(g, { redbull: 5 }), kasa_pocetna: '10' }));
+  ok(g.pushEvents('R1', [{ event_id: 'r1', shift_id: 'R1', tip: 'SALE', product_id: 'redbull', kolicina: 2 }]));
+  ok(g.closeShift('R1', pocetno(g, { redbull: 3 }), '18', ''));
+  ok(g.startShift({ shift_id: 'R2', radnik: 'Edin', pocetna: pocetno(g), kasa_pocetna: '0' })); // ostavljena otvorena
+  ok(g.saveMember('2308', { ime: 'Član Ostaje', telefon: '061' }));
+  const brojProizvoda = g.__tabela('PROIZVODI').length, brojTermina = g.__tabela('TRENINZI').length, brojClanova = g.__tabela('CLANOVI').length;
+  assert.equal(g.resetNaNulu('2580', 'NULA').code, 'DOZVOLA');
+  assert.equal(g.resetNaNulu('2308', 'da').code, 'POTVRDA');
+  assert.equal(g.__tabela('SMJENE').length, 2, 'bez potvrde ništa se ne briše');
+  const r = ok(g.resetNaNulu('2308', 'nula'));
+  assert.deepEqual([r.arhivirano.SMJENE, r.arhivirano.DOGADJAJI > 0, r.arhivirano.INVENTURA > 0], [2, true, true]);
+  // očišćeno
+  for (const t of ['SMJENE', 'DOGADJAJI', 'INVENTURA', 'ULAZI']) assert.equal(g.__tabela(t).length, 0, t);
+  // zaglavlja ostaju
+  assert.equal(g.__ss.getSheetByName('SMJENE').getRange(1, 1).getValue(), 'shift_id');
+  // arhiva sadrži staro (zaglavlje + 2 smjene)
+  const arh = g.__ss.getSheets().filter(x => /^ARHIVA .* SMJENE$/.test(x.getName()));
+  assert.equal(arh.length, 1);
+  assert.equal(arh[0].getLastRow(), 3);
+  // ostaje: proizvodi, članovi, raspored
+  assert.equal(g.__tabela('PROIZVODI').length, brojProizvoda);
+  assert.equal(g.__tabela('CLANOVI').length, brojClanova);
+  assert.equal(g.__tabela('TRENINZI').length, brojTermina);
+  // novi početak: nema aktivne smjene, nema podsjetnika "prošli put" ni "vlasnik javio"
+  const b = ok(g.getBootstrap());
+  assert.equal(b.aktivna, null);
+  assert.deepEqual(JSON.parse(JSON.stringify(b.prijedlog)), {});
+  assert.deepEqual(JSON.parse(JSON.stringify(b.prijavljeno)), {});
+  g.setupSpreadsheet(); g.popraviSistem('2308');
+  assert.deepEqual(JSON.parse(JSON.stringify(ok(g.getBootstrap()).prijavljeno)), {}, 'popravka ne vraća podsjetnik');
+  // Edin počinje: prebroji sve + gotovinu u kasi
+  assert.equal(g.startShift({ shift_id: 'N1', radnik: 'Edin', pocetna: pocetno(g, { redbull: 7 }) }).ok, true);
+  assert.equal(ok(g.getBootstrap()).aktivna.kasa_pocetna, 0);
+});

@@ -2350,9 +2350,46 @@ function AdminPostavke({ d, osvjezi, pin, setPin, pokaziToast }) {
   return (
     <>
       {d.ja === 'Kenan' && <ProvjeraSistema pin={pin} osvjezi={osvjezi} pokaziToast={pokaziToast} />}
+      {d.ja === 'Kenan' && <ResetNaNulu pin={pin} osvjezi={osvjezi} pokaziToast={pokaziToast} />}
       {d.ja === 'Kenan' && <AdminListe d={d} pin={pin} osvjezi={osvjezi} pokaziToast={pokaziToast} />}
       <AdminPin pin={pin} setPin={setPin} pokaziToast={pokaziToast} />
     </>
+  );
+}
+
+/** Početak od nule: arhivira i čisti smjene/prodaju/inventuru/ulaze. Proizvodi, cijene, članovi i raspored ostaju. */
+function ResetNaNulu({ pin, osvjezi, pokaziToast }) {
+  const [otvoreno, setOtvoreno] = useState(false);
+  const [rijec, setRijec] = useState('');
+  const [radi, setRadi] = useState(false);
+  const [gr, setGr] = useState('');
+  const [gotovo, setGotovo] = useState(null);
+  const pokreni = async () => {
+    setRadi(true); setGr('');
+    try {
+      const r = await api('resetNaNulu', pin, rijec);
+      setGotovo(r); setOtvoreno(false); setRijec('');
+      ls.del(LS.RED); ls.del(LS.START); obrisiNacrte();
+      pokaziToast('✓ Sve je vraćeno na nulu. Radnik može početi.', 'ok'); osvjezi();
+    } catch (e) { setGr(e.message); } finally { setRadi(false); }
+  };
+  return (
+    <div className="card" style={{ borderColor: 'rgba(229,84,75,.45)' }}>
+      <div className="lab" style={{ color: 'var(--red)' }}>POČETAK OD NULE</div>
+      <div className="sit">Za čist početak: radnik prebroji sve piće i gotovinu u kasi, i to je prvo stanje. Ovo čisti probne i stare smjene, prodaju, inventuru i ulaze, i zatvara smjenu koja je ostala otvorena. Proizvodi, cijene, članovi i raspored ostaju.</div>
+      <div className="info" style={{ marginTop: 8 }}>Prije čišćenja se sve <b style={{ color: 'var(--text)' }}>kopira u nove tabove ARHIVA…</b> u Google tabeli, pa se ništa ne gubi nepovratno.</div>
+      {gotovo && <div className="good" style={{ marginTop: 10 }} data-testid="reset-gotovo">✓ Očišćeno. Arhivirano: smjena {gotovo.arhivirano.SMJENE}, događaja {gotovo.arhivirano.DOGADJAJI}, redova inventure {gotovo.arhivirano.INVENTURA}.</div>}
+      {!otvoreno && <button className="btn2" style={{ marginTop: 12, color: 'var(--red)', borderColor: 'rgba(229,84,75,.5)' }} data-testid="reset-otvori" onClick={() => setOtvoreno(true)}>Vrati sve na nulu…</button>}
+      {otvoreno && (
+        <>
+          <div className="lab" style={{ marginTop: 12 }}>ZA POTVRDU UPIŠI: NULA</div>
+          <input className="inp" data-testid="reset-rijec" autoCapitalize="characters" value={rijec} onChange={e => setRijec(e.target.value)} placeholder="NULA" />
+          {gr && <div className="err" style={{ marginTop: 8 }}>{gr}</div>}
+          <button className="btn red" data-testid="reset-potvrdi" disabled={radi || rijec.trim().toUpperCase() !== 'NULA'} onClick={pokreni}>{radi ? 'Čistim…' : 'Da, vrati sve na nulu'}</button>
+          <button className="btn2" style={{ marginTop: 8 }} onClick={() => { setOtvoreno(false); setRijec(''); setGr(''); }}>Odustani</button>
+        </>
+      )}
+    </div>
   );
 }
 

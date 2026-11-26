@@ -100,6 +100,7 @@ class MockRange {
     return this;
   }
   setValue(x) { this.sheet._set(this.r, this.c, x); return this; }
+  clearContent() { for (let i = 0; i < this.nr; i++) for (let j = 0; j < this.nc; j++) this.sheet._set(this.r + i, this.c + j, ''); return this; }
   setFormula(f) { this.sheet._set(this.r, this.c, f); this.sheet.formule[this.r + ',' + this.c] = f; return this; }
   setFormulas(f) { f.forEach((row, i) => row.forEach((x, j) => this.sheet._set(this.r + i, this.c + j, x))); return this; }
 }
