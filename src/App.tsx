@@ -28,6 +28,8 @@ import { Dokumentacija } from './screens/Dokumentacija';
 import { Asistent } from './screens/Asistent';
 import { Uvid } from './screens/Uvid';
 import { PametniAlati } from './screens/PametniAlati';
+import { InstrumentDetalj, Instrumenti, Primjena, Sociometrija } from './screens/Instrumenti';
+import { PrintInstrument, PrintSociometrijaUpitnik, PrintTestiranje } from './print/PrintInstrumenti';
 import { PrintAktivnost, PrintAnaliza, PrintDnevnik, PrintDokumentacija, PrintSpiskovi, PrintUvidUcenici, PrintObrazac, PrintUsavrsavanje, PrintIzvjestaj, PrintPeriod, PrintPlan, PrintKarton, PrintRadionica, PrintRazgovor, PrintSaradnja } from './print/Print';
 import type { Period } from './lib/statistika';
 
@@ -157,6 +159,17 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
   else if (d0 === 'dokumentacija') ekran = <Dokumentacija pocetniTab={ruta.upit.get('tab') ?? undefined} />;
   else if (d0 === 'uvid') ekran = <Uvid />;
   else if (d0 === 'ai') ekran = <PametniAlati />;
+  else if (d0 === 'instrumenti') {
+    const sifra = ruta.upit.get('sifra') ?? undefined;
+    if (!d1) ekran = <Instrumenti key={sifra ?? ''} sifra={sifra} />;
+    else if (d2 === 'primjena') {
+      navigacija = false;
+      const id = ruta.upit.get('id') ?? undefined;
+      ekran = d1 === 'sociometrija'
+        ? <Sociometrija key={id ?? 'novo'} testId={id} razred={ruta.upit.get('razred') ?? undefined} />
+        : <Primjena key={`${d1}:${id ?? ''}:${sifra ?? ''}`} id={d1} testId={id} sifra={sifra} informant={ruta.upit.get('informant') ?? undefined} />;
+    } else ekran = <InstrumentDetalj key={d1} id={d1} sifra={sifra} />;
+  }
   else if (d0 === 'asistent') { navigacija = false; ekran = <Asistent pocetnoPitanje={ruta.upit.get('pitanje') ?? undefined} />; }
   else if (d0 === 'plan') ekran = <PlanRada godina={ruta.upit.get('godina') ? Number(ruta.upit.get('godina')) : undefined} mjesec={ruta.upit.get('mjesec') ?? undefined} ai={ruta.upit.get('ai') === '1'} />;
   else if (d0 === 'unos-tekst') { ekran = <UnosIzTeksta />; navigacija = false; }
@@ -184,6 +197,9 @@ function Ekrani({ otkljucano }: { otkljucano: boolean }) {
       : d1 === 'usavrsavanje' ? <PrintUsavrsavanje godina={Number(d2)} />
       : d1 === 'dokumentacija' ? <PrintDokumentacija godina={Number(d2)} />
       : d1 === 'spiskovi' ? <PrintSpiskovi razred={d2} />
+      : d1 === 'instrument' ? <PrintInstrument id={d2} />
+      : d1 === 'testiranje' ? <PrintTestiranje id={d2} />
+      : d1 === 'sociometrija' ? <PrintSociometrijaUpitnik razred={d2} />
       : d1 === 'plan' ? <PrintPlan godina={Number(d2)} mjesec={d3} />
       : d1 === 'dnevnik' ? <PrintDnevnik mjesec={d2} uvid={ruta.upit.get('uvid') === '1'} />
       : d1 === 'uvid-ucenici' ? <PrintUvidUcenici od={d2} do={d3} />

@@ -139,6 +139,27 @@ export interface MojDokument extends Zapis {
   zaAI: boolean; // smije li AI asistent čitati ovaj dokument
 }
 
+/** Primjena psihološkog instrumenta (upitnik, skala) ili sociometrija razreda. */
+export interface Testiranje extends Zapis {
+  datum: string;
+  instrument: string; // id iz lib/instrumenti
+  sifra: string; // učenik; '' za ispitivanje razreda (sociometrija)
+  razred: string;
+  informant: string; // 'dijete' | 'roditelj' | 'nastavnik'
+  odgovori: Record<string, number>;
+  /** rezultat u trenutku spremanja */
+  rezultat: { id: string; naziv: string; vrijednost: number | null; nivo: string; opis: string }[];
+  upozorenja: string[];
+  napomena: string;
+  /** sociometrija */
+  kriterij?: string;
+  brojIzbora?: number;
+  izbori?: Record<string, string[]>;
+  odsutni?: string[];
+  /** povezani unos u dnevniku rada (Psihološko testiranje / ispitivanje) */
+  aktivnostId?: string;
+}
+
 export interface Postavke {
   id: 'postavke';
   nazivSkole: string;
@@ -176,7 +197,7 @@ export interface StavkaSifrarnika extends Zapis {
   sakriveno: boolean;
 }
 
-export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan' | 'brzeBiljeske' | 'analize' | 'kontrola' | 'obrasci' | 'dokumenti';
+export type Tabela = 'ucenici' | 'razgovori' | 'radionice' | 'saradnja' | 'sifrarnik' | 'razredi' | 'aktivnosti' | 'plan' | 'brzeBiljeske' | 'analize' | 'kontrola' | 'obrasci' | 'dokumenti' | 'testiranja';
 
 export interface Obrisano {
   id: string;

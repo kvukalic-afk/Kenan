@@ -17,12 +17,16 @@ import { punoIme, type Ucenik, type Aktivnost, type Analiza, type PopunjenObraza
 import { GRUPE } from '../lib/dokumentacija';
 import { ucitajPripremu, type PripremaRadionice } from '../lib/aiAlati';
 import { useKontrola } from '../lib/useKontrola';
+import { formatVrijednosti, instrument, NAZIV_INFORMANTA, type Informant } from '../lib/instrumenti';
 import './print.css';
 
-function Dokument({ naslov, podnaslov, nazivFajla, postavke, children, javno = false }: {
+export function Dokument({ naslov, podnaslov, nazivFajla, postavke, children, javno = false, bezPotpisa = false, oznaka = 'Školski psiholog' }: {
   naslov: string; podnaslov?: string; nazivFajla: string; postavke: Postavke; children: ReactNode;
   /** dokument za dijeljenje (letak, priprema) – bez oznake POVJERLJIVO */
   javno?: boolean;
+  /** upitnik za učenika/roditelja – bez potpisa psihologa u podnožju */
+  bezPotpisa?: boolean;
+  oznaka?: string;
 }) {
   useEffect(() => {
     const stari = document.title;
@@ -46,12 +50,12 @@ function Dokument({ naslov, podnaslov, nazivFajla, postavke, children, javno = f
               <tr><td>
                 <div className="dok-zaglavlje">
                   <span className="skola">{postavke.nazivSkole}</span>
-                  {javno ? <span className="dok-oznaka">Školski psiholog</span> : <span className="povjerljivo">POVJERLJIVO</span>}
+                  {javno ? <span className="dok-oznaka">{oznaka}</span> : <span className="povjerljivo">POVJERLJIVO</span>}
                 </div>
               </td></tr>
             </thead>
             <tfoot>
-              <tr><td>
+              {bezPotpisa ? <tr><td><div className="dok-podnozje tanko" /></td></tr> : <tr><td>
                 <div className="dok-podnozje">
                   <div>
                     Datum: {prikaz(danasIso())}<br />
@@ -62,7 +66,7 @@ function Dokument({ naslov, podnaslov, nazivFajla, postavke, children, javno = f
                     <span className="linija" aria-label="Potpis" />
                   </div>
                 </div>
-              </td></tr>
+              </td></tr>}
             </tfoot>
             <tbody>
               <tr><td>
@@ -228,15 +232,16 @@ export function PrintSaradnja({ id }: { id: string }) {
 export function PrintKarton({ sifra }: { sifra: string }) {
   const postavke = usePostavke();
   const p = useLiveQuery(async () => {
-    const [ucenik, razgovori, saradnja, radionice, biljeske, analize] = await Promise.all([
+    const [ucenik, razgovori, saradnja, radionice, biljeske, analize, testiranja] = await Promise.all([
       db.ucenici.where('sifra').equals(sifra).first(),
       db.razgovori.where('sifra').equals(sifra).toArray(),
       db.saradnja.where('sifra').equals(sifra).toArray(),
       db.radionice.where('ucenicizaPracenje').equals(sifra).toArray(),
       db.brzeBiljeske.where('sifra').equals(sifra).toArray(),
       db.analize.where('sifra').equals(sifra).toArray(),
+      db.testiranja.where('sifra').equals(sifra).toArray(),
     ]);
-    return { ucenik, razgovori, saradnja, radionice, biljeske, analize };
+    return { ucenik, razgovori, saradnja, radionice, biljeske, analize, testiranja };
   }, [sifra]);
   const uc = useUcenikZaDokument(sifra);
   if (!p) return <Ucitavanje />;
@@ -311,6 +316,25 @@ export function PrintKarton({ sifra }: { sifra: string }) {
             ))}
           </tbody>
         </table>
+      )}
+
+      {p.testiranja.length > 0 && (
+        <>
+          <h2>Primijenjeni instrumenti</h2>
+          <table className="lista-tab">
+            <thead><tr><th style={{ width: '12%' }}>Datum</th><th style={{ width: '16%' }}>Instrument</th><th style={{ width: '14%' }}>Popunio</th><th>Rezultat</th></tr></thead>
+            <tbody>
+              {[...p.testiranja].sort(poDatumu).map((t) => (
+                <tr key={t.id}>
+                  <td>{prikaz(t.datum)}</td>
+                  <td>{instrument(t.instrument)?.kratko ?? t.instrument}</td>
+                  <td>{NAZIV_INFORMANTA[t.informant as Informant] ?? t.informant}</td>
+                  <td className="tekst-celija">{[t.rezultat.filter((r) => r.vrijednost !== null).map((r) => `${r.naziv}: ${formatVrijednosti(r.vrijednost)}${r.opis ? ` – ${r.opis}` : ''}`).join('\n'), ...t.upozorenja.map((u) => `⚠ ${u}`), t.napomena && `Napomena: ${t.napomena}`].filter(Boolean).join('\n')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
 
       {p.analize.length > 0 && (

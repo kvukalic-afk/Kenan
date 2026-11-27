@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Aktivnost, Analiza, BrzaBiljeska, KontrolnaStavka, MojDokument, PopunjenObrazac, Nacrt, PlanStavka, Obrisano, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
+import type { Aktivnost, Analiza, BrzaBiljeska, KontrolnaStavka, MojDokument, PopunjenObrazac, Testiranje, Nacrt, PlanStavka, Obrisano, Postavke, Radionica, Razgovor, Razred, Saradnja, StavkaSifrarnika, Ucenik } from '../types';
 
 export class EvidencijaDB extends Dexie {
   ucenici!: Table<Ucenik, string>;
@@ -18,6 +18,7 @@ export class EvidencijaDB extends Dexie {
   kontrola!: Table<KontrolnaStavka, string>;
   obrasci!: Table<PopunjenObrazac, string>;
   dokumenti!: Table<MojDokument, string>;
+  testiranja!: Table<Testiranje, string>;
 
   constructor(ime = 'evidencija-psihologa') {
     super(ime);
@@ -53,6 +54,8 @@ export class EvidencijaDB extends Dexie {
       obrasci: 'id, vrsta, datum, sifra, createdAt',
       dokumenti: 'id, kategorija, createdAt',
     });
+    // v7: psihološki instrumenti (upitnici, skale, sociometrija)
+    this.version(7).stores({ testiranja: 'id, datum, sifra, instrument, razred, createdAt' });
   }
 }
 

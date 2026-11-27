@@ -23,11 +23,11 @@ export function opcije(sve: StavkaSifrarnika[], kat: Kategorija, trenutna?: stri
 }
 
 export async function snimakBaze(): Promise<Snimak> {
-  const [ucenici, razgovori, radionice, saradnja, sifrarnik, razredi, aktivnosti, plan, brzeBiljeske, analize, kontrola, obrasci, dokumenti, obrisano, postavke] = await Promise.all([
+  const [ucenici, razgovori, radionice, saradnja, sifrarnik, razredi, aktivnosti, plan, brzeBiljeske, analize, kontrola, obrasci, dokumenti, testiranja, obrisano, postavke] = await Promise.all([
     db.ucenici.toArray(), db.razgovori.toArray(), db.radionice.toArray(), db.saradnja.toArray(),
-    db.sifrarnik.toArray(), db.razredi.toArray(), db.aktivnosti.toArray(), db.plan.toArray(), db.brzeBiljeske.toArray(), db.analize.toArray(), db.kontrola.toArray(), db.obrasci.toArray(), db.dokumenti.toArray(), db.obrisano.toArray(), db.postavke.get('postavke'),
+    db.sifrarnik.toArray(), db.razredi.toArray(), db.aktivnosti.toArray(), db.plan.toArray(), db.brzeBiljeske.toArray(), db.analize.toArray(), db.kontrola.toArray(), db.obrasci.toArray(), db.dokumenti.toArray(), db.testiranja.toArray(), db.obrisano.toArray(), db.postavke.get('postavke'),
   ]);
-  return { ucenici, razgovori, radionice, saradnja, sifrarnik, razredi, aktivnosti, plan, brzeBiljeske, analize, kontrola, obrasci, dokumenti, obrisano, postavke: postavke ?? null };
+  return { ucenici, razgovori, radionice, saradnja, sifrarnik, razredi, aktivnosti, plan, brzeBiljeske, analize, kontrola, obrasci, dokumenti, testiranja, obrisano, postavke: postavke ?? null };
 }
 
 /** Mapa šifra → učenik i razred → razrednik, za prikaz imena svuda u appu. */

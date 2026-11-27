@@ -137,3 +137,61 @@ table.dokument > thead > tr > td, table.dokument > tfoot > tr > td, table.dokume
 .listic { height: 112mm; padding: 8pt 12pt; }
 .listic + .listic { margin-top: 5mm; }
 .listic .crta-red { height: 6.5mm; }
+
+/* ---------- Instrumenti ---------- */
+.dok-podnozje.tanko { border-top: 0.6pt solid #999; margin-top: 10pt; padding-top: 0; }
+.upitnik-glava { width: 100%; border-collapse: collapse; margin: 4pt 0 8pt; font-size: 10.5pt; }
+.upitnik-glava td { padding: 4pt 4pt 4pt 0; vertical-align: bottom; }
+.upitnik-glava .upisano { display: inline-block; min-width: 30mm; border-bottom: 0.7pt solid #333; padding: 0 4pt; font-weight: 600; }
+.upitnik-glava td:first-child .upisano { min-width: 60mm; }
+.upitnik-uputa { font-size: 10.5pt; line-height: 1.45; margin: 4pt 0 8pt; padding: 6pt 9pt; background: #f1f6f7; border-left: 2.5pt solid #17556b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+table.upitnik { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
+table.upitnik th, table.upitnik td { border: 0.6pt solid #888; padding: 5pt 5pt; vertical-align: middle; color: #111; }
+table.upitnik thead th { background: #e9f0f2; font-size: 8.5pt; font-weight: 700; line-height: 1.2; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+table.upitnik thead th.tvrdnja { text-align: left; font-size: 10pt; }
+table.upitnik td.rb { width: 7mm; text-align: center; color: #555; font-size: 9pt; }
+table.upitnik th.rb { width: 7mm; }
+table.upitnik th.odg, table.upitnik td.odg { width: 17mm; text-align: center; }
+table.upitnik.op-6 th.odg, table.upitnik.op-6 td.odg { width: 13mm; }
+table.upitnik.op-3 th.odg, table.upitnik.op-3 td.odg { width: 20mm; }
+table.upitnik tbody tr:nth-child(even) td { background: #f7f9fa; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+table.upitnik tr { break-inside: avoid; page-break-inside: avoid; }
+.krug { display: inline-block; width: 9pt; height: 9pt; border: 0.9pt solid #333; border-radius: 50%; }
+.kvadrat { display: inline-block; width: 8pt; height: 8pt; border: 0.9pt solid #333; vertical-align: -1pt; }
+.upitnik-dodatno { margin-top: 8pt; break-inside: avoid; font-size: 10.5pt; }
+.upitnik-dodatno p { margin: 0 0 3pt; }
+.upitnik-opcije { display: flex; flex-wrap: wrap; gap: 4pt 16pt; }
+.upitnik-hvala { text-align: center; margin-top: 12pt; font-weight: 600; }
+.upitnik-izvor, .malo-print { font-size: 8pt; color: #555; margin-top: 8pt; line-height: 1.35; }
+.p-lista { margin: 0 0 8pt; padding-left: 16pt; font-size: 10pt; } .p-lista li { margin-bottom: 3pt; }
+.p-alarm-okvir { border: 1.2pt solid #b42318; background: #fde8e6; color: #7a160f; padding: 6pt 9pt; margin: 8pt 0; font-size: 10pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.p-alarm-okvir div + div { margin-top: 3pt; }
+.p-granicno { color: #8a3a05; font-weight: 600; }
+.p-povisen, .p-alarm { color: #a01b12; font-weight: 700; }
+.bod-mreza { border-collapse: collapse; margin: 6pt 0 10pt; }
+.bod-mreza td { border: 0.6pt solid #777; width: 16mm; height: 9mm; padding: 1pt 3pt; vertical-align: top; }
+.bod-br { display: block; font-size: 7.5pt; color: #555; }
+.abc-tabela { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+.abc-tabela th { background: #e9f0f2; border: 0.6pt solid #777; padding: 3pt; text-align: left; vertical-align: bottom; line-height: 1.2; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.abc-tabela td { border: 0.6pt solid #999; height: 14mm; }
+.crte-print div { border-bottom: 0.6pt solid #999; height: 8mm; }
+.odg-tab td { font-size: 9pt; padding: 2pt 5pt !important; }
+.odg-niz { font-size: 9pt; font-family: Consolas, 'Courier New', monospace; line-height: 1.6; word-spacing: 2pt; }
+.socio-listici { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.socio-listic { border: 1pt dashed #777; padding: 7pt 9pt; break-inside: avoid; page-break-inside: avoid; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
+.socio-listic-vrh { display: flex; justify-content: space-between; font-size: 7.5pt; color: #555; border-bottom: 0.5pt solid #bbb; padding-bottom: 2pt; margin-bottom: 5pt; }
+.socio-listic-ime .upisano { display: inline-block; min-width: 40mm; border-bottom: 0.6pt solid #333; font-weight: 700; }
+.socio-listic-pitanje { font-weight: 700; font-size: 11pt; margin: 6pt 0 2pt !important; color: #10465a; }
+.socio-listic-uputa { font-size: 8.5pt; color: #444; margin: 0 0 4pt !important; }
+.socio-listic-crta { border-bottom: 0.6pt solid #777; height: 8mm; display: flex; align-items: flex-end; font-weight: 700; color: #555; }
+.socio-listic-tajno { font-size: 7.5pt; color: #666; margin: 5pt 0 0 !important; font-style: italic; }
+.socio-matrica { border-collapse: collapse; font-size: 7.5pt; width: 100%; table-layout: fixed; }
+.socio-matrica th, .socio-matrica td { border: 0.5pt solid #888; text-align: center; padding: 1pt 0; height: 4.6mm; }
+.socio-matrica th.ime { text-align: left; width: 38mm; padding-left: 3pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.socio-matrica td.dijag { background: #d6d6d6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.socio-matrica td.uzaj { background: #cfe6d8; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.socio-matrica td.zbir, .socio-matrica tr.primio td { font-weight: 700; background: #eef3f4; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.socio-matrica thead th { background: #e9f0f2; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.socio-matrica thead th:not(.ime) { width: auto; }
+
+.print-stranica .tabela.socio-pregled td, .print-stranica .tabela.socio-pregled th { font-size: 9.5pt; padding: 2pt 5pt; }

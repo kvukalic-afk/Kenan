@@ -52,6 +52,7 @@ export function PlutajuceDugme() {
           <button role="menuitem" className="dugme" onClick={() => izaberi('/novi/saradnja')}><Ikona ime="saradnja" /> Saradnja</button>
           <button role="menuitem" className="dugme" onClick={() => izaberi('/novi/aktivnost')}><Ikona ime="aktivnost" /> Ostala aktivnost</button>
           <button role="menuitem" className="dugme" onClick={() => izaberi('/obrazac/sluzbena-biljeska')}><Ikona ime="prazno" /> Službena bilješka</button>
+          <button role="menuitem" className="dugme" onClick={() => izaberi('/instrumenti')}><Ikona ime="knjiga" /> Instrumenti (upitnici)</button>
           <button role="menuitem" className="dugme ai-stavka" onClick={() => izaberi('/unos-tekst')}><Ikona ime="mikrofon" /> Ispričaj dan (AI)</button>
           <button role="menuitem" className="dugme ai-stavka" onClick={() => izaberi('/ai')}><Ikona ime="iskra" /> Pametni alati</button>
         </div>

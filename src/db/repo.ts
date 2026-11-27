@@ -74,7 +74,7 @@ export async function sacuvajUcenika(podaci: Omit<Ucenik, 'id' | 'createdAt' | '
     createdAt: stari?.createdAt ?? t,
     updatedAt: t,
   };
-  await db.transaction('rw', [db.ucenici, db.razgovori, db.saradnja, db.radionice], async () => {
+  await db.transaction('rw', [db.ucenici, db.razgovori, db.saradnja, db.radionice, db.testiranja], async () => {
     if (stari && stari.sifra !== zapis.sifra) await promijeniSifruU(stari.sifra, zapis.sifra);
     await db.ucenici.put(zapis);
   });
@@ -89,6 +89,15 @@ async function promijeniSifruU(stara: string, nova: string) {
   await db.radionice.where('ucenicizaPracenje').equals(stara).modify((r) => {
     r.ucenicizaPracenje = r.ucenicizaPracenje.map((s) => (s === stara ? nova : s));
     r.updatedAt = t;
+  });
+  await db.testiranja.where('sifra').equals(stara).modify({ sifra: nova, updatedAt: t });
+  // sociometrija: izbori su zapisani po šiframa
+  await db.testiranja.filter((z) => !!z.izbori && (stara in z.izbori! || Object.values(z.izbori!).some((l) => l.includes(stara)))).modify((z) => {
+    const novi: Record<string, string[]> = {};
+    for (const [k, l] of Object.entries(z.izbori ?? {})) novi[k === stara ? nova : k] = l.map((s) => (s === stara ? nova : s));
+    z.izbori = novi;
+    z.odsutni = (z.odsutni ?? []).map((s) => (s === stara ? nova : s));
+    z.updatedAt = t;
   });
 }
 
@@ -156,15 +165,18 @@ export async function obrisi(tabela: Tabela, id: string): Promise<void> {
 }
 
 export async function obrisiUcenika(ucenik: Ucenik): Promise<void> {
-  await db.transaction('rw', [db.ucenici, db.razgovori, db.saradnja, db.obrisano], async () => {
+  await db.transaction('rw', [db.ucenici, db.razgovori, db.saradnja, db.testiranja, db.obrisano], async () => {
     const t = sada();
     const razg = await db.razgovori.where('sifra').equals(ucenik.sifra).primaryKeys();
     await db.razgovori.bulkDelete(razg);
+    const test = await db.testiranja.where('sifra').equals(ucenik.sifra).primaryKeys();
+    await db.testiranja.bulkDelete(test);
     await db.saradnja.where('sifra').equals(ucenik.sifra).modify({ sifra: '', updatedAt: t });
     await db.ucenici.delete(ucenik.id);
     await db.obrisano.bulkPut([
       { id: ucenik.id, tabela: 'ucenici', deletedAt: t },
       ...razg.map((id) => ({ id, tabela: 'razgovori' as const, deletedAt: t })),
+      ...test.map((id) => ({ id, tabela: 'testiranja' as const, deletedAt: t })),
     ]);
   });
 }

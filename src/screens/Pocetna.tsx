@@ -129,6 +129,11 @@ export function Pocetna() {
             <span className="rastegni"><strong>Pametni alati</strong><span className="podsjetnik-red">plan rada, diktat dana, zapisnici, letci</span></span>
           </a>
         </div>
+        <a className="podsjetnik-kartica instr-kartica" href="#/instrumenti">
+          <span className="instr-kartica-ikona" aria-hidden>🧪</span>
+          <span className="rastegni"><strong>Psihološki instrumenti</strong><span className="podsjetnik-red">upitnici za print, bodovanje, sociometrija razreda</span></span>
+          <Ikona ime="desno" />
+        </a>
 
         {imaPodataka && pinUkljucen === false && !bezPinaSkriveno && (
           <div className="obavjestenje upozorenje">

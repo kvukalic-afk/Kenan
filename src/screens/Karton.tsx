@@ -7,6 +7,7 @@ import { Modal, Polje, Potvrda, Prazno, Prekidac, SifraPolje } from '../componen
 import { RedStavke, StatusOznaka, Zaglavlje, type StavkaVremena } from '../components/Okvir';
 import { useToast } from '../components/Toast';
 import { AnalizaModal } from '../components/AnalizaModal';
+import { RedTestiranja } from './Instrumenti';
 import { REZIMI, sastaviIzvore, type RezimAnalize } from '../lib/analiza';
 import { prikaz } from '../lib/datum';
 import { idi } from '../lib/router';
@@ -19,7 +20,7 @@ export function Karton({ sifra }: { sifra: string }) {
   const [uredi, setUredi] = useState(false);
   const [aiPregled, setAiPregled] = useState<RezimAnalize | null>(null);
   const podaci = useLiveQuery(async () => {
-    const [ucenik, razgovori, saradnja, radionice, razredi, biljeske, analize] = await Promise.all([
+    const [ucenik, razgovori, saradnja, radionice, razredi, biljeske, analize, testiranja] = await Promise.all([
       db.ucenici.where('sifra').equals(sifra).first(),
       db.razgovori.where('sifra').equals(sifra).toArray(),
       db.saradnja.where('sifra').equals(sifra).toArray(),
@@ -27,9 +28,11 @@ export function Karton({ sifra }: { sifra: string }) {
       db.razredi.toArray(),
       db.brzeBiljeske.where('sifra').equals(sifra).toArray(),
       db.analize.where('sifra').equals(sifra).toArray(),
+      db.testiranja.where('sifra').equals(sifra).toArray(),
     ]);
     const razrednik = razredi.find((r) => r.razred === ucenik?.razred)?.razrednik ?? '';
-    return { ucenik, razgovori, saradnja, radionice, razrednik, biljeske, analize };
+    testiranja.sort((a, b) => b.datum.localeCompare(a.datum) || b.createdAt.localeCompare(a.createdAt));
+    return { ucenik, razgovori, saradnja, radionice, razrednik, biljeske, analize, testiranja };
   }, [sifra]);
 
   if (!podaci) return <Zaglavlje naslov={sifra} nazadNa="/ucenici" />;
@@ -87,7 +90,19 @@ export function Karton({ sifra }: { sifra: string }) {
             <a className="chip" href={`#/obrazac/plan-podrske?sifra=${encodeURIComponent(sifra)}`}>Plan podrške</a>
             <a className="chip" href={`#/obrazac/sluzbena-biljeska?sifra=${encodeURIComponent(sifra)}`}>Službena bilješka</a>
           </div>
+          <a className="karton-instr" href={`#/instrumenti?sifra=${encodeURIComponent(sifra)}`}>
+            <span aria-hidden>🧪</span>
+            <span className="rastegni"><strong>Primijeni instrument</strong><span>upitnik, skala, bodovanje – rezultat ide u karton</span></span>
+            <Ikona ime="desno" />
+          </a>
         </section>
+
+        {podaci.testiranja.length > 0 && (
+          <>
+            <div className="naslov-sekcije"><h2>Instrumenti</h2><span className="blijedo malo">{podaci.testiranja.length}</span></div>
+            <ul className="lista">{podaci.testiranja.map((t) => <RedTestiranja key={t.id} t={t} imeZa={(s) => s} prikaziUcenika={false} />)}</ul>
+          </>
+        )}
 
         {podaci.analize.length > 0 && (
           <>
@@ -183,7 +198,7 @@ function UrediUcenika({ ucenik, onZatvori }: { ucenik: Ucenik; onZatvori: () => 
       </form>
       {brisanje && (
         <Potvrda naslov="Obrisati učenika?" opasno potvrdi="Obriši"
-          tekst={<p>Biće obrisan učenik <strong>{punoIme(ucenik) || ucenik.sifra}</strong> ({ucenik.sifra}) i svi njegovi razgovori. Kontakti saradnje ostaju, ali bez šifre. Ovo se ne može poništiti.</p>}
+          tekst={<p>Biće obrisan učenik <strong>{punoIme(ucenik) || ucenik.sifra}</strong> ({ucenik.sifra}) i svi njegovi razgovori i rezultati instrumenata. Kontakti saradnje ostaju, ali bez šifre. Ovo se ne može poništiti.</p>}
           onOdustani={() => setBrisanje(false)}
           onPotvrdi={async () => { await obrisiUcenika(ucenik); toast('Učenik obrisan'); onZatvori(); idi('/ucenici', true); }} />
       )}
