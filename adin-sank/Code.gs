@@ -792,12 +792,14 @@ function osigurajTabele_(formatiraj) {
     }
   } catch (e) { logMigracija_('SEED_MJERE_1127B', e); }
 
-  // zatvaranje smjene koja je ostala otvorena — po izričitom odobrenju vlasnika (27.11.); jednom
+  // zatvaranje smjene koja je ostala otvorena — po izričitom odobrenju vlasnika (27.11.); jednom.
+  // Dira samo smjenu započetu prije odobrenja (objava 27.11. u 13:55). Smjena otvorena poslije toga je novi dan i ostaje otvorena.
   try {
     if (!svojstva_().getProperty('SEED_ZATVORI_1127')) {
       svojstva_().setProperty('SEED_ZATVORI_1127', '1');
       tabela_(TAB.SMJENE).redovi.forEach(function (r) {
         if (s_(r.status) !== 'OPEN') return;
+        if (s_(r.created_at) >= '2026-11-27 13:55:00') return;
         zatvoriBezBrojanja_(s_(r.shift_id), 'Zatvoreno bez brojanja po odobrenju vlasnika (Kenan, 27.11.) — počinje novi dan');
         uradjeno.push('zatvorena smjena ' + s_(r.radnik));
       });

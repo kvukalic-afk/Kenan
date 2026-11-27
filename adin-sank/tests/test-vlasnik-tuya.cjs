@@ -706,3 +706,13 @@ test('otvorena smjena se zatvara jednom, po odobrenju vlasnika, i može početi 
   g.setupSpreadsheet();
   assert.equal(ok(g.getBootstrap()).aktivna.shift_id, 'NOVI');
 });
+
+test('automatsko zatvaranje ne dira smjenu započetu nakon odobrenja (novi dan ostaje otvoren)', () => {
+  const g = napraviOkruzenje({ sada: new Date('2026-11-27T13:05:00Z') }); // 14:05 u Sarajevu, poslije objave
+  g.setupSpreadsheet();
+  ok(g.startShift({ shift_id: 'DAN2', radnik: 'Edin', pocetna: pocetno(g, { redbull: 3 }), kasa_pocetna: '24' }));
+  delete g.__props.SEED_ZATVORI_1127; delete g.__props.VERZIJA_SEME;
+  assert.equal(ok(g.getBootstrap()).aktivna.shift_id, 'DAN2', 'svježe prebrojana smjena se ne zatvara');
+  assert.equal(g.__tabela('SMJENE')[0].status, 'OPEN');
+  assert.equal(g.__props.SEED_ZATVORI_1127, '1', 'migracija je obavljena i više se ne pokreće');
+});
