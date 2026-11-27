@@ -195,6 +195,7 @@ function napraviOkruzenje(opcije = {}) {
   if (!opcije.korekcija) props.SEED_KOREKCIJA_1126B = '1';
   if (!opcije.varijante) props.SEED_VARIJANTE_1127 = '1';
   if (!opcije.mjere) props.SEED_MJERE_1127B = '1';
+  if (!opcije.proteinPosto) props.SEED_PROTEIN_POSTO_1127 = '1';
   if (!opcije.zatvori) props.SEED_ZATVORI_1127 = '1'; // testovi rade sa starim početnim cijenama; migracija cijena ima vlastiti test
   let okidaci = [];
   const opcije_ok = { fetch: opcije.fetch || null };

@@ -71,13 +71,20 @@
     padding:10px 12px 10px 14px; border-bottom:1px solid var(--line);}
   .row:last-child{border-bottom:none;}
   .row.prazno{background:rgba(232,163,61,.04);}
+  .row.sumnja{background:rgba(229,84,75,.09); box-shadow:inset 3px 0 0 var(--red);}
+  /* „prošli put" — tap upiše istu vrijednost */
+  .podsj{display:inline-flex; align-items:center; min-height:30px; margin-top:4px; padding:3px 10px; border-radius:15px;
+    background:transparent; border:1px dashed rgba(232,163,61,.5); color:var(--dim); font:inherit; font-size:12px; text-align:left; cursor:pointer;}
+  .podsj:active{background:var(--gold2);}
+  .podsj.vl{color:var(--gold);}
+  .podsj.isto{border-style:solid; border-color:rgba(95,176,122,.55); color:var(--green);}
   .cnt{display:flex; align-items:center; gap:6px; flex-shrink:0;}
   .cbtn{width:48px; height:48px; border-radius:11px; background:var(--card2);
     border:1px solid var(--line); color:var(--text); font-size:24px; line-height:1; padding:0;}
   .cin{width:64px; height:48px; padding:0 4px; background:var(--card2); border:1px solid var(--line);
     border-radius:10px; color:var(--text); font-size:20px; font-weight:700; text-align:center; outline:none;}
   .cin:focus{border-color:var(--gold);}
-  .cin.prazno{border-color:rgba(232,163,61,.45);}
+  .cin.prazno{border-color:rgba(232,163,61,.2);}
   .grid{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
   .tile{position:relative; display:flex; flex-direction:column; align-items:flex-start;
     gap:4px; padding:14px 13px 12px; min-height:92px; background:var(--card);

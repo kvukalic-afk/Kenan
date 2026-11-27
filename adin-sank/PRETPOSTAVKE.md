@@ -30,10 +30,14 @@
 | 24 | Upozorenje na greške Kenan dobija **kad se prijavi** (nema SMS-a/e-maila). Ako želiš poruku na telefon, treba dodati e-mail obavještenja | — |
 
 | 25 | Protein je podijeljen na okuse: **Protein vanilija** (raniji "Protein"), **Protein čokolada**, **Protein malina**. Prodajna 3 KM po **mjerici**, nabavna 2,30 po mjerici (kao ranije) | Vlasnik → Proizvodi |
-| 26 | **Protein**: na početku i kraju smjene samo **Ima / Nema** po okusu (bez brojanja mjerica). **Kreatin**: **% ostalo u kanti** (0–100). Prodaja se i dalje kuca tapom (1 tap = 1 mjerica), ali se za njih ne računa razlika robe | Vlasnik → Proizvodi → „Kako se broji" |
+| 26 | **Protein (vanilija, čokolada, malina) i kreatin**: na početku i kraju smjene upisuje se **% ostalo u kanti** (0–100). Prodaja se i dalje kuca tapom (1 tap = 1 mjerica = 3 KM), ali se za njih ne računa razlika robe | Vlasnik → Proizvodi → „Kako se broji" |
 | 27 | Usred smjene: „+ DOPUNA ZALIHE" → okus „Stiglo — sada ima", kreatin „Nova kanta (100%)" | — |
 | 28 | "Na čiji račun": Edin i Kenan su uvijek prvi izbor u ☕ Potrošnji; izvještaji i pregled vlasnika računaju potrošnju po tim imenima | — |
 | 29 | Otvorena smjena (Edinova) je zatvorena **jednom, automatski**, bez brojanja, po tvom odobrenju (27.11.), kad se aplikacija prvi put otvori nakon objave. Dira samo smjenu započetu prije odobrenja — nova smjena nikad | — |
+| 30 | **Preskočeno = nema (0)**: radnik ne mora upisivati nule. Prije početka smjene i prije kase aplikacija pokaže šta je preskočeno i upozori ako je toga prošli put bilo (ili je vlasnik javio da ima) | — |
+| 31 | **„↺ prošli put"**: na početnom brojanju tap upiše isti broj kao na kraju prošle smjene. Na završnom brojanju se prošli put i očekivano i dalje **ne vide** | — |
+| 32 | Kad se roba ne poklapa, radnik vidi **koji proizvod** (ne i koliko treba biti) i može prebrojati samo njega. Sve što promijeni poslije prve provjere (roba ili kasa) upisuje se kao napomena „Ispravljeno poslije provjere" koju vlasnik vidi u izvještaju | — |
+| 33 | Promjena načina brojanja (komadi / ima-nema / %) važi **od sljedeće smjene** — otvorena smjena se završava kako je počela. Zato je smjena koja je bila otvorena u trenutku objave zadržala ima/nema za protein | Vlasnik → Proizvodi |
 
 ## Ograničenja koja trebaš znati
 

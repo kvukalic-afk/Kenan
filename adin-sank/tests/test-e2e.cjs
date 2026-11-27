@@ -91,9 +91,10 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
 
     /* ── 2. Početna inventura ── */
     await page.getByText('Prebroji početno stanje').waitFor();
-    const dugme = page.getByRole('button', { name: /za prebrojati|ZAPOČNI/ });
-    assert.match(await dugme.textContent(), /Još 15 za prebrojati/);
-    assert.equal(await dugme.isDisabled(), true);
+    await page.getByTestId('preskoceno-broj').filter({ hasText: '15 proizvoda nije upisano' }).waitFor();
+    const dugme = page.getByRole('button', { name: /Upiši gotovinu u kasi|ZAPOČNI/ });
+    assert.match(await dugme.textContent(), /Upiši gotovinu u kasi/);
+    assert.equal(await dugme.isDisabled(), true, 'bez gotovine u kasi se ne počinje');
     await upisiBrojanje(page, { redbull: 10, voda05: 15 });
     await page.screenshot({ path: path.join(SLIKE, '2-pocetna.png'), fullPage: false });
     await page.getByTestId('kasa-pocetna').fill('0');
@@ -450,5 +451,98 @@ test('E2E: protein ima/nema po okusu i kreatin u % — brojanje, NEMA baner, izv
     assert.match(txt, /✕ nema/);
     await page.screenshot({ path: path.join(SLIKE, '9c-okusi-izvjestaj.png'), fullPage: true });
     assert.deepEqual(greske.filter(x => !/favicon|Failed to load resource/.test(x)), []);
+  } finally { await browser.close(); }
+});
+
+test('E2E: preskoči = nema, „prošli put" jednim tapom, ponovo se broji samo ono što se ne poklapa, protein u %', { skip: !playwright && 'playwright nije instaliran', timeout: 150000 }, async () => {
+  const g = napraviOkruzenje({ sada: () => new Date(), varijante: true, mjere: true, proteinPosto: true });
+  g.setupSpreadsheet();
+  const browser = await playwright.chromium.launch();
+  const { page, greske } = await noviTelefon(browser, g, { offline: false, pozivi: [] });
+  try {
+    /* početak: upisano samo nekoliko stvari, ostalo preskočeno */
+    await page.getByRole('button', { name: 'Kenan', exact: true }).click();
+    await page.getByRole('button', { name: /Dalje/ }).click();
+    await page.locator('input[data-pid="redbull"]').fill('6');
+    await page.locator('input[data-pid="voda05"]').fill('10');
+    await page.locator('input[data-pid="protein"]').fill('80');
+    await page.locator('input[data-pid="protein_malina"]').fill('35');
+    await page.getByTestId('kasa-pocetna').fill('20');
+    await page.getByRole('button', { name: 'ZAPOČNI SMJENU' }).click();
+    await page.getByTestId('preskoceno-ok').waitFor();
+    const ostalo = await page.getByTestId('preskoceno').textContent();
+    assert.match(ostalo, /Protein čokolada/); assert.match(ostalo, /Kreatin/);
+    assert.match(await page.getByTestId('preskoceno-sumnja').textContent(), /Voda 1 L — vlasnik javio \d+/, 'upozori na ono što je vlasnik javio da ima');
+    await page.screenshot({ path: path.join(SLIKE, '10a-preskoceno.png') });
+    await page.getByTestId('preskoceno-ok').click();
+    await page.locator('[data-tile="redbull"]').waitFor();
+    const inv1 = g.__tabela('INVENTURA');
+    const red1 = pid => inv1.find(r => r.product_id === pid);
+    assert.equal(red1('voda1').pocetno_stanje, 0, 'preskočeno = 0');
+    assert.deepEqual([red1('redbull').pocetno_stanje, red1('protein').pocetno_stanje, red1('protein_cokolada').pocetno_stanje], [6, 80, 0]);
+    assert.deepEqual([red1('protein').mjera, red1('redbull').mjera], ['%', 'kom']);
+    assert.match(await page.locator('[data-tile="protein"]').textContent(), /80%/);
+    await page.getByTestId('nestalo').filter({ hasText: 'Protein čokolada' }).waitFor();
+    await tap(page, 'redbull', 2);
+    await page.getByTestId('promet').filter({ hasText: '28,00' }).waitFor();
+
+    /* kraj: Red Bull pogrešno upisan, voda preskočena (a ima je) */
+    await page.getByRole('button', { name: 'ZAVRŠI SMJENU' }).click();
+    await page.getByRole('button', { name: 'Da, idem brojati' }).click();
+    await page.getByText('Prebroji završno stanje').waitFor();
+    await page.locator('input[data-pid="redbull"]').fill('3');
+    await page.locator('input[data-pid="protein"]').fill('70');
+    await page.locator('input[data-pid="protein_malina"]').fill('35');
+    await page.getByRole('button', { name: 'DALJE — KASA' }).click();
+    await page.getByTestId('preskoceno-ok').click();
+    await page.getByTestId('kasa').fill('28');
+    await page.getByRole('button', { name: 'PROVJERI' }).click();
+    await page.getByText('⚠ 2 proizvoda se ne poklapa').waitFor();
+    const imena = await page.getByTestId('razlike-imena').textContent();
+    assert.match(imena, /Voda 0,5 L/); assert.match(imena, /Red Bull/);
+    assert.ok(!/Protein/.test(imena), '% u kanti nema razliku');
+    await page.screenshot({ path: path.join(SLIKE, '10b-ne-poklapa.png') });
+    await page.getByTestId('prebroji-ponovo').click();
+    await page.getByTestId('ponovo').waitFor();
+    assert.equal(await page.locator('.row.sumnja').count(), 2, 'označena su samo dva proizvoda');
+    await page.locator('input[data-pid="redbull"]').fill('4');
+    assert.equal(await page.locator('.row.sumnja').count(), 2, 'oznaka se ne mijenja dok radnik kuca (ne otkriva očekivano)');
+    await page.locator('input[data-pid="voda05"]').fill('10');
+    await page.screenshot({ path: path.join(SLIKE, '10c-ponovo.png') });
+    await page.getByRole('button', { name: 'DALJE — KASA' }).click();
+    assert.equal(await page.getByTestId('kasa').inputValue(), '28', 'kasa ostaje upisana');
+    await page.getByRole('button', { name: 'PROVJERI' }).click();
+    await page.getByText('✓ sve se poklapa').waitFor();
+    await page.getByRole('button', { name: 'ZAVRŠI SMJENU' }).click();
+    await page.getByTestId('izv-promet').waitFor();
+    const izv = await page.locator('#root').textContent();
+    assert.match(izv, /Ispravljeno poslije provjere: Voda 0,5 L 0 → 10; Red Bull 3 → 4/, 'vlasnik vidi ispravke');
+    assert.match(izv, /80% → 70%/);
+    const nap = g.__tabela('DOGADJAJI').filter(d => d.tip_dogadjaja === 'NAPOMENA');
+    assert.equal(nap.length, 1, 'napomena o ispravci upisana jednom');
+    assert.equal(g.__tabela('SMJENE')[0].broj_razlika, 0);
+
+    /* sljedeći dan: „prošli put" jednim tapom; preskočena voda upozorava */
+    await page.getByRole('button', { name: 'Gotovo' }).click();
+    await page.getByRole('button', { name: 'Edin', exact: true }).click();
+    await page.getByRole('button', { name: /Dalje/ }).click();
+    await page.locator('[data-isto="redbull"]').click();
+    assert.equal(await page.locator('input[data-pid="redbull"]').inputValue(), '4');
+    await page.locator('[data-isto="redbull"]').filter({ hasText: '✓ prošli put: 4' }).waitFor();
+    await page.locator('[data-isto="protein"]').click();
+    assert.equal(await page.locator('input[data-pid="protein"]').inputValue(), '70');
+    await page.getByTestId('kasa-pocetna').fill('28');
+    await page.getByRole('button', { name: 'ZAPOČNI SMJENU' }).click();
+    await page.getByTestId('preskoceno-sumnja').filter({ hasText: 'Voda 0,5 L — prošli put 10' }).waitFor();
+    assert.ok(!/Red Bull/.test(await page.getByTestId('preskoceno-sumnja').textContent()));
+    await page.screenshot({ path: path.join(SLIKE, '10d-upozorenje.png') });
+    await page.getByRole('button', { name: 'Vrati se i upiši' }).click();
+    await page.locator('[data-isto="voda05"]').click();
+    await page.getByRole('button', { name: 'ZAPOČNI SMJENU' }).click();
+    await page.getByTestId('preskoceno-ok').click();
+    await page.locator('[data-tile="redbull"]').waitFor();
+    const inv2 = g.__tabela('INVENTURA').filter(r => r.radnik === 'Edin');
+    assert.deepEqual(['redbull', 'voda05', 'protein', 'voda1'].map(pid => inv2.find(r => r.product_id === pid).pocetno_stanje), [4, 10, 70, 0]);
+    assert.deepEqual(greske.filter(x => !/favicon|Failed to load resource/.test(x)), [], 'nema JS grešaka');
   } finally { await browser.close(); }
 });

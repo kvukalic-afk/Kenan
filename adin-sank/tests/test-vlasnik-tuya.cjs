@@ -716,3 +716,65 @@ test('automatsko zatvaranje ne dira smjenu započetu nakon odobrenja (novi dan o
   assert.equal(g.__tabela('SMJENE')[0].status, 'OPEN');
   assert.equal(g.__props.SEED_ZATVORI_1127, '1', 'migracija je obavljena i više se ne pokreće');
 });
+
+/** Kao da su redovi INVENTURE upisani prije verzije koja pamti način brojanja. */
+function obrisiMjere(g) {
+  const sh = g.__ss.getSheetByName('INVENTURA');
+  const c = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].indexOf('mjera') + 1;
+  assert.ok(c > 0, 'INVENTURA ima kolonu mjera');
+  for (let r = 2; r <= sh.getLastRow(); r++) sh.getRange(r, c).setValue('');
+}
+
+test('protein po okusima prelazi na % — otvorena smjena se završi kako je počela, stari redovi su „kom"', () => {
+  const g = napraviOkruzenje({ sada: new Date('2026-11-26T10:00:00Z'), varijante: true, mjere: true });
+  g.setupSpreadsheet();
+  // stara smjena (prije objave 27.11. u 13:55)
+  ok(g.startShift({ shift_id: 'STARA', radnik: 'Edin', pocetna: pocetno(g, { redbull: 4 }), kasa_pocetna: '0' }));
+  ok(g.closeShift('STARA', pocetno(g, { redbull: 4 }), '0', ''));
+  // današnja smjena: protein ima/nema, kreatin %
+  g.__postaviSat(new Date('2026-11-27T13:30:00Z'));
+  ok(g.startShift({ shift_id: 'DANAS', radnik: 'Edin', pocetna: pocetno(g, { protein: 1, protein_cokolada: 0, protein_malina: 1, kreatin: 60, redbull: 5 }), kasa_pocetna: '10' }));
+  ok(g.pushEvents('DANAS', [{ event_id: 'p1', shift_id: 'DANAS', tip: 'SALE', product_id: 'protein', kolicina: 1 }]));
+  obrisiMjere(g);
+  delete g.__props.SEED_PROTEIN_POSTO_1127; delete g.__props.VERZIJA_SEME;
+  const b = ok(g.getBootstrap());
+  const pr = id => b.proizvodi.find(p => p.product_id === id);
+  assert.deepEqual(['protein', 'protein_cokolada', 'protein_malina'].map(id => pr(id).jedinica), ['%', '%', '%']);
+  assert.equal(pr('kreatin').jedinica, '%');
+  assert.deepEqual([b.aktivna.mjere.protein, b.aktivna.mjere.kreatin, b.aktivna.mjere.redbull], ['ima', '%', 'kom'], 'otvorena smjena zadržava svoj način');
+  assert.ok(g.__tabela('INVENTURA').filter(r => r.shift_id === 'STARA').every(r => r.mjera === 'kom'), 'stara smjena: sve na komade');
+  const a = ok(g.getAdminData('2308'));
+  assert.deepEqual([a.zalihe.find(x => x.product_id === 'protein').mjera, a.zalihe.find(x => x.product_id === 'protein').kolicina], ['ima', 1]);
+  // završno brojanje po starom načinu (ima/nema) — bez lažnih razlika
+  const zv = ok(g.closeShift('DANAS', pocetno(g, { protein: 1, protein_cokolada: 0, protein_malina: 0, kreatin: 50, redbull: 5 }), '13', ''));
+  const st = id => zv.izvjestaj.stavke.find(x => x.product_id === id);
+  assert.deepEqual([st('protein').mjera, st('protein').stvarno, st('kreatin').stvarno], ['ima', 1, 50]);
+  assert.equal(zv.izvjestaj.broj_razlika, 0);
+  // novi dan: protein u %; ima/nema nije podsjetnik za %
+  const b2 = ok(g.getBootstrap());
+  assert.ok(!('protein' in b2.prijedlog) && !('protein_malina' in b2.prijedlog), 'nema „prošli put" iz ima/nema');
+  assert.deepEqual([b2.prijedlog.kreatin, b2.prijedlog.redbull], [50, 5]);
+  assert.equal(g.startShift({ shift_id: 'SUTRA', radnik: 'Edin', pocetna: pocetno(g, { protein: 140 }), kasa_pocetna: '13' }).code, 'NEISPRAVAN_BROJ', '% ne može preko 100');
+  const s3 = ok(g.startShift({ shift_id: 'SUTRA', radnik: 'Edin', pocetna: pocetno(g, { protein: 80, protein_malina: 35, kreatin: 50, redbull: 5 }), kasa_pocetna: '13' }));
+  assert.deepEqual([s3.smjena.mjere.protein, s3.smjena.mjere.redbull], ['%', 'kom']);
+  assert.equal(g.__tabela('INVENTURA').find(r => r.shift_id === 'SUTRA' && r.product_id === 'protein_malina').mjera, '%');
+  // detalji stare smjene se i dalje računaju na komade
+  const det = ok(g.getShiftDetails('2308', 'DANAS')).izvjestaj;
+  assert.equal(det.stavke.find(x => x.product_id === 'protein').mjera, 'ima');
+});
+
+test('promjena načina brojanja usred smjene važi tek od sljedeće smjene', () => {
+  const g = napraviOkruzenje({ sada: SAT });
+  g.setupSpreadsheet();
+  ok(g.startShift({ shift_id: 'A', radnik: 'Edin', pocetna: pocetno(g, { redbull: 6 }), kasa_pocetna: '0' }));
+  const rb = ok(g.getAdminData('2308')).proizvodi.find(p => p.product_id === 'redbull');
+  ok(g.saveProduct('2308', Object.assign({}, rb, { nabavna: rb.nabavna_cijena !== undefined ? rb.nabavna_cijena : rb.nabavna, jedinica: '%' })));
+  const b = ok(g.getBootstrap());
+  assert.equal(b.proizvodi.find(p => p.product_id === 'redbull').jedinica, '%');
+  assert.equal(b.aktivna.mjere.redbull, 'kom', 'otvorena smjena i dalje broji komade');
+  ok(g.pushEvents('A', [{ event_id: 'r1', shift_id: 'A', tip: 'SALE', product_id: 'redbull', kolicina: 2 }]));
+  const zv = ok(g.closeShift('A', pocetno(g, { redbull: 3 }), '8', 'Ne znam'));
+  assert.equal(zv.izvjestaj.stavke.find(x => x.product_id === 'redbull').razlika_kom, -1, 'razlika se računa na komade');
+  const b2 = ok(g.getBootstrap());
+  assert.ok(!('redbull' in b2.prijedlog), 'komadi nisu podsjetnik za %');
+});

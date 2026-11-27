@@ -36,7 +36,7 @@ var KOLONE = {
     'product_id', 'proizvod', 'kolicina', 'cijena', 'ukupno', 'napomena', 'osoba'],
   INVENTURA: ['shift_id', 'datum', 'radnik', 'product_id', 'proizvod', 'pocetno_stanje',
     'dopunjeno', 'evidentirano_prodano', 'ocekivano_zavrsno', 'stvarno_zavrsno',
-    'prodano_po_inventuri', 'razlika_kom', 'razlika_KM', 'potroseno'],
+    'prodano_po_inventuri', 'razlika_kom', 'razlika_KM', 'potroseno', 'mjera'],
   CLANOVI: ['member_id', 'ime', 'telefon', 'vrsta', 'pocetak', 'istek', 'zadnje_produzenje',
     'napomena', 'aktivan', 'brava_id', 'trener', 'trener_do'],
   ULAZI: ['izvor_id', 'datum', 'vrijeme', 'nacin', 'korisnik_brave', 'ime', 'member_id', 'clanarina', 'napomena'],
@@ -48,7 +48,7 @@ var TEKST_KOLONE = {
   PROIZVODI: ['product_id'],
   SMJENE: ['shift_id', 'datum', 'vrijeme_pocetka', 'vrijeme_kraja', 'created_at', 'updated_at'],
   DOGADJAJI: ['event_id', 'shift_id', 'datum', 'timestamp', 'product_id'],
-  INVENTURA: ['shift_id', 'datum', 'product_id'],
+  INVENTURA: ['shift_id', 'datum', 'product_id', 'mjera'],
   CLANOVI: ['member_id', 'telefon', 'pocetak', 'istek', 'zadnje_produzenje', 'brava_id', 'trener_do'],
   ULAZI: ['izvor_id', 'datum', 'vrijeme', 'korisnik_brave', 'member_id'],
   TRENINZI: ['termin_id', 'dan', 'vrijeme']
@@ -78,7 +78,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '15';
+var VERZIJA_SEME = '16';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -586,6 +586,28 @@ function mjera_(p) {
   return 'kom';
 }
 
+/** Oznaka načina brojanja za Sheet (kolona INVENTURA.mjera): 'kom', 'ima' ili '%'. */
+function oznakaMjere_(p) {
+  var m = mjera_(p);
+  return m === 'posto' ? '%' : m;
+}
+
+/**
+ * Proizvodi onako kako su se brojali u toj smjeni. Promjena načina brojanja (komadi / ima-nema / %)
+ * važi od sljedeće smjene — otvorena ili stara smjena se ne kvari.
+ */
+function uSmjeni_(proizvodi, mjere) {
+  if (!mjere) return proizvodi;
+  return proizvodi.map(function (p) {
+    var m = mjere[p.product_id];
+    if (!m || mjera_({ jedinica: m }) === mjera_(p)) return p;
+    var o = {};
+    for (var k in p) if (p.hasOwnProperty(k)) o[k] = p[k];
+    o.jedinica = m; o.paket = 0;
+    return o;
+  });
+}
+
 /** Provjera brojanja: svaki proizvod mora imati vrijednost (i nula se upisuje). Ima/nema = 1/0, postotak = 0–100. */
 function provjeriBrojanje_(roba, mapa, rijec) {
   mapa = mapa || {};
@@ -612,6 +634,30 @@ function setupSpreadsheet() {
   var poruka = zakljucano_(function () { return osigurajTabele_(true); });
   try { Logger.log(poruka); } catch (e) { /* */ }
   return poruka;
+}
+
+/**
+ * Jednom: upiši način brojanja u postojeće redove INVENTURE (samo prazna polja).
+ * Do objave 27.11. u 13:55 sve se brojalo na komade; poslije toga po tadašnjem načinu proizvoda.
+ */
+function oznaciMjereInventure_(uradjeno) {
+  var t = tabela_(TAB.INVENTURA);
+  var c = t.kol.indexOf('mjera');
+  var lr = t.sh.getLastRow();
+  if (c < 0 || lr < 2) return;
+  var pocela = {};
+  tabela_(TAB.SMJENE).redovi.forEach(function (r) { pocela[s_(r.shift_id)] = s_(r.created_at); });
+  var poId = {};
+  proizvodi_(true).forEach(function (p) { poId[p.product_id] = p; });
+  var opseg = t.sh.getRange(2, c + 1, lr - 1, 1);
+  var v = opseg.getValues(), n = 0;
+  t.redovi.forEach(function (r) {
+    if (s_(r.mjera) !== '' || r._red < 2) return;
+    var ts = pocela[s_(r.shift_id)] || '', p = poId[s_(r.product_id)];
+    v[r._red - 2][0] = (!p || (ts && ts < '2026-11-27 13:55:00')) ? 'kom' : oznakaMjere_(p);
+    n++;
+  });
+  if (n) { opseg.setValues(v); uradjeno.push('INVENTURA: upisan način brojanja za ' + n + ' redova'); }
 }
 
 function osigurajTabele_(formatiraj) {
@@ -805,6 +851,21 @@ function osigurajTabele_(formatiraj) {
       });
     }
   } catch (e) { logMigracija_('SEED_ZATVORI_1127', e); }
+
+  // način brojanja se pamti po smjeni (INVENTURA.mjera); zatim protein po okusima prelazi na % u kanti (vlasnik, 27.11.)
+  try {
+    if (!svojstva_().getProperty('SEED_PROTEIN_POSTO_1127')) {
+      oznaciMjereInventure_(uradjeno);
+      var tq = tabela_(TAB.PROIZVODI);
+      tq.redovi.forEach(function (r) {
+        var id = s_(r.product_id);
+        if (!(id === 'protein' || id === 'protein_cokolada' || id === 'protein_malina' || /^protein/i.test(s_(r.naziv)))) return;
+        if (mjera_(r) === 'posto') return;
+        azurirajRed_(tq, r, { jedinica: '%', paket: 0 }); uradjeno.push(s_(r.naziv) + ': % u kanti');
+      });
+      svojstva_().setProperty('SEED_PROTEIN_POSTO_1127', '1');
+    }
+  } catch (e) { logMigracija_('SEED_PROTEIN_POSTO_1127', e); }
 
   var pg = ss.getSheetByName(TAB.PREGLED);
   if (!pg) {
@@ -1064,22 +1125,24 @@ function dogadjajiSmjene_(shiftId, tDog) {
 
 function pocetnaSmjene_(shiftId, tInv) {
   var t = tInv || tabela_(TAB.INVENTURA);
-  var poc = {}, broj = {}, imaBroj = false;
+  var poc = {}, broj = {}, imaBroj = false, mjere = {}, imaMjera = false;
   t.redovi.forEach(function (r) {
     if (s_(r.shift_id) !== shiftId) return;
     var pid = s_(r.product_id);
     poc[pid] = Math.round(num_(r.pocetno_stanje));
     if (s_(r.stvarno_zavrsno) !== '') { broj[pid] = Math.round(num_(r.stvarno_zavrsno)); imaBroj = true; }
+    if (s_(r.mjera) !== '') { mjere[pid] = s_(r.mjera); imaMjera = true; }
   });
-  return { pocetna: poc, brojanje: imaBroj ? broj : null };
+  return { pocetna: poc, brojanje: imaBroj ? broj : null, mjere: imaMjera ? mjere : null };
 }
 
 function smjenaJavno_(r, tInv, tDog) {
   var id = s_(r.shift_id);
+  var ps = pocetnaSmjene_(id, tInv);
   return {
     shift_id: id, radnik: s_(r.radnik), datum: datum_(r.datum), vrijeme_pocetka: vrijeme_(r.vrijeme_pocetka),
     pocetak_ts: s_(r.created_at), status: s_(r.status), kasa_pocetna: r2_(num_(r.kasa_pocetna)),
-    pocetna: pocetnaSmjene_(id, tInv).pocetna,
+    pocetna: ps.pocetna, mjere: ps.mjere || {},
     dogadjaji: dogadjajiSmjene_(id, tDog)
   };
 }
@@ -1090,11 +1153,17 @@ function prijavljenoStanje_() {
   try { return JSON.parse(svojstva_().getProperty('PRIJAVLJENO_STANJE') || '{}') || {}; } catch (e) { return {}; }
 }
 
-function prijedlog_(tInv) {
+function prijedlog_(tInv, proizvodi) {
   var t = tInv || tabela_(TAB.INVENTURA);
+  var sada = {};
+  (proizvodi || []).forEach(function (x) { sada[x.product_id] = mjera_(x); });
   var p = {};
   t.redovi.forEach(function (r) {
-    if (s_(r.stvarno_zavrsno) !== '') p[s_(r.product_id)] = Math.round(num_(r.stvarno_zavrsno));
+    if (s_(r.stvarno_zavrsno) === '') return;
+    var pid = s_(r.product_id);
+    // brojano na drugi način (npr. mjerice, a sada %) — to nije podsjetnik za novi način
+    if (s_(r.mjera) !== '' && sada[pid] && mjera_({ jedinica: r.mjera }) !== sada[pid]) { delete p[pid]; return; }
+    p[pid] = Math.round(num_(r.stvarno_zavrsno));
   });
   return p;
 }
@@ -1162,7 +1231,7 @@ function getBootstrap() {
     return {
       proizvodi: proizvodi.map(javniProizvod_),
       aktivna: aktivna,
-      prijedlog: prijedlog_(tInv),
+      prijedlog: prijedlog_(tInv, proizvodi),
       prijavljeno: prijavljenoStanje_(),
       radnici: radnici_(),
       treneri: treneri_(),
@@ -1209,14 +1278,16 @@ function startShift(podaci) {
       dodajRedove_(tabela_(TAB.INVENTURA), roba.map(function (x) {
         return {
           shift_id: shiftId, datum: t.datum, radnik: radnik, product_id: x.product_id, proizvod: x.naziv,
-          pocetno_stanje: pocetna[x.product_id]
+          pocetno_stanje: pocetna[x.product_id], mjera: oznakaMjere_(x)
         };
       }));
+      var mjereSmjene = {};
+      roba.forEach(function (x) { mjereSmjene[x.product_id] = oznakaMjere_(x); });
       return {
         postojeca: false,
         smjena: {
           shift_id: shiftId, radnik: radnik, datum: t.datum, vrijeme_pocetka: t.vrijeme, pocetak_ts: t.ts,
-          status: 'OPEN', pocetna: pocetna, dogadjaji: [], kasa_pocetna: kasaPocetna
+          status: 'OPEN', pocetna: pocetna, mjere: mjereSmjene, dogadjaji: [], kasa_pocetna: kasaPocetna
         }
       };
     });
@@ -1452,6 +1523,7 @@ function closeShift(shiftId, brojanje, kasaStvarno, razlog) {
       var tDog = tabela_(TAB.DOGADJAJI);
       var dog = dogadjajiSmjene_(id, tDog);
       var ps = pocetnaSmjene_(id, tInv);
+      proizvodi = uSmjeni_(proizvodi, ps.mjere);
 
       if (s_(red.status) === 'CLOSED') {
         return { vec_zatvorena: true, izvjestaj: izvjestaj_(red, proizvodi, ps.pocetna, dog, ps.brojanje) };
@@ -1570,7 +1642,7 @@ function getShiftDetails(pin, shiftId) {
     tabela_(TAB.SMJENE).redovi.forEach(function (r) { if (s_(r.shift_id) === id) red = r; });
     if (!red) throw greska_('NEMA_SMJENE', 'Smjena ne postoji.');
     var ps = pocetnaSmjene_(id);
-    var iz = izvjestaj_(red, proizvodi_(true), ps.pocetna, dogadjajiSmjene_(id), ps.brojanje);
+    var iz = izvjestaj_(red, uSmjeni_(proizvodi_(true), ps.mjere), ps.pocetna, dogadjajiSmjene_(id), ps.brojanje);
     return { izvjestaj: ko === 'Kenan' ? iz : bezNovca_(iz) };
   });
 }
@@ -1648,10 +1720,10 @@ function zatvoriBezBrojanja_(id, razlog) {
       sm.redovi.forEach(function (r) { if (s_(r.shift_id) === id) red = r; });
       if (!red) throw greska_('NEMA_SMJENE', 'Smjena ne postoji.');
       if (s_(red.status) !== 'OPEN') throw greska_('SMJENA_ZATVORENA', 'Smjena je već zatvorena.');
-      var proizvodi = proizvodi_(true);
       var tInv = tabela_(TAB.INVENTURA);
       var dog = dogadjajiSmjene_(id);
       var ps = pocetnaSmjene_(id, tInv);
+      var proizvodi = uSmjeni_(proizvodi_(true), ps.mjere);
       var ob = obracunSmjene_(proizvodi, ps.pocetna, dog, null);
       var poPid = {};
       ob.stavke.forEach(function (st) { poPid[st.product_id] = st; });
@@ -1766,7 +1838,7 @@ function getAdminData(pin) {
     if (otvorena) {
       var sid = s_(otvorena.shift_id);
       var ps = pocetnaSmjene_(sid, tInv);
-      var ob = obracunSmjene_(proizvodi, ps.pocetna, dogadjajiSmjene_(sid, tDog), null);
+      var ob = obracunSmjene_(uSmjeni_(proizvodi, ps.mjere), ps.pocetna, dogadjajiSmjene_(sid, tDog), null);
       var sati = (tsMin_(t.ts) - tsMin_(s_(otvorena.created_at))) / 60;
       otv = {
         shift_id: sid, radnik: s_(otvorena.radnik), datum: datum_(otvorena.datum),
@@ -1789,7 +1861,7 @@ function getAdminData(pin) {
           nisko: k !== null && k <= p.minimum, nestalo: bilo && k !== null && k <= 0 };
       });
     } else {
-      var pr = prijedlog_(tInv);
+      var pr = prijedlog_(tInv, proizvodi);
       zalihe = robaAktivna.map(function (p) {
         var k = pr.hasOwnProperty(p.product_id) ? pr[p.product_id] : null;
         var mjz = mjera_(p);
@@ -1999,7 +2071,7 @@ function addProductRadnik(podaci) {
         tabela_(TAB.SMJENE).redovi.forEach(function (r) { if (s_(r.shift_id) === sid) sm = r; });
         if (sm && s_(sm.status) === 'OPEN') {
           dodajRedove_(tabela_(TAB.INVENTURA), [{
-            shift_id: sid, datum: datum_(sm.datum), radnik: s_(sm.radnik), product_id: k, proizvod: naziv, pocetno_stanje: 0
+            shift_id: sid, datum: datum_(sm.datum), radnik: s_(sm.radnik), product_id: k, proizvod: naziv, pocetno_stanje: 0, mjera: 'kom'
           }]);
           uSmjenu = true;
         }

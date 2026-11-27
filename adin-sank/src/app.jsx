@@ -140,6 +140,7 @@ var Logika = (function () {
     var kasaRazlika = imaKasu ? Math.round((kasaBroj - st.kasaTreba) * 100) / 100 : null;
     return {
       razlikeRobe: razlike.length,
+      razlikePid: razlike,
       kasaOcekivano: st.kasaTreba,
       kasaPocetna: st.kasaPocetna, promet: st.promet, uzeto: st.uzeto,
       kasaRazlika: kasaRazlika,
@@ -149,6 +150,43 @@ var Logika = (function () {
 
   function nedostaje(roba, vrijednosti) {
     return roba.filter(function (p) { var v = vrijednosti[p.product_id]; return v === undefined || v === null || v === ''; });
+  }
+
+  /** Preskočeno = nema: prazna polja postaju 0. */
+  function saNulama(roba, vrijednosti) {
+    var o = {};
+    Object.keys(vrijednosti || {}).forEach(function (k) { o[k] = vrijednosti[k]; });
+    nedostaje(roba, vrijednosti || {}).forEach(function (p) { o[p.product_id] = '0'; });
+    return o;
+  }
+
+  /** Proizvodi onako kako se broje u ovoj smjeni (promjena načina brojanja važi od sljedeće smjene). */
+  function uSmjeni(proizvodi, smjena) {
+    var mj = smjena && smjena.mjere;
+    if (!mj) return proizvodi || [];
+    return (proizvodi || []).map(function (p) {
+      var m = mj[p.product_id];
+      if (!m || mjera({ jedinica: m }) === mjera(p)) return p;
+      var o = {};
+      for (var k in p) if (Object.prototype.hasOwnProperty.call(p, k)) o[k] = p[k];
+      o.jedinica = m; o.paket = 0;
+      return o;
+    });
+  }
+
+  /** Šta je radnik promijenio poslije prve provjere — vlasnik to vidi kao napomenu u izvještaju. */
+  function ispravke(prva, roba, vrijednosti, kasa) {
+    if (!prva) return '';
+    var dijelovi = [];
+    roba.forEach(function (p) {
+      var a = prva.roba ? prva.roba[p.product_id] : undefined, b = vrijednosti[p.product_id];
+      if (a === undefined || a === null || a === '' || b === undefined || b === null || b === '') return;
+      if (Number(a) !== Number(b)) dijelovi.push(p.naziv + ' ' + opisMjere(p, a) + ' → ' + opisMjere(p, b));
+    });
+    var ka = String(prva.kasa === undefined || prva.kasa === null ? '' : prva.kasa).replace(',', '.').trim();
+    var kb = String(kasa === undefined || kasa === null ? '' : kasa).replace(',', '.').trim();
+    if (ka !== '' && kb !== '' && Number(ka) !== Number(kb)) dijelovi.push('kasa ' + km(ka) + ' → ' + km(kb) + ' KM');
+    return dijelovi.length ? 'Ispravljeno poslije provjere: ' + dijelovi.join('; ') : '';
   }
 
   /* ── red čekanja ── */
@@ -311,7 +349,7 @@ var Logika = (function () {
 
   return {
     uid: uid, km: km, dT: dT, trajanje: trajanje, danasSarajevo: danasSarajevo,
-    stanjeSmjene: stanjeSmjene, provjeraZavrsnog: provjeraZavrsnog, nedostaje: nedostaje,
+    stanjeSmjene: stanjeSmjene, provjeraZavrsnog: provjeraZavrsnog, nedostaje: nedostaje, saNulama: saNulama, uSmjeni: uSmjeni, ispravke: ispravke,
     dodajURed: dodajURed, ukloniIzReda: ukloniIzReda, sljedeciBatch: sljedeciBatch, pauza: pauza,
     spojiDogadjaje: spojiDogadjaje, dozvoliTap: dozvoliTap,
     dodajMjesece: dodajMjesece, produzenje: produzenje, normaliziraj: normaliziraj, traziClanove: traziClanove,
@@ -322,7 +360,7 @@ var Logika = (function () {
 if (typeof module !== 'undefined' && module.exports) module.exports = Logika;
 /* @logika-end */
 
-const { useState, useEffect, useRef, useCallback } = React;
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
 const { km, dT } = Logika;
 
 /* ═══════ VEZA SA SERVEROM ═══════ */
@@ -390,6 +428,9 @@ function App() {
   const pokusajRef = useRef(0);
   const timerRef = useRef(null);
   const toastTimer = useRef(null);
+  const ispravkaRef = useRef('');
+  // proizvodi onako kako se broje u otvorenoj smjeni (promjena načina brojanja važi od sljedeće smjene)
+  const proizvodiSmjene = useMemo(() => Logika.uSmjeni(podaci.proizvodi, smjena), [podaci.proizvodi, smjena && smjena.mjere]); // eslint-disable-line
 
   const setSmjena = useCallback(f => {
     setSmjenaS(s => { const n = typeof f === 'function' ? f(s) : f; smjenaRef.current = n; return n; });
@@ -560,9 +601,14 @@ function App() {
     return e;
   }, [spremiRed, setSmjena, zakazi]);
 
-  const zavrsi = async (brojanje, kasa, razlog) => {
+  const zavrsi = async (brojanje, kasa, razlog, ispravka) => {
     setRadi(true); setGreska('');
     try {
+      const s0 = smjenaRef.current;
+      if (ispravka && s0 && ispravkaRef.current !== s0.shift_id + '|' + ispravka) {
+        dodaj('NAPOMENA', '', 0, ispravka);
+        ispravkaRef.current = s0.shift_id + '|' + ispravka;
+      }
       const prazno = await isprazniRed();
       if (!prazno) {
         setGreska('Još ' + redRef.current.length + ' promjena nije poslano na server. Provjeri internet pa klikni ponovo. Ništa nije izgubljeno.');
@@ -575,7 +621,11 @@ function App() {
       setSmjena(null);
       setFaza('izvjestaj');
       window.scrollTo(0, 0);
-      api('getBootstrap').then(b => setPodaci(p => ({ ...p, prijedlog: b.prijedlog || {}, proizvodi: b.proizvodi || p.proizvodi }))).catch(() => {});
+      api('getBootstrap').then(b => setPodaci(p => {
+        const n = { ...p, prijedlog: b.prijedlog || {}, prijavljeno: b.prijavljeno || {}, proizvodi: b.proizvodi || p.proizvodi };
+        ls.set(LS.CACHE, n);
+        return n;
+      })).catch(() => {});
     } catch (e) {
       setGreska(e.mreza ? 'Nema veze sa serverom. Ništa nije izgubljeno — provjeri internet pa klikni ponovo.' : e.message);
     } finally { setRadi(false); }
@@ -624,11 +674,11 @@ function App() {
       {faza === 'pocetna' && <Pocetna proizvodi={podaci.proizvodi} prijedlog={podaci.prijedlog} prijavljeno={podaci.prijavljeno || {}} radnik={radnik} onNovi={noviProizvod}
         greska={greska} radi={radi} nazad={() => { setGreska(''); setFaza('radnik'); }} onStart={zapocni} />}
 
-      {faza === 'smjena' && smjena && <Smjena smjena={smjena} radnici={podaci.radnici || []} raspored={podaci.raspored || []} proizvodi={podaci.proizvodi} clanovi={podaci.clanovi} treneri={podaci.treneri || []} onNovi={noviProizvod}
+      {faza === 'smjena' && smjena && <Smjena smjena={smjena} radnici={podaci.radnici || []} raspored={podaci.raspored || []} proizvodi={proizvodiSmjene} clanovi={podaci.clanovi} treneri={podaci.treneri || []} onNovi={noviProizvod}
         dodaj={dodaj} pokaziToast={pokaziToast} setClanovi={c => setPodaci(p => ({ ...p, clanovi: c }))}
         onZavrsi={() => { setGreska(''); setFaza('zavrsna'); window.scrollTo(0, 0); }} />}
 
-      {faza === 'zavrsna' && smjena && <Zavrsna smjena={smjena} proizvodi={podaci.proizvodi} razlozi={podaci.razlozi}
+      {faza === 'zavrsna' && smjena && <Zavrsna smjena={smjena} proizvodi={proizvodiSmjene} razlozi={podaci.razlozi}
         greska={greska} radi={radi} cekaju={red.length}
         nazad={() => { setGreska(''); setFaza('smjena'); }} onGotovo={zavrsi} />}
 
@@ -739,15 +789,34 @@ function Radnik({ radnici, izabran, onDalje, onAdmin, raspored }) {
 }
 
 /* ═══════ BROJAČ (−  18  +) ═══════ */
-function Brojac({ pid, naziv, pod, prij, v, set, mjera }) {
+/** „prošli put" / „vlasnik javio" — tap upiše istu vrijednost (radnik ne mora kucati). */
+function Podsjetnik({ pid, mjera, pod, prij, v, set }) {
+  const imaPrij = prij !== undefined && prij !== null;
+  const x = imaPrij ? prij : pod;
+  if (x === undefined || x === null) return null;
+  const opis = mjera === 'ima' ? (Number(x) > 0 ? 'ima' : 'nema') : mjera === 'posto' ? (Number(x) > 0 ? x + '%' : 'prazna') : String(x);
+  const ko = imaPrij ? 'vlasnik javio' : 'prošli put';
+  // nula se ne tapka: preskočeno je ionako 0
+  if (!(Number(x) > 0)) return <div className="sit">{ko}: {opis}</div>;
+  const isto = v !== undefined && v !== null && v !== '' && Number(v) === Number(x);
+  return (
+    <button type="button" className={'podsj' + (isto ? ' isto' : '') + (imaPrij ? ' vl' : '')} data-isto={pid} onClick={() => set(String(x))}>
+      {(isto ? '✓ ' : '↺ ') + ko + ': ' + opis}
+    </button>
+  );
+}
+
+function Brojac({ pid, naziv, pod, prij, v, set, mjera, oznaka }) {
   const n = v === '' || v === undefined ? null : Number(v);
   const prazno = v === '' || v === undefined;
+  const kl = 'row' + (prazno ? ' prazno' : '') + (oznaka ? ' sumnja' : '');
+  const hint = <Podsjetnik pid={pid} mjera={mjera} pod={pod} prij={prij} v={v} set={set} />;
   if (mjera === 'ima') {
     return (
-      <div className={'row' + (prazno ? ' prazno' : '')}>
+      <div className={kl}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 15.5, fontWeight: 500 }}>{naziv}</div>
-          {pod !== undefined && pod !== null && <div className="sit">prošli put: {pod > 0 ? 'ima' : 'nema'}</div>}
+          {hint}
         </div>
         <div className="cnt">
           <button className={'chip' + (n === 1 ? ' on' : '')} data-ima={pid} style={{ minWidth: 64 }} onClick={() => set('1')}>✓ Ima</button>
@@ -758,13 +827,14 @@ function Brojac({ pid, naziv, pod, prij, v, set, mjera }) {
   }
   if (mjera === 'posto') {
     return (
-      <div className={'row' + (prazno ? ' prazno' : '')} style={{ flexWrap: 'wrap' }}>
+      <div className={kl} style={{ flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 15.5, fontWeight: 500 }}>{naziv}</div>
-          <div className="sit">koliko je ostalo u kanti{pod !== undefined && pod !== null ? ' · prošli put: ' + pod + '%' : ''}</div>
+          <div className="sit">koliko je ostalo u kanti</div>
+          {hint}
         </div>
         <div className="cnt">
-          <input className={'cin' + (prazno ? ' prazno' : '')} data-pid={pid} inputMode="numeric" pattern="[0-9]*" value={v === undefined ? '' : v} placeholder="%" maxLength={3}
+          <input className={'cin' + (prazno ? ' prazno' : '')} data-pid={pid} inputMode="numeric" pattern="[0-9]*" value={v === undefined ? '' : v} placeholder="0" maxLength={3}
             onFocus={e => e.target.select()} onChange={e => { const t = e.target.value.replace(/\D/g, ''); set(t === '' ? '' : String(Math.min(100, Number(t)))); }} />
           <span style={{ color: 'var(--dim)', fontSize: 16 }}>%</span>
         </div>
@@ -775,17 +845,16 @@ function Brojac({ pid, naziv, pod, prij, v, set, mjera }) {
     );
   }
   return (
-    <div className={'row' + (prazno ? ' prazno' : '')}>
+    <div className={kl}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 15.5, fontWeight: 500 }}>{naziv}</div>
-        {prij !== undefined && prij !== null
-          ? <div className="sit" style={{ color: 'var(--gold)' }}>vlasnik javio: {prij}{pod !== undefined && pod !== null && pod !== prij ? ' · prošli put: ' + pod : ''}</div>
-          : (pod !== undefined && pod !== null && <div className="sit">prošli put: {pod}</div>)}
+        {hint}
+        {prij !== undefined && prij !== null && pod !== undefined && pod !== null && pod !== prij && <div className="sit">prošli put: {pod}</div>}
       </div>
       <div className="cnt">
         <button className="cbtn" aria-label={'manje ' + naziv} onClick={() => set(String(Math.max(0, (n || 0) - 1)))}>−</button>
         <input className={'cin' + (prazno ? ' prazno' : '')} data-pid={pid} inputMode="numeric" pattern="[0-9]*"
-          value={v === undefined ? '' : v} placeholder="—" maxLength={4}
+          value={v === undefined ? '' : v} placeholder="0" maxLength={4}
           onFocus={e => e.target.select()}
           onChange={e => set(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, ''))} />
         <button className="cbtn" aria-label={'više ' + naziv} onClick={() => set(String((n || 0) + 1))}>+</button>
@@ -794,22 +863,51 @@ function Brojac({ pid, naziv, pod, prij, v, set, mjera }) {
   );
 }
 
+/** Potvrda: što nije upisano računa se kao 0 (nema). Upozori ako je toga prošli put bilo. */
+function Preskoceno({ lista, prijedlog, prijavljeno, dugme, zatvori, potvrdi }) {
+  const odVlasnika = p => !!prijavljeno && prijavljeno[p.product_id] !== undefined && prijavljeno[p.product_id] !== null;
+  const bilo = p => {
+    const x = odVlasnika(p) ? prijavljeno[p.product_id] : prijedlog ? prijedlog[p.product_id] : undefined;
+    return x !== undefined && x !== null && Number(x) > 0 ? x : null;
+  };
+  const sumnja = lista.filter(p => bilo(p) !== null);
+  const ostali = lista.filter(p => bilo(p) === null);
+  return (
+    <Sheet naslov="Preskočeno = nema" zatvori={zatvori}>
+      <div className="info">Ovo nisi upisao, pa se računa da toga <b style={{ color: 'var(--text)' }}>nema (0)</b>.</div>
+      {sumnja.length > 0 && (
+        <div className="warn" data-testid="preskoceno-sumnja">
+          <b>⚠ Ovoga je bilo — provjeri da stvarno nema:</b>
+          {sumnja.map(p => <div key={p.product_id} style={{ marginTop: 4 }}>{p.naziv} — {odVlasnika(p) ? 'vlasnik javio' : 'prošli put'} {Logika.opisMjere(p, bilo(p))}</div>)}
+        </div>
+      )}
+      {ostali.length > 0 && <div className="card" data-testid="preskoceno" style={{ fontSize: 14, lineHeight: 1.6 }}>{ostali.map(p => p.naziv).join(', ')}</div>}
+      <button className="btn" data-testid="preskoceno-ok" onClick={potvrdi}>{dugme}</button>
+      <button className="btn2" style={{ marginTop: 10 }} onClick={zatvori}>Vrati se i upiši</button>
+    </Sheet>
+  );
+}
+
 /* ═══════ 2. POČETNA INVENTURA ═══════ */
 function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, nazad, onStart, onNovi }) {
   const roba = proizvodi.filter(p => p.prati_zalihu);
   const [novi, setNovi] = useState(false);
+  const [potvrda, setPotvrda] = useState(false);
   const [kasa, setKasa] = useNacrt('kasa_pocetna', '');
   const kasaOk = String(kasa).trim() !== '' && isFinite(Number(String(kasa).replace(',', '.')));
   const [v, setV] = useNacrt('pocetno', {});
   const fali = Logika.nedostaje(roba, v);
   const post = (id, nov) => setV(s => ({ ...s, [id]: nov }));
+  const kreni = (vr) => {
+    const o = {}; roba.forEach(p => { o[p.product_id] = Number(vr[p.product_id]); }); onStart(o, String(kasa).replace(',', '.'));
+  };
 
   return (
     <div className="wrap" style={{ paddingBottom: 32 }}>
       <div className="h1">Prebroji početno stanje</div>
       <div className="info">
-        <b style={{ color: 'var(--text)' }}>{radnik}</b> · Prebroji svaki proizvod u frižideru i na polici. Upiši i <b style={{ color: 'var(--text)' }}>0</b> ako nečega nema.
-        „Prošli put" je samo podsjetnik — broji stvarno stanje.
+        <b style={{ color: 'var(--text)' }}>{radnik}</b> · Prebroji robu u frižideru i na polici. <b style={{ color: 'var(--text)' }}>Čega nema — samo preskoči</b> (računa se 0).
+        Ako je isto kao prošli put, samo tapni <b style={{ color: 'var(--text)' }}>↺ prošli put</b> ispod naziva.
       </div>
       {Logika.grupisi(roba).map(g => (
         <div key={g.ime}>
@@ -836,12 +934,15 @@ function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, naza
         <div className="sit" style={{ marginTop: 8 }}>Prebroji sav novac u kasi (i kusur). Ako je prazna, upiši 0.</div>
       </div>
       {greska && <div className="err">{greska}</div>}
-      <button className="btn" disabled={fali.length > 0 || !kasaOk || radi} onClick={() => {
-        const o = {}; roba.forEach(p => { o[p.product_id] = Number(v[p.product_id]); }); onStart(o, String(kasa).replace(',', '.'));
-      }}>
-        {radi ? 'Počinjem…' : fali.length > 0 ? 'Još ' + fali.length + ' za prebrojati' : !kasaOk ? 'Upiši gotovinu u kasi' : 'ZAPOČNI SMJENU'}
+      <button className="btn" disabled={!kasaOk || radi} onClick={() => { if (fali.length) setPotvrda(true); else kreni(v); }}>
+        {radi ? 'Počinjem…' : !kasaOk ? 'Upiši gotovinu u kasi' : 'ZAPOČNI SMJENU'}
       </button>
+      {fali.length > 0 && <div className="sit" data-testid="preskoceno-broj" style={{ textAlign: 'center', marginTop: -2, marginBottom: 6 }}>
+        {fali.length === 1 ? '1 proizvod nije upisan' : fali.length + ' proizvoda nije upisano'} — računa se da ih nema (0)</div>}
       <button className="btn2" onClick={nazad}>Nazad</button>
+      {potvrda && <Preskoceno lista={fali} prijedlog={prijedlog} prijavljeno={prijavljeno} dugme="Tačno — ZAPOČNI SMJENU"
+        zatvori={() => setPotvrda(false)}
+        potvrdi={() => { const nv = Logika.saNulama(roba, v); setV(nv); setPotvrda(false); kreni(nv); }} />}
     </div>
   );
 }
@@ -1473,31 +1574,42 @@ function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGo
   const [kasa, setKasa] = useNacrt('kasa:' + smjena.shift_id, '');
   const [provjereno, setProvjereno] = useState(false);
   const [razlog, setRazlog] = useState('');
+  const [potvrda, setPotvrda] = useState(false);
+  const [ponovo, setPonovo] = useState([]);   // proizvodi koje treba prebrojati ponovo (zamrznuto, ne mijenja se dok kuca)
+  const [prva, setPrva] = useNacrt('prva:' + smjena.shift_id, null);
   const fali = Logika.nedostaje(roba, v);
   const pr = Logika.provjeraZavrsnog(smjena, proizvodi, v, kasa);
   const kasaOk = pr.kasaRazlika !== null;
   const lista = (razlozi && razlozi.length) ? razlozi : ['Greška u kucanju', 'Gratis / poklon', 'Lom ili isteklo', 'Ne znam'];
 
+  const imena = pids => pids.map(pid => (poId[pid] || { naziv: pid }).naziv).join(', ');
+  const naKasu = () => { setKorak('kasa'); setProvjereno(false); setPonovo([]); window.scrollTo(0, 0); };
+  const naBrojanje = () => { setPonovo(provjereno ? pr.razlikePid.slice() : []); setKorak('brojanje'); setProvjereno(false); window.scrollTo(0, 0); };
+
   if (korak === 'brojanje') {
     return (
       <div className="wrap" style={{ paddingBottom: 32 }}>
         <div className="h1">Prebroji završno stanje</div>
-        <div className="info">Prebroji ponovo <b style={{ color: 'var(--text)' }}>sve</b>, i upiši 0 gdje nema ništa. Poslije toga upisuješ gotovinu iz kase.</div>
+        {ponovo.length > 0
+          ? <div className="warn" data-testid="ponovo">Ne poklapa se: <b>{imena(ponovo)}</b>. Prebroji ponovo označene (crveno). Ako je bilo tačno, ostavi kako jeste.</div>
+          : <div className="info">Prebroji ponovo <b style={{ color: 'var(--text)' }}>sve</b>. Čega nema — samo preskoči (računa se 0). Poslije toga upisuješ gotovinu iz kase.</div>}
         {Logika.grupisi(roba).map(g => (
           <div key={g.ime}>
             <div className="grp">{g.ime.toUpperCase()}</div>
             <div className="card0">
               {g.stavke.map(p => (
-                <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} mjera={Logika.mjera(p)} v={v[p.product_id]}
+                <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} mjera={Logika.mjera(p)} v={v[p.product_id]} oznaka={ponovo.indexOf(p.product_id) >= 0}
                   set={n => setV(s => ({ ...s, [p.product_id]: n }))} />
               ))}
             </div>
           </div>
         ))}
-        <button className="btn" disabled={fali.length > 0} onClick={() => { setKorak('kasa'); setProvjereno(false); window.scrollTo(0, 0); }}>
-          {fali.length > 0 ? 'Još ' + fali.length + ' za prebrojati' : 'DALJE — KASA'}
-        </button>
+        <button className="btn" onClick={() => { if (fali.length) setPotvrda(true); else naKasu(); }}>DALJE — KASA</button>
+        {fali.length > 0 && <div className="sit" data-testid="preskoceno-broj" style={{ textAlign: 'center', marginTop: -2, marginBottom: 6 }}>
+          {fali.length === 1 ? '1 proizvod nije upisan' : fali.length + ' proizvoda nije upisano'} — računa se da ih nema (0)</div>}
         <button className="btn2" onClick={nazad}>Nazad na prodaju</button>
+        {potvrda && <Preskoceno lista={fali} dugme="Tačno — DALJE NA KASU" zatvori={() => setPotvrda(false)}
+          potvrdi={() => { setV(Logika.saNulama(roba, v)); setPotvrda(false); naKasu(); }} />}
       </div>
     );
   }
@@ -1513,7 +1625,7 @@ function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGo
         <span style={{ fontSize: 18, color: 'var(--dim)' }}>KM</span>
       </div>
       {!provjereno && (
-        <button className="btn" disabled={!kasaOk} onClick={() => setProvjereno(true)}>PROVJERI</button>
+        <button className="btn" disabled={!kasaOk} onClick={() => { setProvjereno(true); if (!prva) setPrva({ roba: { ...v }, kasa }); }}>PROVJERI</button>
       )}
       {provjereno && kasaOk && (
         <>
@@ -1536,7 +1648,9 @@ function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGo
                 {pr.razlikeRobe ? '⚠ ' + pr.razlikeRobe + (pr.razlikeRobe === 1 ? ' proizvod se ne poklapa' : ' proizvoda se ne poklapa') : '✓ sve se poklapa'}
               </b>
             </div>
+            {pr.razlikeRobe > 0 && <div className="sit" data-testid="razlike-imena" style={{ marginTop: 4, color: 'var(--text)' }}>{imena(pr.razlikePid)}</div>}
           </div>
+          {pr.razlikeRobe > 0 && <button className="btn2" data-testid="prebroji-ponovo" onClick={naBrojanje}>↺ Prebroji ponovo: {imena(pr.razlikePid)}</button>}
           {pr.trebaRazlog && (
             <>
               <div className="warn">Nešto se ne poklapa. Ako nisi siguran, vrati se i prebroji robu ponovo. Ako je sve tačno, izaberi razlog:</div>
@@ -1550,13 +1664,13 @@ function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGo
           <button className="btn" disabled={radi || (pr.trebaRazlog && !razlog)}
             onClick={() => {
               const b = {}; roba.forEach(p => { b[p.product_id] = Number(v[p.product_id]); });
-              onGotovo(b, String(kasa).replace(',', '.'), pr.trebaRazlog ? razlog : '');
+              onGotovo(b, String(kasa).replace(',', '.'), pr.trebaRazlog ? razlog : '', Logika.ispravke(prva, roba, v, kasa));
             }}>
             {radi ? 'Zatvaram smjenu…' : 'ZAVRŠI SMJENU'}
           </button>
         </>
       )}
-      <button className="btn2" onClick={() => { setKorak('brojanje'); setProvjereno(false); }}>Nazad na brojanje robe</button>
+      <button className="btn2" onClick={naBrojanje}>Nazad na brojanje robe</button>
     </div>
   );
 }

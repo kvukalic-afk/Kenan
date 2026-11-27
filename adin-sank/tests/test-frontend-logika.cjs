@@ -235,3 +235,46 @@ test('mjere: "stiglo" i "nova kanta" usred smjene', () => {
   assert.deepEqual([L.trenutnoMjera(prod[0], smjena, st), L.trenutnoMjera(prod[1], smjena, st)], [1, 100]);
   assert.equal(L.nestalo(smjena, prod, st).length, 0);
 });
+
+test('preskočeno = nema: prazna polja postaju 0, upisano ostaje', () => {
+  const roba = [{ product_id: 'a', naziv: 'A' }, { product_id: 'b', naziv: 'B' }, { product_id: 'c', naziv: 'C' }];
+  const v = { a: '5', b: '' };
+  assert.deepEqual(Object.assign({}, L.saNulama(roba, v)), { a: '5', b: '0', c: '0' });
+  assert.deepEqual(Object.assign({}, v), { a: '5', b: '' }, 'original se ne mijenja');
+  assert.equal(L.nedostaje(roba, L.saNulama(roba, v)).length, 0);
+});
+
+test('način brojanja otvorene smjene ima prednost nad novim načinom proizvoda', () => {
+  const proizvodi = [
+    { product_id: 'protein', naziv: 'Protein vanilija', jedinica: '%', paket: 0 },
+    { product_id: 'redbull', naziv: 'Red Bull', jedinica: 'kom', paket: 24 },
+    { product_id: 'kreatin', naziv: 'Kreatin', jedinica: '%' }
+  ];
+  const smjena = { mjere: { protein: 'ima', redbull: 'kom', kreatin: '%' } };
+  const u = L.uSmjeni(proizvodi, smjena);
+  assert.deepEqual(u.map(p => L.mjera(p)).join(','), 'ima,kom,posto');
+  assert.equal(u[1], proizvodi[1], 'nepromijenjen proizvod je isti objekat');
+  assert.equal(proizvodi[0].jedinica, '%', 'original se ne mijenja');
+  assert.equal(L.uSmjeni(proizvodi, null), proizvodi);
+  assert.equal(L.uSmjeni(proizvodi, { mjere: {} })[0], proizvodi[0]);
+});
+
+test('razlike po imenu i ispravke poslije provjere', () => {
+  const proizvodi = [
+    { product_id: 'voda', naziv: 'Voda', cijena: 1, prati_zalihu: true },
+    { product_id: 'rb', naziv: 'Red Bull', cijena: 4, prati_zalihu: true },
+    { product_id: 'protein', naziv: 'Protein', cijena: 3, prati_zalihu: true, jedinica: '%' }
+  ];
+  const smjena = { pocetna: { voda: 10, rb: 6, protein: 80 }, kasa_pocetna: 20,
+    dogadjaji: [{ event_id: 'e1', tip: 'SALE', product_id: 'rb', kolicina: 2 }] };
+  const pr = L.provjeraZavrsnog(smjena, proizvodi, { voda: '0', rb: '3', protein: '70' }, '28');
+  assert.equal(pr.razlikePid.join(','), 'voda,rb', 'protein u % nema razliku');
+  assert.equal(pr.kasaRazlika, 0);
+  const prva = { roba: { voda: '0', rb: '3', protein: '70' }, kasa: '28' };
+  assert.equal(L.ispravke(prva, proizvodi, { voda: '10', rb: '4', protein: '70' }, '28'),
+    'Ispravljeno poslije provjere: Voda 0 → 10; Red Bull 3 → 4');
+  assert.equal(L.ispravke(prva, proizvodi, { voda: '0', rb: '3', protein: '60' }, '30,5'),
+    'Ispravljeno poslije provjere: Protein 70% → 60%; kasa 28,00 → 30,50 KM');
+  assert.equal(L.ispravke(prva, proizvodi, prva.roba, '28'), '', 'bez promjena nema napomene');
+  assert.equal(L.ispravke(null, proizvodi, prva.roba, '28'), '');
+});
