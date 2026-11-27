@@ -31,3 +31,18 @@ Cilj: 100 kutija (1 dizajn) + umetak + 180 naljepnica (6 dizajna × 30), oko 300
 
 ## Odbili
 Tunart, Sitoprint, QinPrinting, Injectorpen, Fuyang, Sarpet, Ebifine, Kutuevi, Omex, 1200dpi, Contrast, Pressia, MJC, Pakendikeskus, Demago (samo HR), Jinguan (MOQ 500), Chief Color, Ecopaperbox (min. 600 $), Guanchi (MOQ 500), Stickersmanufacturer i Labelprintingchina (ne šalju u BiH), JinZCai (420 $), Data Print EE, Digitala Pele, Mouse Studio (CG), Stojkov (ne prodaje fizičkim licima).
+
+## Dopuna 27.11.2026 (krajnje procjene do Cazina, 1 $ = 1,70 KM, carina i PDV oko +29 %)
+| Firma | 100 kom | 300 kom | Napomena |
+|---|---|---|---|
+| JHua | 271,91 $ s FedEx-om, ~625 KM | 468 $ s FedEx-om, ~1.055 KM | kutija 65×40×20 + plastični uložak, naljepnice uključene |
+| CNNPACKAGE | 302 $ s dostavom, ~690 KM | upitano | sklopiva kutija + standardni umetak + 180 naljepnica; provjeravaju doplatu za Cazin |
+| Fine Packing | 350 $ s dostavom do Cazina, ~795 KM | / | uspravna 38×23×68 + plastični uložak |
+| MGM Zagreb | 320,75 € s HR PDV-om + DPD 47 €, ~860 KM (s našim PDV-om) | upitano (v4) | uspravna 25×25×65 + umetak; stara varijanta |
+| Hengxinmao (ispravljeno) | 499 $, ~1.120 KM | 760 $, ~1.690 KM | skuplje nego prvi put |
+| Pakoro | ne radi | ~20 % manje od 500 kom | 500 kom: 781 $ EMS sa plaćenom carinom, ~1.330 KM |
+| Glee | 378 $ + dostava | / | poklopac+dno 72×52×25, 350 g |
+| Yilucai | 570 $ + dostava | 540 $ + naljepnice + dostava | skupo |
+| Gentlever | 9,50 $/kom | 500 kom ~3 $/kom | skupo |
+| OEMSticker | samo naljepnice 380 $ | / | skupo |
+Regija: Eurotisak i PROOF odbili (PROOF samo firmama), Kengo proslijedio GS Pixel Bijeljina (print@gspixel.ba).
