@@ -75,3 +75,10 @@ Vraćeno kao nepostojeća adresa: Weiqi, no KACHI, QinPrinting, Kailiou, Tianshi
 
 ## 26.11.2026: adresa za dostavu
 Adresa isporuke (Cazin) poslana na 15 dobavljača uz zahtjev za tačnu cijenu dostave, doplatu za udaljeno područje i rok: PackPro, MY Packaging, Yellow, Zhengyang, Pakoro, JHua, Sticker Printing China, Fine Packing, Glee, Xinyi, Gentlever, Huaqiang, Hengxinmao, 1Etiket, MGM.
+
+## 27.11.2026: RFQ-HV-004 na bosanskom (novi dizajn: jedna kutija + 6 naljepnica)
+Prilozi: RFQ_HELVERA_v4_BS.pdf i print fajlovi (kutija, kroj, naljepnice) iz `dizajn-v4/`. Traženo: 100 i 300 kompleta, dostava do Cazina.
+- **BiH (13):** ES-Star Bihać (info@es-star.ba), Grafis Cazin (info@grafis.ba), Feral Jelah (info@feral.ba), Planjax Jelah (info@planjaxgroup.com), Rigel Ilidža (office@rigel.ba), Belimprint Lukavac (belimkomercijala@gmail.com), Ermex I. Sarajevo (info@ermex.ba), Pentagram Sarajevo (pentagram@pentagram.ba), Optigraf Sarajevo (optigraf@hotmail.com), Tiskara Logotip (info@tiskara-logotip.com), Pepi-Karttis Mostar (odgovor u postojećoj niti); samo naljepnice: Dobra knjiga (info@dobraknjiga.ba), Boskan (boskan@bih.net.ba)
+- **Hrvatska (9):** Markom (markom@markom.hr), Jampak (info@jampak.hr), Kerschoffset (kerschoffset@kerschoffset.hr), MPprint (info@mpprint.hr), Slog (info@slog-tiskara.hr), MGM Studio (odgovor u niti); naljepnice: Redak (odgovor u niti), Emboss Ink (info@embossink.hr), Eurotisak (info@eurotisak.hr)
+- **Srbija (15):** Print Shop Kolibri (info@printshopkolibri.rs), Kengo (info@kengo.rs), Profi Print (info@profiprint.co.rs), Aja Grafika (office@ajagrafika.rs), Štampačija (stampacija@gmail.com), Bari Print, Grafolik, Grafo Marketing, SWA TIM, Deto, Elite Print, PROOF (office@stamparija.rs); naljepnice: LabelPrint.rs, Xtim, DM Trade
+- Nije poslano (ranije odbili ili ne odgovara): Pressia, Stojkov, Sitoprint, no KACHI, Omex, Demago, Mouse Studio. Grafičar Promet nema čitljiv email (tel. +387 61 357 505).
