@@ -27,7 +27,7 @@ var TAB = {
 
 var KOLONE = {
   PROIZVODI: ['product_id', 'kategorija', 'naziv', 'cijena', 'nabavna_cijena', 'prati_zalihu',
-    'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci', 'tip', 'dodao'],
+    'aktivan', 'redoslijed', 'minimum', 'clanarina_mjeseci', 'tip', 'dodao', 'jedinica', 'paket'],
   SMJENE: ['shift_id', 'datum', 'radnik', 'vrijeme_pocetka', 'vrijeme_kraja', 'status',
     'ukupno_prodano_klikovima', 'ukupno_prodano_po_inventuri', 'promet', 'kasa_ocekivano',
     'kasa_stvarno', 'kasa_razlika', 'kasa_razlog', 'broj_razlika', 'vrijednost_razlike',
@@ -78,7 +78,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '13';
+var VERZIJA_SEME = '14';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -391,7 +391,9 @@ function proizvodi_(sviUkljucujuciNeaktivne) {
       redoslijed: s_(r.redoslijed) === '' ? 9999 : num_(r.redoslijed),
       minimum: num_(r.minimum),
       clanarina_mjeseci: Math.max(0, Math.round(num_(r.clanarina_mjeseci))),
-      dodao: s_(r.dodao)
+      dodao: s_(r.dodao),
+      jedinica: s_(r.jedinica) || 'kom',
+      paket: Math.max(0, Math.round(num_(r.paket)))
     };
   });
   lista.forEach(function (p, i) { p.tip = tipProizvoda_(t.redovi.filter(function (r) { return s_(r.product_id); })[i], p); });
@@ -420,7 +422,8 @@ function trosak_(p) {
 function javniProizvod_(p) {
   return {
     product_id: p.product_id, kategorija: p.kategorija, naziv: p.naziv, cijena: p.cijena,
-    prati_zalihu: p.prati_zalihu, minimum: p.minimum, clanarina_mjeseci: p.clanarina_mjeseci, tip: p.tip
+    prati_zalihu: p.prati_zalihu, minimum: p.minimum, clanarina_mjeseci: p.clanarina_mjeseci, tip: p.tip,
+    jedinica: p.jedinica, paket: p.paket
   };
 }
 
@@ -744,6 +747,14 @@ function osigurajTabele_(formatiraj) {
     }
   } catch (e) { logMigracija_('SEED_KOREKCIJA_1126B', e); }
 
+  // protein po okusima (mjerice) + dopuna u kantama (vlasnik, 27.11.)
+  try {
+    if (!svojstva_().getProperty('SEED_VARIJANTE_1127')) {
+      osigurajVarijante_(uradjeno);
+      svojstva_().setProperty('SEED_VARIJANTE_1127', '1');
+    }
+  } catch (e) { logMigracija_('SEED_VARIJANTE_1127', e); }
+
   var pg = ss.getSheetByName(TAB.PREGLED);
   if (!pg) {
     pg = ss.insertSheet(TAB.PREGLED);
@@ -796,6 +807,34 @@ function osigurajNovaPica_(uradjeno) {
     uradjeno.push('upisano javljeno stanje');
   }
   return ids;
+}
+
+/**
+ * Protein se prodaje na mjerice, po okusima: vanilija (postojeći 'protein'), čokolada, malina.
+ * Kreatin je također na mjerice. Idempotentno: dodaje samo ono čega nema; postojeće redove ne prepisuje osim praznog imena/jedinice.
+ */
+function osigurajVarijante_(uradjeno) {
+  var t = tabela_(TAB.PROIZVODI);
+  var poId = {}, maxR = 0;
+  t.redovi.forEach(function (r) { poId[s_(r.product_id)] = r; maxR = Math.max(maxR, num_(r.redoslijed)); });
+  var osnovni = poId.protein;
+  var cijena = osnovni ? num_(osnovni.cijena) || 3 : 3, nabavna = osnovni ? num_(osnovni.nabavna_cijena) || 2.3 : 2.3;
+  if (osnovni) {
+    var izm = { jedinica: 'mjerica', paket: num_(osnovni.paket) || 30 };
+    if (s_(osnovni.naziv) === 'Protein') izm.naziv = 'Protein vanilija';
+    azurirajRed_(t, osnovni, izm);
+    uradjeno.push('Protein → okusi (vanilija)');
+  }
+  var ostali = [['protein_cokolada', 'Protein čokolada'], ['protein_malina', 'Protein malina']];
+  var redS = osnovni ? num_(osnovni.redoslijed) : 100;
+  ostali.forEach(function (o, i) {
+    if (poId[o[0]]) return;
+    dodajRedove_(tabela_(TAB.PROIZVODI), [{ product_id: o[0], kategorija: osnovni ? s_(osnovni.kategorija) : 'Suplementi', naziv: o[1], cijena: cijena, nabavna_cijena: nabavna,
+      prati_zalihu: true, aktivan: true, redoslijed: redS + 1 + i, minimum: 5, clanarina_mjeseci: 0, tip: 'roba', dodao: '', jedinica: 'mjerica', paket: 30 }]);
+    uradjeno.push('dodan ' + o[1]);
+  });
+  var kr = poId.kreatin;
+  if (kr && !s_(kr.jedinica)) { azurirajRed_(t, kr, { jedinica: 'mjerica', paket: num_(kr.paket) || 30 }); uradjeno.push('Kreatin na mjerice'); }
 }
 
 /** Greške u migracijama se više ne gutaju tiho: upisuju se i vidljive su u Vlasnik → Postavke → Provjera sistema. */
@@ -1687,13 +1726,16 @@ function getAdminData(pin) {
       ob.stavke.forEach(function (st) { ocek[st.product_id] = st.ocekivano; });
       zalihe = robaAktivna.map(function (p) {
         var k = ocek.hasOwnProperty(p.product_id) ? ocek[p.product_id] : null;
-        return { product_id: p.product_id, naziv: p.naziv, kolicina: k, minimum: p.minimum, izvor: 'očekivano sada', nisko: k !== null && k <= p.minimum };
+        var stavka = ob.stavke.filter(function (x) { return x.product_id === p.product_id; })[0];
+        var bilo = !!stavka && (stavka.pocetno + stavka.dopunjeno) > 0;
+        return { product_id: p.product_id, naziv: p.naziv, kolicina: k, minimum: p.minimum, jedinica: p.jedinica, izvor: 'očekivano sada',
+          nisko: k !== null && k <= p.minimum, nestalo: bilo && k !== null && k <= 0 };
       });
     } else {
       var pr = prijedlog_(tInv);
       zalihe = robaAktivna.map(function (p) {
         var k = pr.hasOwnProperty(p.product_id) ? pr[p.product_id] : null;
-        return { product_id: p.product_id, naziv: p.naziv, kolicina: k, minimum: p.minimum, izvor: 'zadnje brojanje', nisko: k !== null && k <= p.minimum };
+        return { product_id: p.product_id, naziv: p.naziv, kolicina: k, minimum: p.minimum, jedinica: p.jedinica, izvor: 'zadnje brojanje', nisko: k !== null && k <= p.minimum, nestalo: false };
       });
     }
 
@@ -1793,7 +1835,8 @@ function saveProduct(pin, p) {
         naziv: naziv, kategorija: s_(p.kategorija).slice(0, 30) || 'Ostalo', cijena: r2_(cijena), nabavna_cijena: nabavna,
         prati_zalihu: !!p.prati_zalihu, aktivan: p.aktivan === undefined ? true : !!p.aktivan,
         minimum: Math.max(0, Math.round(num_(p.minimum))),
-        clanarina_mjeseci: Math.max(0, Math.round(num_(p.clanarina_mjeseci)))
+        clanarina_mjeseci: Math.max(0, Math.round(num_(p.clanarina_mjeseci))),
+        jedinica: s_(p.jedinica).slice(0, 20) || 'kom', paket: Math.max(0, Math.min(1000, Math.round(num_(p.paket))))
       };
       var tip = s_(p.tip).toLowerCase();
       if (TIPOVI_PROIZVODA.indexOf(tip) < 0) tip = izmjene.prati_zalihu ? 'roba' : (izmjene.clanarina_mjeseci > 0 ? 'clanarina' : 'usluga');
@@ -2278,6 +2321,7 @@ function popraviSistem(pin) {
       svojstva_().deleteProperty('MIGRACIJE_GRESKE');
       var uradjeno = [];
       try { osigurajNovaPica_(uradjeno); } catch (e) { logMigracija_('popravka pića', e); poruke.push('Pića: ' + (e && e.message ? e.message : e)); }
+      try { osigurajVarijante_(uradjeno); } catch (e) { logMigracija_('popravka okusa', e); poruke.push('Okusi: ' + (e && e.message ? e.message : e)); }
       ['SEED_TRENERI_1126', 'SEED_CIJENE_1126', 'SEED_RASPORED', 'SEED_PICA_1125'].forEach(function (k) { if (k !== 'SEED_PICA_1125') svojstva_().deleteProperty(k); });
       try { poruke.push(osigurajTabele_(true)); } catch (e) { logMigracija_('osigurajTabele', e); poruke.push('Tabele: ' + (e && e.message ? e.message : e)); }
       svojstva_().setProperty('VERZIJA_SEME', VERZIJA_SEME);

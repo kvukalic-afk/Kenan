@@ -627,3 +627,28 @@ test('POČETAK OD NULE: arhivira i čisti smjene/događaje/inventuru/ulaze; proi
   assert.equal(g.startShift({ shift_id: 'N1', radnik: 'Edin', pocetna: pocetno(g, { redbull: 7 }) }).ok, true);
   assert.equal(ok(g.getBootstrap()).aktivna.kasa_pocetna, 0);
 });
+
+test('protein po okusima (mjerice): vanilija/čokolada/malina, kreatin na mjerice, dopuna u kantama; jedinica i paket se mogu mijenjati', () => {
+  const g = napraviOkruzenje({ sada: SAT, varijante: true });
+  g.setupSpreadsheet();
+  const b = ok(g.getBootstrap());
+  const pr = id => b.proizvodi.find(p => p.product_id === id);
+  assert.deepEqual(['protein', 'protein_cokolada', 'protein_malina'].map(id => pr(id).naziv), ['Protein vanilija', 'Protein čokolada', 'Protein malina']);
+  assert.ok(['protein', 'protein_cokolada', 'protein_malina', 'kreatin'].every(id => pr(id).jedinica === 'mjerica' && pr(id).paket === 30));
+  assert.ok(['protein', 'protein_cokolada', 'protein_malina'].every(id => pr(id).cijena === 3 && pr(id).prati_zalihu));
+  g.setupSpreadsheet();
+  assert.equal(g.__tabela('PROIZVODI').filter(p => /^Protein/.test(p.naziv)).length, 3, 'nema duplikata');
+  // vlasnik mijenja veličinu kante
+  ok(g.saveProduct('2308', { product_id: 'protein_malina', naziv: 'Protein malina', kategorija: 'Suplementi', cijena: 3, nabavna: 2.3, tip: 'roba', jedinica: 'mjerica', paket: 40 }));
+  assert.equal(ok(g.getBootstrap()).proizvodi.find(p => p.product_id === 'protein_malina').paket, 40);
+  // nestalo: smjena u toku, malina je bila na zalihi i potrošena do nule
+  ok(g.startShift({ shift_id: 'P', radnik: 'Edin', pocetna: pocetno(g, { protein_malina: 2, protein: 5 }) }));
+  ok(g.pushEvents('P', [
+    { event_id: 'p1', shift_id: 'P', tip: 'SALE', product_id: 'protein_malina', kolicina: 1 },
+    { event_id: 'p2', shift_id: 'P', tip: 'POTROSNJA', product_id: 'protein_malina', kolicina: 1, osoba: 'Kenan' }
+  ]));
+  const z = ok(g.getAdminData('2308')).zalihe;
+  assert.equal(z.find(x => x.product_id === 'protein_malina').nestalo, true);
+  assert.equal(z.find(x => x.product_id === 'protein').nestalo, false);
+  assert.equal(z.find(x => x.product_id === 'rodeo').nestalo, false, 'što nikad nije bilo na zalihi nije "nestalo"');
+});

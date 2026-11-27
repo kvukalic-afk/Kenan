@@ -29,6 +29,11 @@
 | 23 | Greška je „kritična" ako je minus u evidenciji ili manjak ≥ 5 KM; manji manjak i višak su „upozorenje" | — |
 | 24 | Upozorenje na greške Kenan dobija **kad se prijavi** (nema SMS-a/e-maila). Ako želiš poruku na telefon, treba dodati e-mail obavještenja | — |
 
+| 25 | Protein je podijeljen na okuse: **Protein vanilija** (raniji "Protein"), **Protein čokolada**, **Protein malina**. Prodajna 3 KM po **mjerici**, nabavna 2,30 po mjerici (kao ranije) | Vlasnik → Proizvodi |
+| 26 | **Kanta = 30 mjerica** (samo moja pretpostavka, za brzu dopunu "1 kanta"). Kreatin je također na mjerice (30) | Vlasnik → Proizvodi → Veličina pakovanja |
+| 27 | Radnik broji **mjerice** (1 tap = 1 mjerica), ne kante. Okus kreatina nije razdvajan; ako treba, dodaj ga kao novi proizvod | Vlasnik → Proizvodi |
+| 28 | "Na čiji račun": Edin i Kenan su uvijek prvi izbor u ☕ Potrošnji; izvještaji i pregled vlasnika računaju potrošnju po tim imenima | — |
+
 ## Ograničenja koja trebaš znati
 
 - Aplikacija se mora **otvoriti** dok ima interneta (Google je servira). Kad je jednom otvorena, prodaja radi i bez interneta, a sinhronizuje se kasnije.

@@ -186,6 +186,12 @@
   .stupac{display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; flex:1 0 16px}
   .stupac i{display:block; width:100%; max-width:22px; border-radius:4px 4px 0 0; background:var(--goldg)}
   .stupac span{font-size:10px; color:var(--dim)}
+  .kolone{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .kol{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; min-height:64px}
+  .kol.on{border-color:var(--gold); background:var(--gold2)}
+  .kol .kh{display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:14.5px; margin-bottom:4px}
+  .kol .kh span{color:var(--gold); font-size:18px}
+  .err.nestalo{animation:puls 1.6s ease-in-out 3}
   .card.greska{animation:ulaz .35s ease both}
   @media (prefers-reduced-motion: reduce){ *, *::before, *::after{animation:none !important; transition:none !important;} }
 </style>

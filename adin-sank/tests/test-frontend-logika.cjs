@@ -184,3 +184,20 @@ test('paket s prilagođenom cijenom trenera', () => {
   assert.equal(L.paket(karta, tr, 'Edin', {}, '2026-11-21').ukupno, 80);
   assert.equal(L.cijenaIzUnosa('3000'), null);
 });
+
+test('nestalo: samo ono što je bilo na zalihi i došlo do nule', () => {
+  const prod = [
+    { product_id: 'malina', naziv: 'Protein malina', prati_zalihu: true }, { product_id: 'cokolada', naziv: 'Protein čokolada', prati_zalihu: true },
+    { product_id: 'rodeo', naziv: 'Rodeo', prati_zalihu: true }, { product_id: 'dnevna', naziv: 'Dnevna', prati_zalihu: false }
+  ];
+  const smjena = { pocetna: { malina: 2, cokolada: 5, rodeo: 0 }, dogadjaji: [
+    { tip: 'SALE', product_id: 'malina', kolicina: 1 }, { tip: 'POTROSNJA', product_id: 'malina', kolicina: 1, osoba: 'Edin' }, { tip: 'SALE', product_id: 'cokolada', kolicina: 1 }
+  ] };
+  const st = L.stanjeSmjene(smjena, prod);
+  assert.equal(L.nestalo(smjena, prod, st).map(p => p.naziv).join(), 'Protein malina');
+  // dopuna vraća zalihu
+  smjena.dogadjaji.push({ tip: 'RESTOCK', product_id: 'malina', kolicina: 30 });
+  assert.equal(L.nestalo(smjena, prod, L.stanjeSmjene(smjena, prod)).length, 0);
+  // potrošnja po računu
+  assert.equal(JSON.stringify(st.potrosnjaOsobe), JSON.stringify({ Edin: { malina: 1 } }));
+});

@@ -247,9 +247,13 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByRole('button', { name: '☕ Potrošnja osoblja' }).click();
     await page.locator('[data-osoba="Edin"]').click();
     await page.locator('[data-potrosnja="redbull"]').click();
+    await page.getByTestId('racuni').locator('[data-racun="Edin"]').filter({ hasText: 'Red Bull' }).waitFor();
+    assert.equal(await page.getByTestId('racuni').locator('[data-racun="Kenan"]').count(), 1, 'dvije kolone: Edin i Kenan');
+    await page.screenshot({ path: path.join(SLIKE, '6e-potrosnja-racuni.png') });
     await page.getByRole('button', { name: 'Gotovo', exact: true }).click();
     await page.getByRole('button', { name: '💶 Uzeto iz kase' }).click();
     await page.getByTestId('uzeto-iznos').fill('10');
+    await page.locator('.sheet').getByRole('button', { name: 'Kenan', exact: true }).click();
     await page.getByRole('button', { name: /Zapiši: Kenan uzeo 10,00 KM/ }).click();
     await page.getByTestId('promet').filter({ hasText: '78,00' }).waitFor();
     await cekajSync(page);
