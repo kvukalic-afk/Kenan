@@ -278,3 +278,34 @@ test('razlike po imenu i ispravke poslije provjere', () => {
   assert.equal(L.ispravke(prva, proizvodi, prva.roba, '28'), '', 'bez promjena nema napomene');
   assert.equal(L.ispravke(null, proizvodi, prva.roba, '28'), '');
 });
+
+test('analiza rada: tekst za Claudea nosi uvide, brojke i detalje (ugovor backend ↔ telefon)', () => {
+  const g = napraviOkruzenje({ sada: new Date('2026-11-21T15:03:00Z') });
+  g.setupSpreadsheet();
+  const ms = Date.parse('2026-11-21T14:00:00Z');
+  const z = (i, vrsta, x = {}) => Object.assign({ id: 'T-test' + i, vrsta, ms, radnik: 'Edin', shift_id: 'S1', ekran: 'smjena', verzija: 'v', uredjaj: 'Android' }, x);
+  const paket = [];
+  for (let i = 0; i < 4; i++) paket.push(z(i, 'ponisti', { pid: 'redbull', trajanje: 2 }));
+  paket.push(z(10, 'brojanje', { ekran: 'pocetna', trajanje: 480, detalji: JSON.stringify({ preskoceno: 6, prosli: 9 }) }));
+  paket.push(z(11, 'prozor', { detalji: 'dopuna', broj: 0, trajanje: 15 }));
+  paket.push(z(12, 'greska', { detalji: 'Upiši gotovinu u kasi' }));
+  paket.push(z(13, 'ekran', { ekran: 'zavrsna', detalji: 'smjena', trajanje: 30 }));
+  assert.equal(JSON.parse(JSON.stringify(g.zabiljeziTrag(paket))).primljeno.length, paket.length);
+  const a = JSON.parse(JSON.stringify(g.getAnalizaRada('2308', 7)));
+  const t = L.tekstAnalize(a);
+  assert.match(t, /^ANALIZA RADA — Fitness Club Adin, 15\.11\.2026\. – 21\.11\.2026\. \(7 dana\)/);
+  assert.match(t, /Smjena: 1 · zapisa: 8 · radnici: Edin/);
+  assert.match(t, /UVIDI:\n1\. \[SREDNJA\] Početno brojanje traje oko 8 min/);
+  assert.match(t, /Često poništavanje: Red Bull \(4×\) — 4 od toga u prvih 5 sekundi/);
+  assert.match(t, /BROJANJE: početak medijan 8 min \(najduže 8\), preskočeno ~6, „prošli put" ~9 · kraj nema podataka/);
+  assert.match(t, /PONIŠTAVANJA: Red Bull 4× \(4 odmah\)/);
+  assert.match(t, /PROZORI: Dopuna zalihe 1× \(bez unosa 1, Ø 15 s\)/);
+  assert.match(t, /PORUKE O GREŠCI: „Upiši gotovinu u kasi" 1×/);
+  assert.match(t, /NAZAD: sa završnog brojanja na prodaju 1×/);
+  assert.equal(L.tekstAnalize(null), '');
+  const g2 = napraviOkruzenje({ sada: new Date('2026-11-21T15:03:00Z') });
+  g2.setupSpreadsheet();
+  const prazno = L.tekstAnalize(JSON.parse(JSON.stringify(g2.getAnalizaRada('2308', 1))));
+  assert.match(prazno, /\(1 dan\)/);
+  assert.match(prazno, /Još nema zapisa/);
+});

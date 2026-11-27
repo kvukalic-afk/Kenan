@@ -206,7 +206,7 @@
 <body>
 <div id="root"></div>
 <script>
-/* Generisano iz src/app.jsx (2026-11-27 13:20 UTC) — ne uređuj ručno, pokreni npm run build */
+/* Generisano iz src/app.jsx (2026-11-27 23:42 UTC) — ne uređuj ručno, pokreni npm run build */
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
@@ -602,7 +602,69 @@ var Logika = /* @__PURE__ */ function() {
     });
     return L.join("\n");
   }
+  function tekstAnalize(a) {
+    if (!a) return "";
+    var L = [];
+    var n1 = function(x) {
+      return x === null || x === void 0 ? "—" : String(x).replace(".", ",");
+    };
+    var lista = function(naslov, arr, f) {
+      if (arr && arr.length) L.push(naslov + ": " + arr.map(f).join(", "));
+    };
+    L.push("ANALIZA RADA — Fitness Club Adin, " + dT2(a.od) + " – " + dT2(a.do) + " (" + a.dana + (a.dana % 10 === 1 && a.dana % 100 !== 11 ? " dan)" : " dana)"));
+    L.push("Smjena: " + a.smjena + " · zapisa: " + a.zapisa + (a.radnici && a.radnici.length ? " · radnici: " + a.radnici.map(function(r) {
+      return r.ime;
+    }).join(", ") : ""));
+    if (!a.zapisa) L.push("Još nema zapisa — telefon bilježi od nove verzije aplikacije.");
+    if (a.uvidi && a.uvidi.length) {
+      L.push("");
+      L.push("UVIDI:");
+      a.uvidi.forEach(function(u, i) {
+        L.push(i + 1 + ". [" + String(u.ozbiljnost).toUpperCase() + "] " + u.naslov + (u.detalj ? " — " + u.detalj : "") + " Prijedlog: " + u.prijedlog);
+      });
+    }
+    L.push("");
+    var b = a.brojanje || { pocetak: {}, kraj: {} };
+    L.push("BROJANJE: početak " + (b.pocetak.n ? "medijan " + n1(b.pocetak.medijan_min) + " min (najduže " + n1(b.pocetak.max_min) + "), preskočeno ~" + n1(b.pocetak.preskoceno) + ', „prošli put" ~' + n1(b.pocetak.prosli_put) : "nema podataka") + " · kraj " + (b.kraj.n ? "medijan " + n1(b.kraj.medijan_min) + " min (najduže " + n1(b.kraj.max_min) + "), preskočeno ~" + n1(b.kraj.preskoceno) : "nema podataka"));
+    var p = a.provjere;
+    if (p && p.smjena) {
+      L.push("PROVJERA NA KRAJU: iz prve se poklopilo " + p.iz_prve + "/" + p.smjena + ", prosjek provjera " + n1(p.prosjek_pokusaja) + ", ponovo brojano " + p.ponovo + "×, ispravki " + p.ispravke + (p.razlozi && p.razlozi.length ? ", razlozi: " + p.razlozi.map(function(r) {
+        return r.razlog + " " + r.n + "×";
+      }).join(", ") : ""));
+    }
+    lista("PONIŠTAVANJA", a.ponistavanja, function(x) {
+      return x.naziv + " " + x.n + "×" + (x.brzo ? " (" + x.brzo + " odmah)" : "");
+    });
+    lista("ISPRAVKE", a.ispravke, function(x) {
+      return x.naziv + " " + x.n + "×";
+    });
+    lista("DUPLI TAP", a.dupli_tap, function(x) {
+      return x.naziv + " " + x.n + "×";
+    });
+    lista("PRODAJA BEZ ZALIHE", a.bez_zalihe, function(x) {
+      return x.naziv + " " + x.n + "×";
+    });
+    lista("PROZORI", a.prozori, function(x) {
+      return x.naziv + " " + x.otvoreno + "× (bez unosa " + x.bez_akcije + ", Ø " + x.prosjek_s + " s)";
+    });
+    lista("PORUKE O GREŠCI", a.greske, function(x) {
+      return "„" + x.poruka + '" ' + x.n + "×";
+    });
+    if (a.offline && a.offline.epizoda) L.push("BEZ INTERNETA: " + a.offline.epizoda + " puta, ukupno " + a.offline.minuta + " min, najviše " + a.offline.max_cekalo + " promjena na čekanju");
+    if (a.preskoceno && (a.preskoceno.potvrdio || a.preskoceno.vratio)) L.push("PRESKAKANJE: potvrdio " + a.preskoceno.potvrdio + "×, vratio se da upiše " + a.preskoceno.vratio + "×, upozorenja " + a.preskoceno.upozorenja);
+    if (a.navigacija && (a.navigacija.vratio_se_na_prodaju || a.navigacija.odustao_od_pocetka)) {
+      L.push("NAZAD: sa završnog brojanja na prodaju " + a.navigacija.vratio_se_na_prodaju + "×, sa početnog brojanja na izbor imena " + a.navigacija.odustao_od_pocetka + "×");
+    }
+    lista("RAZLIKE ROBE", a.razlike_robe, function(x) {
+      return x.naziv + " u " + x.smjena + " smj. (" + (x.kom > 0 ? "+" : "") + x.kom + " kom)";
+    });
+    lista("TEHNIČKE GREŠKE", a.js_greske, function(x) {
+      return x.poruka + " " + x.n + "×";
+    });
+    return L.join("\n");
+  }
   return {
+    tekstAnalize,
     uid,
     km: km2,
     dT: dT2,
@@ -721,6 +783,101 @@ function vibriraj(ms) {
   } catch (e) {
   }
 }
+async function kopirajTekst(tekst) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(tekst);
+      return true;
+    }
+  } catch (e) {
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = tekst;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return !!ok;
+  } catch (e) {
+    return false;
+  }
+}
+const VERZIJA = "28. 11. u 00:42";
+const Trag = (() => {
+  const KLJUC = "adin_trag_v1";
+  let kontekst = { radnik: "", shift_id: "", ekran: "" };
+  let saljem = false, zadnje = 0;
+  const uredjaj = (() => {
+    try {
+      const u = navigator.userAgent || "";
+      return /iPhone|iPad|iPod/.test(u) ? "iPhone" : /Android/.test(u) ? "Android" : "računar";
+    } catch (e) {
+      return "";
+    }
+  })();
+  const red = () => {
+    const r = ls.get(KLJUC, []);
+    return Array.isArray(r) ? r : [];
+  };
+  async function posalji(odmah) {
+    const r = red();
+    if (!r.length || saljem) return;
+    if (!odmah && r.length < 30 && Date.now() - zadnje < 4 * 6e4) return;
+    saljem = true;
+    zadnje = Date.now();
+    try {
+      const odg = await api("zabiljeziTrag", r.slice(0, 150));
+      const gotovo = {};
+      (odg.primljeno || []).forEach((id) => {
+        gotovo[id] = true;
+      });
+      ls.set(KLJUC, red().filter((x) => !gotovo[x.id]));
+    } catch (e) {
+    } finally {
+      saljem = false;
+    }
+  }
+  function zabiljezi(vrsta, d) {
+    try {
+      d = d || {};
+      const r = red();
+      r.push({
+        id: Logika.uid("T"),
+        ms: Date.now(),
+        vrsta,
+        ekran: d.ekran || kontekst.ekran,
+        radnik: kontekst.radnik,
+        shift_id: kontekst.shift_id,
+        pid: d.pid || "",
+        trajanje: d.trajanje === void 0 ? "" : Math.round(d.trajanje * 10) / 10,
+        broj: d.broj === void 0 || d.broj === null ? "" : d.broj,
+        detalji: d.detalji === void 0 || d.detalji === null ? "" : (typeof d.detalji === "string" ? d.detalji : JSON.stringify(d.detalji)).slice(0, 300),
+        verzija: VERZIJA,
+        uredjaj
+      });
+      ls.set(KLJUC, r.slice(-400));
+      if (r.length >= 30) posalji();
+    } catch (e) {
+    }
+  }
+  return {
+    zabiljezi,
+    posalji,
+    postavi(k) {
+      kontekst = __spreadValues(__spreadValues({}, kontekst), k);
+    },
+    sekundi(od) {
+      return (Date.now() - od) / 1e3;
+    },
+    naCekanju() {
+      return red().length;
+    }
+  };
+})();
 function App() {
   const [faza, setFaza] = useState("ucitavanje");
   const [podaci, setPodaci] = useState({ proizvodi: [], prijedlog: {}, radnici: ["Kenan", "Edin"], razlozi: [], clanovi: [] });
@@ -739,6 +896,45 @@ function App() {
   const timerRef = useRef(null);
   const toastTimer = useRef(null);
   const ispravkaRef = useRef("");
+  const offlineRef = useRef(null);
+  const ekranRef = useRef({ ime: "ucitavanje", od: Date.now() });
+  useEffect(() => {
+    Trag.postavi({ radnik: smjena2 && smjena2.radnik || radnik || "", shift_id: smjena2 && smjena2.shift_id || "" });
+  }, [smjena2 && smjena2.shift_id, smjena2 && smjena2.radnik, radnik]);
+  useEffect(() => {
+    const e0 = ekranRef.current;
+    if (e0.ime !== faza) {
+      if (e0.ime !== "ucitavanje" && e0.ime !== "admin" && faza !== "admin") {
+        Trag.zabiljezi("ekran", { ekran: e0.ime, trajanje: Trag.sekundi(e0.od), detalji: faza });
+      }
+      ekranRef.current = { ime: faza, od: Date.now() };
+    }
+    Trag.postavi({ ekran: faza });
+  }, [faza]);
+  useEffect(() => {
+    if (greska) Trag.zabiljezi("greska", { detalji: greska });
+  }, [greska]);
+  useEffect(() => {
+    const salji = setInterval(() => Trag.posalji(), 6e4);
+    const sakriven = () => {
+      if (document.visibilityState === "hidden") Trag.posalji(true);
+    };
+    const jsGreska = (e) => Trag.zabiljezi("js_greska", { detalji: String(e && e.message || "greška") + (e && e.lineno ? " @" + e.lineno + ":" + e.colno : "") });
+    const obecanje = (e) => {
+      if (e && e.reason instanceof Error) Trag.zabiljezi("js_greska", { detalji: "promise: " + e.reason.message });
+    };
+    document.addEventListener("visibilitychange", sakriven);
+    window.addEventListener("error", jsGreska);
+    window.addEventListener("unhandledrejection", obecanje);
+    const prvo = setTimeout(() => Trag.posalji(true), 8e3);
+    return () => {
+      clearInterval(salji);
+      clearTimeout(prvo);
+      document.removeEventListener("visibilitychange", sakriven);
+      window.removeEventListener("error", jsGreska);
+      window.removeEventListener("unhandledrejection", obecanje);
+    };
+  }, []);
   const proizvodiSmjene = useMemo(() => Logika.uSmjeni(podaci.proizvodi, smjena2), [podaci.proizvodi, smjena2 && smjena2.mjere]);
   const setSmjena = useCallback((f) => {
     setSmjenaS((s) => {
@@ -753,6 +949,7 @@ function App() {
     ls.set(LS.RED, r);
   }, []);
   const pokaziToast = useCallback((tekst, vrsta) => {
+    if (vrsta === "err") Trag.zabiljezi("greska", { detalji: "obavijest: " + tekst });
     clearTimeout(toastTimer.current);
     setToast({ tekst, vrsta: vrsta || "info" });
     toastTimer.current = setTimeout(() => setToast(null), vrsta === "err" ? 6e3 : 3500);
@@ -841,12 +1038,20 @@ function App() {
         });
       }
       pokusajRef.current = 0;
+      if (offlineRef.current) {
+        Trag.zabiljezi("offline", { trajanje: Trag.sekundi(offlineRef.current.od), broj: offlineRef.current.max });
+        offlineRef.current = null;
+      }
       setSinh(redRef.current.length ? "salje" : "ok");
       if (redRef.current.length) dalje = 50;
     } catch (e) {
       if (!e.mreza && e.code !== "ZAUZETO") {
       }
       pokusajRef.current += 1;
+      if (e.mreza) {
+        if (!offlineRef.current) offlineRef.current = { od: Date.now(), max: 0 };
+        offlineRef.current.max = Math.max(offlineRef.current.max, redRef.current.length);
+      }
       setSinh("greska");
       dalje = Logika.pauza(pokusajRef.current);
     } finally {
@@ -952,6 +1157,7 @@ function App() {
       setIzvjestaj(r.izvjestaj);
       setSmjena(null);
       setFaza("izvjestaj");
+      setTimeout(() => Trag.posalji(true), 1500);
       window.scrollTo(0, 0);
       api("getBootstrap").then((b) => setPodaci((p) => {
         const n = __spreadProps(__spreadValues({}, p), { prijedlog: b.prijedlog || {}, prijavljeno: b.prijavljeno || {}, proizvodi: b.proizvodi || p.proizvodi });
@@ -1104,9 +1310,9 @@ function Radnik({ radnici, izabran, onDalje, onAdmin, raspored }) {
       onChange: (e) => setDrugi(e.target.value),
       placeholder: "Upiši ime"
     }
-  ), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !ime, onClick: () => onDalje(ime) }, "Dalje — prebroji robu"), /* @__PURE__ */ React.createElement(DanasTrening, { raspored }), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 30 } }, /* @__PURE__ */ React.createElement("button", { className: "linkbtn", onClick: onAdmin }, "Vlasnik ›")), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center", opacity: 0.5 } }, "verzija 27. 11. u 14:20"));
+  ), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !ime, onClick: () => onDalje(ime) }, "Dalje — prebroji robu"), /* @__PURE__ */ React.createElement(DanasTrening, { raspored }), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginTop: 30 } }, /* @__PURE__ */ React.createElement("button", { className: "linkbtn", onClick: onAdmin }, "Vlasnik ›")), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center", opacity: 0.5 } }, "verzija 28. 11. u 00:42"));
 }
-function Podsjetnik({ pid, mjera, pod, prij, v, set }) {
+function Podsjetnik({ pid, mjera, pod, prij, v, set, onTap }) {
   const imaPrij = prij !== void 0 && prij !== null;
   const x = imaPrij ? prij : pod;
   if (x === void 0 || x === null) return null;
@@ -1114,13 +1320,16 @@ function Podsjetnik({ pid, mjera, pod, prij, v, set }) {
   const ko = imaPrij ? "vlasnik javio" : "prošli put";
   if (!(Number(x) > 0)) return /* @__PURE__ */ React.createElement("div", { className: "sit" }, ko, ": ", opis);
   const isto = v !== void 0 && v !== null && v !== "" && Number(v) === Number(x);
-  return /* @__PURE__ */ React.createElement("button", { type: "button", className: "podsj" + (isto ? " isto" : "") + (imaPrij ? " vl" : ""), "data-isto": pid, onClick: () => set(String(x)) }, (isto ? "✓ " : "↺ ") + ko + ": " + opis);
+  return /* @__PURE__ */ React.createElement("button", { type: "button", className: "podsj" + (isto ? " isto" : "") + (imaPrij ? " vl" : ""), "data-isto": pid, onClick: () => {
+    set(String(x));
+    if (onTap) onTap();
+  } }, (isto ? "✓ " : "↺ ") + ko + ": " + opis);
 }
-function Brojac({ pid, naziv, pod, prij, v, set, mjera, oznaka }) {
+function Brojac({ pid, naziv, pod, prij, v, set, mjera, oznaka, onPodsjetnik }) {
   const n = v === "" || v === void 0 ? null : Number(v);
   const prazno = v === "" || v === void 0;
   const kl = "row" + (prazno ? " prazno" : "") + (oznaka ? " sumnja" : "");
-  const hint = /* @__PURE__ */ React.createElement(Podsjetnik, { pid, mjera, pod, prij, v, set });
+  const hint = /* @__PURE__ */ React.createElement(Podsjetnik, { pid, mjera, pod, prij, v, set, onTap: onPodsjetnik });
   if (mjera === "ima") {
     return /* @__PURE__ */ React.createElement("div", { className: kl }, /* @__PURE__ */ React.createElement("div", { style: { minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15.5, fontWeight: 500 } }, naziv), hint), /* @__PURE__ */ React.createElement("div", { className: "cnt" }, /* @__PURE__ */ React.createElement("button", { className: "chip" + (n === 1 ? " on" : ""), "data-ima": pid, style: { minWidth: 64 }, onClick: () => set("1") }, "✓ Ima"), /* @__PURE__ */ React.createElement("button", { className: "chip" + (n === 0 ? " on" : ""), "data-nema": pid, style: { minWidth: 64, color: n === 0 ? "var(--red)" : void 0 }, onClick: () => set("0") }, "Nema")));
   }
@@ -1166,7 +1375,15 @@ function Preskoceno({ lista, prijedlog, prijavljeno, dugme, zatvori, potvrdi }) 
   };
   const sumnja = lista.filter((p) => bilo(p) !== null);
   const ostali = lista.filter((p) => bilo(p) === null);
-  return /* @__PURE__ */ React.createElement(Sheet, { naslov: "Preskočeno = nema", zatvori }, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Ovo nisi upisao, pa se računa da toga ", /* @__PURE__ */ React.createElement("b", { style: { color: "var(--text)" } }, "nema (0)"), "."), sumnja.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "warn", "data-testid": "preskoceno-sumnja" }, /* @__PURE__ */ React.createElement("b", null, "⚠ Ovoga je bilo — provjeri da stvarno nema:"), sumnja.map((p) => /* @__PURE__ */ React.createElement("div", { key: p.product_id, style: { marginTop: 4 } }, p.naziv, " — ", odVlasnika(p) ? "vlasnik javio" : "prošli put", " ", Logika.opisMjere(p, bilo(p))))), ostali.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card", "data-testid": "preskoceno", style: { fontSize: 14, lineHeight: 1.6 } }, ostali.map((p) => p.naziv).join(", ")), /* @__PURE__ */ React.createElement("button", { className: "btn", "data-testid": "preskoceno-ok", onClick: potvrdi }, dugme), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: zatvori }, "Vrati se i upiši"));
+  const trag = (potvrdio) => Trag.zabiljezi("preskoceno", { broj: lista.length, detalji: { potvrdio, upozorenja: sumnja.length, sumnja: sumnja.map((p) => p.product_id).slice(0, 8) } });
+  const nazad = () => {
+    trag(false);
+    zatvori();
+  };
+  return /* @__PURE__ */ React.createElement(Sheet, { naslov: "Preskočeno = nema", zatvori: nazad }, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Ovo nisi upisao, pa se računa da toga ", /* @__PURE__ */ React.createElement("b", { style: { color: "var(--text)" } }, "nema (0)"), "."), sumnja.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "warn", "data-testid": "preskoceno-sumnja" }, /* @__PURE__ */ React.createElement("b", null, "⚠ Ovoga je bilo — provjeri da stvarno nema:"), sumnja.map((p) => /* @__PURE__ */ React.createElement("div", { key: p.product_id, style: { marginTop: 4 } }, p.naziv, " — ", odVlasnika(p) ? "vlasnik javio" : "prošli put", " ", Logika.opisMjere(p, bilo(p))))), ostali.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card", "data-testid": "preskoceno", style: { fontSize: 14, lineHeight: 1.6 } }, ostali.map((p) => p.naziv).join(", ")), /* @__PURE__ */ React.createElement("button", { className: "btn", "data-testid": "preskoceno-ok", onClick: () => {
+    trag(true);
+    potvrdi();
+  } }, dugme), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: nazad }, "Vrati se i upiši"));
 }
 function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, nazad, onStart, onNovi }) {
   const roba = proizvodi.filter((p) => p.prati_zalihu);
@@ -1176,8 +1393,21 @@ function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, naza
   const kasaOk = String(kasa).trim() !== "" && isFinite(Number(String(kasa).replace(",", ".")));
   const [v, setV] = useNacrt("pocetno", {});
   const fali = Logika.nedostaje(roba, v);
-  const post = (id, nov) => setV((s) => __spreadProps(__spreadValues({}, s), { [id]: nov }));
+  const mjeri = useRef({ od: Date.now(), prosli: 0, dirano: {}, zapisano: false });
+  const post = (id, nov) => {
+    mjeri.current.dirano[id] = 1;
+    setV((s) => __spreadProps(__spreadValues({}, s), { [id]: nov }));
+  };
   const kreni = (vr) => {
+    if (!mjeri.current.zapisano) {
+      mjeri.current.zapisano = true;
+      Trag.zabiljezi("brojanje", {
+        ekran: "pocetna",
+        trajanje: Trag.sekundi(mjeri.current.od),
+        broj: roba.length,
+        detalji: { preskoceno: fali.length, prosli: mjeri.current.prosli, dirano: Object.keys(mjeri.current.dirano).length }
+      });
+    }
     const o = {};
     roba.forEach((p) => {
       o[p.product_id] = Number(vr[p.product_id]);
@@ -1194,7 +1424,10 @@ function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, naza
       pod: prijedlog[p.product_id],
       prij: prijavljeno[p.product_id],
       v: v[p.product_id],
-      set: (n) => post(p.product_id, n)
+      set: (n) => post(p.product_id, n),
+      onPodsjetnik: () => {
+        mjeri.current.prosli += 1;
+      }
     }
   ))))), /* @__PURE__ */ React.createElement("button", { className: "btn2 novo", onClick: () => setNovi(true) }, "＋ Ima nešto čega nema na listi? Dodaj novo piće"), novi && /* @__PURE__ */ React.createElement(
     NoviProizvod,
@@ -1249,6 +1482,19 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
   const [sada, setSada] = useState(Date.now());
   const tapovi = useRef({});
   const hitTimer = useRef(null);
+  const prozorRef = useRef(null);
+  useEffect(() => {
+    const s0 = prozorRef.current;
+    if (s0 && s0.ime !== sheet) Trag.zabiljezi("prozor", { detalji: s0.ime, broj: s0.akcija, trajanje: Trag.sekundi(s0.od) });
+    prozorRef.current = sheet ? s0 && s0.ime === sheet ? s0 : { ime: sheet, od: Date.now(), akcija: 0 } : null;
+  }, [sheet]);
+  const akcija = () => {
+    if (prozorRef.current) prozorRef.current.akcija += 1;
+  };
+  const zapisi = (...a) => {
+    akcija();
+    return dodaj(...a);
+  };
   useEffect(() => {
     const t = setInterval(() => setSada(Date.now()), 3e4);
     return () => clearInterval(t);
@@ -1267,8 +1513,14 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
   const brojClanarina = dio.clanarine.reduce((a, p) => a + st.prodano(p.product_id), 0);
   const brojTrenera = dio.treneri.reduce((a, p) => a + st.prodano(p.product_id), 0);
   const prodaj = (p) => {
-    if (!Logika.dozvoliTap(tapovi.current, p.product_id, Date.now(), 150)) return;
-    dodaj("SALE", p.product_id, 1);
+    if (!Logika.dozvoliTap(tapovi.current, p.product_id, Date.now(), 150)) {
+      Trag.zabiljezi("dupli_tap", { pid: p.product_id });
+      return;
+    }
+    if (p.prati_zalihu && st.ocekivano.hasOwnProperty(p.product_id) && st.ocekivano[p.product_id] <= 0) {
+      Trag.zabiljezi("bez_zalihe", { pid: p.product_id, broj: st.ocekivano[p.product_id] });
+    }
+    zapisi("SALE", p.product_id, 1);
     setZadnji((z) => z && z.p.product_id === p.product_id ? { p, n: z.n + 1, k: Date.now() } : { p, n: 1, k: Date.now() });
     setHit(p.product_id);
     clearTimeout(hitTimer.current);
@@ -1277,8 +1529,12 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
   };
   const ponisti = () => {
     if (!zadnji) return;
-    if (Date.now() - zadnji.k < 500) return;
-    dodaj("UNDO_SALE", zadnji.p.product_id, 1, "Poništeno na šanku");
+    if (Date.now() - zadnji.k < 500) {
+      Trag.zabiljezi("dupli_tap", { pid: zadnji.p.product_id, detalji: "traka" });
+      return;
+    }
+    Trag.zabiljezi("ponisti", { pid: zadnji.p.product_id, trajanje: Trag.sekundi(zadnji.k) });
+    zapisi("UNDO_SALE", zadnji.p.product_id, 1, "Poništeno na šanku");
     vibriraj([8, 40, 8]);
     setZadnji((z) => z && z.n > 1 ? __spreadProps(__spreadValues({}, z), { n: z.n - 1, k: Date.now() }) : null);
   };
@@ -1325,7 +1581,9 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
       /* @__PURE__ */ React.createElement("span", { className: "nm" }, p.naziv),
       /* @__PURE__ */ React.createElement("span", { className: "bot" }, /* @__PURE__ */ React.createElement("span", { className: "pr" }, km(p.cijena), " KM"), opisM && /* @__PURE__ */ React.createElement("span", { className: "st" + (nisko ? " low" : "") }, opisM), ost !== null && /* @__PURE__ */ React.createElement("span", { className: "st" + (nisko ? " low" : "") }, ost <= 0 && nestaloLista.indexOf(p) >= 0 ? "NESTALO" : "ima " + ost, p.jedinica && p.jedinica !== "kom" ? " " + p.jedinica.slice(0, 4) + "." : ""))
     );
-  })))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 14 } }, /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 2 }, onClick: () => setSheet("dopuna") }, "+ DOPUNA ZALIHE"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("ispravka") }, "Ispravka")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("potrosnja") }, "☕ Potrošnja osoblja"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("uzeto") }, "💶 Uzeto iz kase")), /* @__PURE__ */ React.createElement("button", { className: "btn2 novo", onClick: () => setSheet("novi") }, "＋ Novo piće / proizvod (nema na listi)"), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: () => setSheet("napomena") }, "✎ Napomena za vlasnika")), zadnji && /* @__PURE__ */ React.createElement("div", { className: "undo", "data-testid": "undo" }, /* @__PURE__ */ React.createElement("span", null, "✓ ", zadnji.p.naziv, " +1", zadnji.n > 1 ? " (×" + zadnji.n + ")" : ""), /* @__PURE__ */ React.createElement("button", { onClick: ponisti }, "PONIŠTI")), /* @__PURE__ */ React.createElement("div", { className: "dock" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9.5, letterSpacing: 1.6, color: "var(--dim)" } }, "U KASI TREBA BITI"), /* @__PURE__ */ React.createElement("div", { className: "n", "data-testid": "promet" }, /* @__PURE__ */ React.createElement(AnimBroj, { v: st.kasaTreba }), /* @__PURE__ */ React.createElement("span", { className: "u" }, "KM")), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10.5, color: "var(--dim)" } }, "promet ", km(st.promet), " · ", st.kom, " kom", st.uzeto ? " · uzeto " + km(st.uzeto) : "")), /* @__PURE__ */ React.createElement("button", { onClick: () => setSheet("zavrsi") }, "ZAVRŠI SMJENU")), sheet === "potrosnja" && /* @__PURE__ */ React.createElement(
+  })))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 14 } }, /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 2 }, onClick: () => setSheet("dopuna") }, "+ DOPUNA ZALIHE"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("ispravka") }, "Ispravka")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("potrosnja") }, "☕ Potrošnja osoblja"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { flex: 1 }, onClick: () => setSheet("uzeto") }, "💶 Uzeto iz kase")), /* @__PURE__ */ React.createElement("button", { className: "btn2 novo", onClick: () => setSheet("novi") }, "＋ Novo piće / proizvod (nema na listi)"), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: () => setSheet("napomena") }, "✎ Napomena za vlasnika")), zadnji && /* @__PURE__ */ React.createElement("div", { className: "undo", "data-testid": "undo", onClick: (e) => {
+    if (!(e.target && e.target.closest && e.target.closest("button"))) Trag.zabiljezi("dupli_tap", { pid: zadnji.p.product_id, detalji: "traka" });
+  } }, /* @__PURE__ */ React.createElement("span", null, "✓ ", zadnji.p.naziv, " +1", zadnji.n > 1 ? " (×" + zadnji.n + ")" : ""), /* @__PURE__ */ React.createElement("button", { onClick: ponisti }, "PONIŠTI")), /* @__PURE__ */ React.createElement("div", { className: "dock" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9.5, letterSpacing: 1.6, color: "var(--dim)" } }, "U KASI TREBA BITI"), /* @__PURE__ */ React.createElement("div", { className: "n", "data-testid": "promet" }, /* @__PURE__ */ React.createElement(AnimBroj, { v: st.kasaTreba }), /* @__PURE__ */ React.createElement("span", { className: "u" }, "KM")), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10.5, color: "var(--dim)" } }, "promet ", km(st.promet), " · ", st.kom, " kom", st.uzeto ? " · uzeto " + km(st.uzeto) : "")), /* @__PURE__ */ React.createElement("button", { onClick: () => setSheet("zavrsi") }, "ZAVRŠI SMJENU")), sheet === "potrosnja" && /* @__PURE__ */ React.createElement(
     Potrosnja,
     {
       roba: proizvodi.filter((p) => p.prati_zalihu && smjena2.pocetna.hasOwnProperty(p.product_id)),
@@ -1333,7 +1591,7 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
       st,
       zatvori: () => setSheet(null),
       zapisi: (osoba, p, q) => {
-        dodaj("POTROSNJA", p.product_id, q, "", null, { osoba });
+        zapisi("POTROSNJA", p.product_id, q, "", null, { osoba });
         vibriraj(10);
       }
     }
@@ -1344,7 +1602,7 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
       kasaTreba: st.kasaTreba,
       zatvori: () => setSheet(null),
       zapisi: (osoba, iznos, napomena) => {
-        dodaj("KASA_IZLAZ", "", 0, napomena, null, { osoba, iznos });
+        zapisi("KASA_IZLAZ", "", 0, napomena, null, { osoba, iznos });
         setSheet(null);
         pokaziToast("✓ Zapisano: " + osoba + " uzeo " + km(iznos) + " KM iz kase.", "ok");
       }
@@ -1357,6 +1615,7 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
       shiftId: smjena2.shift_id,
       zatvori: () => setSheet(null),
       gotovo: (r, kol) => {
+        akcija();
         setSheet(null);
         onNovi(r, kol);
       }
@@ -1365,10 +1624,13 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
     Dopuna,
     {
       proizvodi: proizvodi.filter((p) => p.prati_zalihu && smjena2.pocetna.hasOwnProperty(p.product_id) && (Logika.mjera(p) !== "ima" || Logika.trenutnoMjera(p, smjena2, st) === 0)),
-      noviProizvod: () => setSheet("novi"),
+      noviProizvod: () => {
+        akcija();
+        setSheet("novi");
+      },
       zatvori: () => setSheet(null),
       potvrdi: (p, kol) => {
-        dodaj("RESTOCK", p.product_id, kol);
+        zapisi("RESTOCK", p.product_id, kol);
         setSheet(null);
         const m = Logika.mjera(p);
         pokaziToast(m === "ima" ? "✓ " + p.naziv + ": sada ima" : m === "posto" ? "✓ " + p.naziv + ": nova kanta (100%)" : "✓ Dopuna: " + p.naziv + " +" + kol, "ok");
@@ -1379,7 +1641,7 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
     {
       zatvori: () => setSheet(null),
       posalji: (t) => {
-        dodaj("NAPOMENA", "", 0, t);
+        zapisi("NAPOMENA", "", 0, t);
         setSheet(null);
         pokaziToast("✓ Napomena zapisana. Vlasnik je vidi u izvještaju.", "ok");
       }
@@ -1391,7 +1653,8 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
       st,
       zatvori: () => setSheet(null),
       ponisti: (p) => {
-        dodaj("UNDO_SALE", p.product_id, 1, "Ispravka");
+        Trag.zabiljezi("ispravka", { pid: p.product_id });
+        zapisi("UNDO_SALE", p.product_id, 1, "Ispravka");
         vibriraj(10);
       }
     }
@@ -1408,7 +1671,7 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
         const azuriran = __spreadValues({}, clan);
         pk.stavke.forEach((st0) => {
           if (Logika.tip(st0.p) === "trener") {
-            dodaj(
+            zapisi(
               "SALE",
               st0.p.product_id,
               1,
@@ -1419,7 +1682,7 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
             azuriran.trener = trenerIme;
             azuriran.trener_do = st0.do;
           } else {
-            dodaj("SALE", st0.p.product_id, 1, "", payload);
+            zapisi("SALE", st0.p.product_id, 1, "", payload);
             azuriran.vrsta = st0.p.product_id;
             azuriran.istek = st0.do;
           }
@@ -1432,6 +1695,7 @@ function Smjena({ smjena: smjena2, raspored, proizvodi, clanovi, treneri, radnic
       }
     }
   ), sheet === "zavrsi" && /* @__PURE__ */ React.createElement(Sheet, { naslov: "Završiti smjenu?", zatvori: () => setSheet(null) }, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Ideš na završno brojanje robe i kase. Prodaja se poslije toga više ne kuca."), /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => {
+    akcija();
     setSheet(null);
     onZavrsi();
   } }, "Da, idem brojati"), /* @__PURE__ */ React.createElement("button", { className: "btn2", style: { marginTop: 10 }, onClick: () => setSheet(null) }, "Ne, nastavljam prodaju")));
@@ -1690,18 +1954,23 @@ function Zavrsna({ smjena: smjena2, proizvodi, razlozi, greska, radi, cekaju, na
   const [potvrda, setPotvrda] = useState(false);
   const [ponovo, setPonovo] = useState([]);
   const [prva, setPrva] = useNacrt("prva:" + smjena2.shift_id, null);
+  const mjeri = useRef({ od: Date.now(), krug: 0, provjera: 0 });
   const fali = Logika.nedostaje(roba, v);
   const pr = Logika.provjeraZavrsnog(smjena2, proizvodi, v, kasa);
   const kasaOk = pr.kasaRazlika !== null;
   const lista = razlozi && razlozi.length ? razlozi : ["Greška u kucanju", "Gratis / poklon", "Lom ili isteklo", "Ne znam"];
   const imena = (pids) => pids.map((pid) => (poId[pid] || { naziv: pid }).naziv).join(", ");
   const naKasu = () => {
+    mjeri.current.krug += 1;
+    Trag.zabiljezi("brojanje", { ekran: "zavrsna", trajanje: Trag.sekundi(mjeri.current.od), broj: roba.length, detalji: { preskoceno: fali.length, krug: mjeri.current.krug } });
     setKorak("kasa");
     setProvjereno(false);
     setPonovo([]);
     window.scrollTo(0, 0);
   };
   const naBrojanje = () => {
+    if (provjereno && pr.razlikePid.length) Trag.zabiljezi("ponovo", { broj: pr.razlikePid.length, detalji: { pids: pr.razlikePid.slice(0, 8) } });
+    mjeri.current.od = Date.now();
     setPonovo(provjereno ? pr.razlikePid.slice() : []);
     setKorak("brojanje");
     setProvjereno(false);
@@ -1752,6 +2021,8 @@ function Zavrsna({ smjena: smjena2, proizvodi, razlozi, greska, radi, cekaju, na
       }
     }
   ), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 18, color: "var(--dim)" } }, "KM")), !provjereno && /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !kasaOk, onClick: () => {
+    mjeri.current.provjera += 1;
+    Trag.zabiljezi("provjera", { broj: mjeri.current.provjera, detalji: { roba: pr.razlikeRobe, kasa: pr.kasaRazlika, pids: pr.razlikePid.slice(0, 8) } });
     setProvjereno(true);
     if (!prva) setPrva({ roba: __spreadValues({}, v), kasa });
   } }, "PROVJERI"), provjereno && kasaOk && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "card" }, (pr.kasaPocetna > 0 || pr.uzeto > 0) && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Na početku smjene"), /* @__PURE__ */ React.createElement("b", null, km(pr.kasaPocetna), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "+ Promet"), /* @__PURE__ */ React.createElement("b", null, km(pr.promet), " KM")), pr.uzeto > 0 && /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "− Uzeto iz kase"), /* @__PURE__ */ React.createElement("b", null, km(pr.uzeto), " KM"))), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Treba biti u kasi"), /* @__PURE__ */ React.createElement("b", null, km(pr.kasaOcekivano), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Upisao si"), /* @__PURE__ */ React.createElement("b", null, km(Number(String(kasa).replace(",", "."))), " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln", style: { borderTop: "1px solid var(--line)", marginTop: 4, paddingTop: 9 } }, /* @__PURE__ */ React.createElement("span", null, "Kasa"), /* @__PURE__ */ React.createElement("b", { style: { color: pr.kasaRazlika === 0 ? "var(--green)" : "var(--red)" } }, pr.kasaRazlika === 0 ? "✓ poklapa se" : (pr.kasaRazlika > 0 ? "višak +" : "manjak ") + km(pr.kasaRazlika) + " KM")), /* @__PURE__ */ React.createElement("div", { className: "ln" }, /* @__PURE__ */ React.createElement("span", null, "Roba"), /* @__PURE__ */ React.createElement("b", { style: { color: pr.razlikeRobe ? "var(--red)" : "var(--green)" } }, pr.razlikeRobe ? "⚠ " + pr.razlikeRobe + (pr.razlikeRobe === 1 ? " proizvod se ne poklapa" : " proizvoda se ne poklapa") : "✓ sve se poklapa")), pr.razlikeRobe > 0 && /* @__PURE__ */ React.createElement("div", { className: "sit", "data-testid": "razlike-imena", style: { marginTop: 4, color: "var(--text)" } }, imena(pr.razlikePid))), pr.razlikeRobe > 0 && /* @__PURE__ */ React.createElement("button", { className: "btn2", "data-testid": "prebroji-ponovo", onClick: naBrojanje }, "↺ Prebroji ponovo: ", imena(pr.razlikePid)), pr.trebaRazlog && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "warn" }, "Nešto se ne poklapa. Ako nisi siguran, vrati se i prebroji robu ponovo. Ako je sve tačno, izaberi razlog:"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8 } }, lista.map((r) => /* @__PURE__ */ React.createElement("button", { key: r, className: "chip" + (razlog === r ? " on" : ""), onClick: () => setRazlog(r) }, r)))), cekaju > 0 && /* @__PURE__ */ React.createElement("div", { className: "warn" }, "⟳ ", cekaju, " promjena još čeka slanje. Biće poslane prije zatvaranja."), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), /* @__PURE__ */ React.createElement(
@@ -1764,7 +2035,9 @@ function Zavrsna({ smjena: smjena2, proizvodi, razlozi, greska, radi, cekaju, na
         roba.forEach((p) => {
           b[p.product_id] = Number(v[p.product_id]);
         });
-        onGotovo(b, String(kasa).replace(",", "."), pr.trebaRazlog ? razlog : "", Logika.ispravke(prva, roba, v, kasa));
+        const isp = Logika.ispravke(prva, roba, v, kasa);
+        Trag.zabiljezi("zavrseno", { broj: mjeri.current.provjera, detalji: { razlog: pr.trebaRazlog ? razlog : "", ispravke: isp ? isp.split(";").length : 0 } });
+        onGotovo(b, String(kasa).replace(",", "."), pr.trebaRazlog ? razlog : "", isp);
       }
     },
     radi ? "Zatvaram smjenu…" : "ZAVRŠI SMJENU"
@@ -1780,28 +2053,7 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
   const tekst = Logika.tekstIzvjestaja(izv);
   const [pokaziTekst, setPokaziTekst] = useState(false);
   const kopiraj = async () => {
-    let uspjeh = false;
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(tekst);
-        uspjeh = true;
-      }
-    } catch (e) {
-    }
-    if (!uspjeh) {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = tekst;
-        ta.setAttribute("readonly", "");
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        uspjeh = document.execCommand("copy");
-        document.body.removeChild(ta);
-      } catch (e) {
-      }
-    }
+    const uspjeh = await kopirajTekst(tekst);
     if (uspjeh) pokaziToast("✓ Izvještaj kopiran. Zalijepi ga u Viber ili WhatsApp.", "ok");
     else setPokaziTekst(true);
   };
@@ -1860,7 +2112,7 @@ function Admin({ nazad, pokaziToast }) {
   }, []);
   const nepregledane = d ? (d.greske || []).filter((g) => !g.pregledano).length : 0;
   const kenan = !!(d && d.ja === "Kenan");
-  const tabovi = kenan ? [["danas", "Danas"], ["greske", "Greške"], ["dani", "Dani"], ["raspored", "Raspored"], ["karte", "Karte"], ["vrata", "Vrata"], ["smjene", "Smjene"], ["clanovi", "Članovi"], ["zalihe", "Zalihe"], ["proizvodi", "Proizvodi"], ["mjesec", "Mjesec"], ["postavke", "Postavke"]] : [["danas", "Danas"], ["greske", "Greške"], ["raspored", "Raspored"], ["smjene", "Smjene"], ["clanovi", "Članovi"], ["zalihe", "Zalihe"], ["postavke", "Postavke"]];
+  const tabovi = kenan ? [["danas", "Danas"], ["greske", "Greške"], ["rad", "Rad"], ["dani", "Dani"], ["raspored", "Raspored"], ["karte", "Karte"], ["vrata", "Vrata"], ["smjene", "Smjene"], ["clanovi", "Članovi"], ["zalihe", "Zalihe"], ["proizvodi", "Proizvodi"], ["mjesec", "Mjesec"], ["postavke", "Postavke"]] : [["danas", "Danas"], ["greske", "Greške"], ["raspored", "Raspored"], ["smjene", "Smjene"], ["clanovi", "Članovi"], ["zalihe", "Zalihe"], ["postavke", "Postavke"]];
   if (!ulogovan) {
     return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { className: "h1" }, "Vlasnik"), /* @__PURE__ */ React.createElement("div", { className: "lab" }, "PIN"), /* @__PURE__ */ React.createElement(
       "input",
@@ -1879,7 +2131,7 @@ function Admin({ nazad, pokaziToast }) {
       }
     ), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), /* @__PURE__ */ React.createElement("button", { className: "btn", disabled: !unos || radi, onClick: () => ucitaj(unos) }, radi ? "Provjeravam…" : "Uđi"), /* @__PURE__ */ React.createElement("button", { className: "btn2", onClick: nazad }, "Nazad"));
   }
-  return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginBottom: 2 } }, "DOBRO DOŠAO", d && d.ja ? " · " + d.ja.toUpperCase() : ""), /* @__PURE__ */ React.createElement("div", { className: "h1", style: { fontSize: 21 } }, d && d.ja ? d.ja : "Vlasnik", d && d.ograniceno ? /* @__PURE__ */ React.createElement("span", { className: "sit", style: { fontSize: 12, marginLeft: 8 } }, "evidencija i rad") : null)), /* @__PURE__ */ React.createElement("button", { className: "chip", onClick: () => ucitaj(pin), disabled: radi }, radi ? "…" : "↻ Osvježi")), /* @__PURE__ */ React.createElement("div", { className: "tabs" }, tabovi.map(([k, n]) => /* @__PURE__ */ React.createElement("button", { key: k, "data-tab": k, className: tab === k ? "on" : "", onClick: () => setTab(k) }, n, k === "greske" && nepregledane > 0 ? /* @__PURE__ */ React.createElement("span", { className: "tbadge" }, nepregledane) : null))), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), d && tab === "danas" && /* @__PURE__ */ React.createElement(AdminDanas, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "greske" && /* @__PURE__ */ React.createElement(AdminGreske, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && kenan && tab === "dani" && /* @__PURE__ */ React.createElement(AdminDani, { pin }), d && tab === "zalihe" && /* @__PURE__ */ React.createElement(AdminZalihe, { d }), d && kenan && tab === "karte" && /* @__PURE__ */ React.createElement(AdminKarte, { d }), d && tab === "raspored" && /* @__PURE__ */ React.createElement(AdminRaspored, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "clanovi" && /* @__PURE__ */ React.createElement(AdminClanovi, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && kenan && tab === "proizvodi" && /* @__PURE__ */ React.createElement(AdminProizvodi, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && kenan && tab === "vrata" && /* @__PURE__ */ React.createElement(AdminVrata, { pin, pokaziToast }), d && tab === "postavke" && /* @__PURE__ */ React.createElement(AdminPostavke, { d, osvjezi: () => ucitaj(pin), pin, setPin: (p) => {
+  return /* @__PURE__ */ React.createElement("div", { className: "wrap" }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "lab", style: { marginBottom: 2 } }, "DOBRO DOŠAO", d && d.ja ? " · " + d.ja.toUpperCase() : ""), /* @__PURE__ */ React.createElement("div", { className: "h1", style: { fontSize: 21 } }, d && d.ja ? d.ja : "Vlasnik", d && d.ograniceno ? /* @__PURE__ */ React.createElement("span", { className: "sit", style: { fontSize: 12, marginLeft: 8 } }, "evidencija i rad") : null)), /* @__PURE__ */ React.createElement("button", { className: "chip", onClick: () => ucitaj(pin), disabled: radi }, radi ? "…" : "↻ Osvježi")), /* @__PURE__ */ React.createElement("div", { className: "tabs" }, tabovi.map(([k, n]) => /* @__PURE__ */ React.createElement("button", { key: k, "data-tab": k, className: tab === k ? "on" : "", onClick: () => setTab(k) }, n, k === "greske" && nepregledane > 0 ? /* @__PURE__ */ React.createElement("span", { className: "tbadge" }, nepregledane) : null))), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), d && tab === "danas" && /* @__PURE__ */ React.createElement(AdminDanas, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "greske" && /* @__PURE__ */ React.createElement(AdminGreske, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && kenan && tab === "dani" && /* @__PURE__ */ React.createElement(AdminDani, { pin }), d && kenan && tab === "rad" && /* @__PURE__ */ React.createElement(AdminRad, { pin, pokaziToast }), d && tab === "zalihe" && /* @__PURE__ */ React.createElement(AdminZalihe, { d }), d && kenan && tab === "karte" && /* @__PURE__ */ React.createElement(AdminKarte, { d }), d && tab === "raspored" && /* @__PURE__ */ React.createElement(AdminRaspored, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && tab === "clanovi" && /* @__PURE__ */ React.createElement(AdminClanovi, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && kenan && tab === "proizvodi" && /* @__PURE__ */ React.createElement(AdminProizvodi, { d, pin, osvjezi: () => ucitaj(pin), pokaziToast }), d && kenan && tab === "vrata" && /* @__PURE__ */ React.createElement(AdminVrata, { pin, pokaziToast }), d && tab === "postavke" && /* @__PURE__ */ React.createElement(AdminPostavke, { d, osvjezi: () => ucitaj(pin), pin, setPin: (p) => {
     setPin(p);
     try {
       sessionStorage.setItem("adin_pin", p);
@@ -1962,6 +2214,38 @@ function AdminGreske({ d, pin, osvjezi, pokaziToast }) {
   return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Detektor traži ", /* @__PURE__ */ React.createElement("b", { style: { color: "var(--text)" } }, "minus robe"), " (manjak, ili više prodano nego što je bilo) i ", /* @__PURE__ */ React.createElement("b", { style: { color: "var(--text)" } }, "minus para"), " (manjak u kasi), u smjeni koja je u toku i u smjenama zadnjih 30 dana. Uz svaku grešku piše gdje je i kako provjeriti."), !nove.length && /* @__PURE__ */ React.createElement("div", { className: "good", "data-testid": "nema-gresaka" }, "✓ Nema neprovjerenih grešaka. Sve štima."), nove.map((g) => /* @__PURE__ */ React.createElement(GreskaKartica, { key: g.id, g, pregledano: (g1) => potvrdi([g1.id]) })), nove.length > 1 && /* @__PURE__ */ React.createElement("button", { className: "btn2", disabled: radi, onClick: () => potvrdi(nove.map((g) => g.id)) }, "✓ Sve sam pregledao"), stare.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "grp" }, "VEĆ PREGLEDANO (", stare.length, ")"), stare.map((g) => /* @__PURE__ */ React.createElement(GreskaKartica, { key: g.id, g }))));
 }
 const DAN_KRATKO = { pon: "pon", uto: "uto", sri: "sri", cet: "čet", pet: "pet", sub: "sub", ned: "ned" };
+function AdminRad({ pin, pokaziToast }) {
+  const [dana, setDana] = useState(14);
+  const [a, setA] = useState(null);
+  const [greska, setGreska] = useState("");
+  const [radi, setRadi] = useState(false);
+  const [tekst, setTekst] = useState("");
+  useEffect(() => {
+    let ziv = true;
+    setRadi(true);
+    setGreska("");
+    setTekst("");
+    api("getAnalizaRada", pin, dana).then((r) => {
+      if (ziv) setA(r);
+    }).catch((e) => {
+      if (ziv) setGreska(e.message);
+    }).finally(() => {
+      if (ziv) setRadi(false);
+    });
+    return () => {
+      ziv = false;
+    };
+  }, [pin, dana]);
+  const boja = { visoka: "var(--red)", srednja: "var(--gold)", niska: "var(--dim)" };
+  const kopiraj = async () => {
+    const t = Logika.tekstAnalize(a);
+    if (await kopirajTekst(t)) pokaziToast('✓ Kopirano. Zalijepi u razgovor s Claudeom i napiši „predloži popravke".', "ok");
+    else setTekst(t);
+  };
+  const b = a && a.brojanje;
+  const min = (x) => x === null || x === void 0 ? "—" : String(x).replace(".", ",") + " min";
+  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "info" }, "Telefon tiho bilježi gdje radnik zapinje: poništavanja, dupli tapovi, koliko traje brojanje, prozori zatvoreni bez unosa, poruke o greškama i rad bez interneta. Ovdje su uvidi s prijedlozima popravki."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 10 } }, [7, 14, 30].map((n) => /* @__PURE__ */ React.createElement("button", { key: n, className: "chip" + (dana === n ? " on" : ""), "data-dana": n, onClick: () => setDana(n) }, n, " dana"))), greska && /* @__PURE__ */ React.createElement("div", { className: "err" }, greska), radi && !a && /* @__PURE__ */ React.createElement("div", { className: "sit" }, "Učitavam…"), a && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement(Broj, { lab: "POČETNO BROJANJE", v: min(b.pocetak.medijan_min), sit: b.pocetak.n ? b.pocetak.n + '× · „prošli put" ~' + (b.pocetak.prosli_put || 0) : "nema podataka" }), /* @__PURE__ */ React.createElement(Broj, { lab: "ZAVRŠNO BROJANJE", v: min(b.kraj.medijan_min), sit: b.kraj.n ? b.kraj.n + "× · preskočeno ~" + (b.kraj.preskoceno || 0) : "nema podataka" })), /* @__PURE__ */ React.createElement("div", { className: "two" }, /* @__PURE__ */ React.createElement(Broj, { lab: "IZ PRVE SE POKLOPILO", v: a.provjere.smjena ? a.provjere.iz_prve + " / " + a.provjere.smjena : "—", sit: "završnih provjera" }), /* @__PURE__ */ React.createElement(Broj, { lab: "PONIŠTAVANJA", v: a.ponistavanja.reduce((x, y) => x + y.n, 0), sit: a.ponistavanja[0] ? "najviše " + a.ponistavanja[0].naziv : "nema" })), /* @__PURE__ */ React.createElement("div", { className: "grp" }, "UVIDI I PRIJEDLOZI"), a.uvidi.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "good", "data-testid": "bez-uvida" }, a.zapisa ? "✓ U ovom periodu nema većih problema." : "Još nema zapisa. Telefon bilježi od ove verzije aplikacije — pogledaj ponovo za par dana.") : a.uvidi.map((u, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "card", "data-testid": "uvid", style: { borderLeft: "3px solid " + (boja[u.ozbiljnost] || "var(--line)") } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, fontSize: 15, lineHeight: 1.35 } }, u.naslov), u.detalj && /* @__PURE__ */ React.createElement("div", { className: "sit", style: { marginTop: 5, lineHeight: 1.45 } }, u.detalj), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, fontSize: 13.5, lineHeight: 1.5 } }, "💡 ", u.prijedlog))), (a.prozori.length > 0 || a.greske.length > 0 || a.offline.epizoda > 0) && /* @__PURE__ */ React.createElement("div", { className: "grp" }, "DETALJI"), a.prozori.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card" }, a.prozori.map((x) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: x.ime }, /* @__PURE__ */ React.createElement("span", null, x.naziv), /* @__PURE__ */ React.createElement("b", null, x.otvoreno, "× · bez unosa ", x.bez_akcije)))), a.greske.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "card" }, a.greske.map((x, i) => /* @__PURE__ */ React.createElement("div", { className: "ln", key: i, style: { alignItems: "flex-start" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13 } }, x.poruka), /* @__PURE__ */ React.createElement("b", null, x.n, "×")))), a.offline.epizoda > 0 && /* @__PURE__ */ React.createElement("div", { className: "sit" }, "Bez interneta: ", a.offline.epizoda, "×, ukupno ", a.offline.minuta, " min."), /* @__PURE__ */ React.createElement("button", { className: "btn", "data-testid": "kopiraj-analizu", onClick: kopiraj }, "📋 Kopiraj za Claude"), /* @__PURE__ */ React.createElement("div", { className: "sit", style: { textAlign: "center" } }, 'Zalijepi u razgovor s Claudeom i napiši „predloži popravke".'), tekst && /* @__PURE__ */ React.createElement("textarea", { className: "inp", "data-testid": "analiza-tekst", readOnly: true, value: tekst, style: { minHeight: 220, fontSize: 12, marginTop: 10 }, onFocus: (e) => e.target.select() })));
+}
 function AdminDani({ pin }) {
   const [r, setR] = useState(null);
   const [gr, setGr] = useState("");

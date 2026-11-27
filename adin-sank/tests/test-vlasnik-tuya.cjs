@@ -778,3 +778,100 @@ test('promjena načina brojanja usred smjene važi tek od sljedeće smjene', () 
   const b2 = ok(g.getBootstrap());
   assert.ok(!('redbull' in b2.prijedlog), 'komadi nisu podsjetnik za %');
 });
+
+/* ── trag rada: gdje radnik zapinje ── */
+const tragZapis = (id, vrsta, x = {}) => Object.assign({ id, vrsta, ms: Date.parse('2026-11-21T15:00:00Z'), radnik: 'Edin', shift_id: 'S1', ekran: 'smjena', verzija: 't', uredjaj: 'iPhone' }, x);
+
+test('trag rada: prima zapise jednom (idempotentno), bez formula, ograničen tekst; zauzet server = kasnije', () => {
+  const g = napraviOkruzenje({ sada: SAT });
+  g.setupSpreadsheet();
+  const paket = [
+    tragZapis('T-aaaa1', 'ponisti', { pid: 'redbull', trajanje: 1.24 }),
+    tragZapis('T-aaaa2', 'greska', { detalji: '=HYPERLINK("http://zlo")' }),
+    tragZapis('T-aaaa3', 'prozor', { detalji: 'dopuna', broj: 0, trajanje: 12 }),
+    { id: 'los id!', vrsta: 'ponisti' }, { id: 'T-aaaa4', vrsta: 'Ne Valja' }, null
+  ];
+  assert.deepEqual(ok(g.zabiljeziTrag(paket)).primljeno, ['T-aaaa1', 'T-aaaa2', 'T-aaaa3']);
+  assert.deepEqual(ok(g.zabiljeziTrag(paket.slice(0, 2))).primljeno, ['T-aaaa1', 'T-aaaa2'], 'ponovno slanje se potvrdi');
+  const t = g.__tabela('AKTIVNOST');
+  assert.equal(t.length, 3, 'duplikati se ne upisuju');
+  assert.equal(t[0].vrsta, 'ponisti'); assert.equal(t[0].product_id, 'redbull'); assert.equal(t[0].trajanje_s, 1.2);
+  assert.equal(t[0].datum, '2026-11-21'); assert.equal(t[0].vrijeme, '16:00:00');
+  assert.ok(t[1].detalji.startsWith("'="), 'tekst koji počinje s = ne postaje formula');
+  assert.equal(ok(g.zabiljeziTrag([tragZapis('T-dug1', 'greska', { detalji: 'x'.repeat(1000) })])).primljeno.length, 1);
+  assert.equal(g.__tabela('AKTIVNOST')[3].detalji.length, 300);
+  // dok se prodaja upisuje (lock zauzet), trag čeka — ne smeta prodaji
+  g.__stats.aktivniLock = true;
+  const r = ok(g.zabiljeziTrag([tragZapis('T-kasn1', 'ponisti')]));
+  g.__stats.aktivniLock = false;
+  assert.deepEqual([r.kasnije, r.primljeno.length], [true, 0]);
+  assert.equal(g.getAnalizaRada('2580', 14).code, 'DOZVOLA', 'analiza je samo za Kenana');
+});
+
+test('trag rada: analiza pronalazi gdje radnik zapinje i predlaže popravke', () => {
+  const g = napraviOkruzenje({ sada: SAT });
+  g.setupSpreadsheet();
+  let i = 0;
+  const z = (vrsta, x) => tragZapis('T-z' + (++i) + 'xx', vrsta, x);
+  const paket = [];
+  for (let k = 0; k < 5; k++) paket.push(z('ponisti', { pid: 'redbull', trajanje: k < 4 ? 2 : 40 }));
+  for (let k = 0; k < 3; k++) paket.push(z('dupli_tap', { pid: 'voda05' }));
+  for (let k = 0; k < 2; k++) paket.push(z('bez_zalihe', { pid: 'monster', broj: 0 }));
+  for (let k = 0; k < 4; k++) paket.push(z('prozor', { detalji: 'dopuna', broj: k === 0 ? 1 : 0, trajanje: 20 }));
+  paket.push(z('prozor', { detalji: 'clan', broj: 1, trajanje: 30 }));
+  paket.push(z('brojanje', { ekran: 'pocetna', trajanje: 11 * 60, detalji: JSON.stringify({ preskoceno: 9, prosli: 2 }) }));
+  paket.push(z('brojanje', { ekran: 'pocetna', trajanje: 13 * 60, shift_id: 'S2', detalji: JSON.stringify({ preskoceno: 7, prosli: 4 }) }));
+  paket.push(z('brojanje', { ekran: 'zavrsna', trajanje: 5 * 60, detalji: JSON.stringify({ preskoceno: 3, krug: 1 }) }));
+  paket.push(z('provjera', { broj: 1, detalji: JSON.stringify({ roba: 2, kasa: 0 }) }));
+  paket.push(z('ponovo', { broj: 2 }));
+  paket.push(z('provjera', { broj: 2, detalji: JSON.stringify({ roba: 0, kasa: 0 }) }));
+  paket.push(z('zavrseno', { broj: 2, detalji: JSON.stringify({ razlog: '', ispravke: 2 }) }));
+  paket.push(z('provjera', { broj: 1, shift_id: 'S2', detalji: JSON.stringify({ roba: 1, kasa: -2 }) }));
+  paket.push(z('zavrseno', { broj: 1, shift_id: 'S2', detalji: JSON.stringify({ razlog: 'Ne znam', ispravke: 0 }) }));
+  for (let k = 0; k < 3; k++) paket.push(z('greska', { detalji: 'Nema veze sa serverom. Provjeri internet.' }));
+  paket.push(z('offline', { trajanje: 40 * 60, broj: 12 }));
+  paket.push(z('js_greska', { detalji: 'TypeError: x is undefined' }));
+  paket.push(z('preskoceno', { detalji: JSON.stringify({ potvrdio: false, upozorenja: 2 }) }));
+  paket.push(z('preskoceno', { detalji: JSON.stringify({ potvrdio: true, upozorenja: 1 }) }));
+  assert.equal(ok(g.zabiljeziTrag(paket)).primljeno.length, paket.length);
+  // stari zapis (prije perioda) se ne broji
+  ok(g.zabiljeziTrag([tragZapis('T-stari1', 'ponisti', { pid: 'redbull', ms: Date.parse('2026-10-01T10:00:00Z') })]));
+
+  const a = ok(g.getAnalizaRada('2308', 14));
+  assert.equal(a.zapisa, paket.length);
+  assert.deepEqual([a.brojanje.pocetak.n, a.brojanje.pocetak.medijan_min, a.brojanje.pocetak.prosli_put], [2, 12, 3]);
+  assert.equal(a.brojanje.kraj.medijan_min, 5);
+  assert.deepEqual([a.ponistavanja[0].naziv, a.ponistavanja[0].n, a.ponistavanja[0].brzo], ['Red Bull', 5, 4]);
+  assert.deepEqual([a.dupli_tap[0].product_id, a.dupli_tap[0].n], ['voda05', 3]);
+  const dop = a.prozori.find(x => x.ime === 'dopuna');
+  assert.deepEqual([dop.otvoreno, dop.bez_akcije, dop.naziv], [4, 3, 'Dopuna zalihe']);
+  assert.deepEqual([a.provjere.smjena, a.provjere.iz_prve, a.provjere.ponovo, a.provjere.ispravke], [2, 0, 1, 2]);
+  assert.deepEqual(a.provjere.razlozi, [{ razlog: 'Ne znam', n: 1 }]);
+  assert.deepEqual([a.offline.epizoda, a.offline.minuta, a.offline.max_cekalo], [1, 40, 12]);
+  assert.deepEqual([a.preskoceno.potvrdio, a.preskoceno.vratio, a.preskoceno.upozorenja], [1, 1, 3]);
+  const naslovi = a.uvidi.map(u => u.naslov);
+  assert.match(naslovi.join('|'), /Početno brojanje traje oko 12 min/);
+  assert.match(naslovi.join('|'), /Često poništavanje: Red Bull \(5×\)/);
+  assert.match(naslovi.join('|'), /Brzi dupli tap: Voda 0,5 L/);
+  assert.match(naslovi.join('|'), /Prodaje se Monster dok je po evidenciji 0/);
+  assert.match(naslovi.join('|'), /„Dopuna zalihe" se često zatvori bez unosa \(3 od 4\)/);
+  assert.match(naslovi.join('|'), /Tehnička greška/);
+  assert.match(naslovi.join('|'), /Telefon je često bez interneta/);
+  assert.ok(!/Mjesečna karta/.test(naslovi.join('|')), 'prozor koji se koristi nije problem');
+  assert.equal(a.uvidi[0].ozbiljnost, 'visoka');
+  assert.ok(a.uvidi.every(u => u.prijedlog && u.detalj !== undefined), 'svaki uvid ima prijedlog');
+});
+
+test('trag rada: tabela se sama skraćuje (najstariji zapisi se brišu)', () => {
+  const g = napraviOkruzenje({ sada: SAT });
+  g.setupSpreadsheet();
+  const sh = g.__ss.getSheetByName('AKTIVNOST');
+  const kol = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const c = kol.indexOf('trag_id');
+  for (let r = 2; r <= 25001; r++) { const red = new Array(kol.length).fill(''); red[c] = 'T-st' + r; red[kol.indexOf('vrsta')] = 'ekran'; sh.data[r - 1] = red; }
+  assert.equal(sh.getLastRow(), 25001);
+  ok(g.zabiljeziTrag([tragZapis('T-novi1', 'ponisti', { pid: 'redbull' })]));
+  assert.equal(sh.getLastRow(), 20002, 'obrisano 5.000 najstarijih');
+  assert.equal(sh.getRange(2, c + 1).getValue(), 'T-st5002');
+  assert.equal(sh.getRange(sh.getLastRow(), c + 1).getValue(), 'T-novi1');
+});

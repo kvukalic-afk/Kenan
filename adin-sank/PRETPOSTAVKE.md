@@ -38,6 +38,8 @@
 | 31 | **„↺ prošli put"**: na početnom brojanju tap upiše isti broj kao na kraju prošle smjene. Na završnom brojanju se prošli put i očekivano i dalje **ne vide** | — |
 | 32 | Kad se roba ne poklapa, radnik vidi **koji proizvod** (ne i koliko treba biti) i može prebrojati samo njega. Sve što promijeni poslije prve provjere (roba ili kasa) upisuje se kao napomena „Ispravljeno poslije provjere" koju vlasnik vidi u izvještaju | — |
 | 33 | Promjena načina brojanja (komadi / ima-nema / %) važi **od sljedeće smjene** — otvorena smjena se završava kako je počela. Zato je smjena koja je bila otvorena u trenutku objave zadržala ima/nema za protein | Vlasnik → Proizvodi |
+| 34 | **Trag rada** (gdje radnik zapinje) bilježi samo radnje u aplikaciji, bez sadržaja izvan nje, i vidi ga samo **Kenan** (tab „Rad"). Radnik je o tome obaviješten u uputstvu. Čuva se do 25.000 zapisa | Vlasnik → Rad; Sheet → AKTIVNOST |
+| 35 | Pragovi za uvide: početno brojanje duže od 6 min, završno duže od 8 min, isti proizvod poništen 3+ puta, 3+ brza dupla tapa, prozor zatvoren bez unosa u pola slučajeva (3+ otvaranja), ista poruka o grešci 2+ puta, 30+ min bez interneta | `uvidiRada_` u Code.gs |
 
 ## Ograničenja koja trebaš znati
 

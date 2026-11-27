@@ -22,7 +22,8 @@ var CONFIG = {
 /* ═══════ STRUKTURA TABELA ═══════ */
 var TAB = {
   PROIZVODI: 'PROIZVODI', SMJENE: 'SMJENE', DOGADJAJI: 'DOGADJAJI',
-  INVENTURA: 'INVENTURA', CLANOVI: 'CLANOVI', PREGLED: 'PREGLED', ULAZI: 'ULAZI', TRENINZI: 'TRENINZI'
+  INVENTURA: 'INVENTURA', CLANOVI: 'CLANOVI', PREGLED: 'PREGLED', ULAZI: 'ULAZI', TRENINZI: 'TRENINZI',
+  AKTIVNOST: 'AKTIVNOST'
 };
 
 var KOLONE = {
@@ -40,7 +41,10 @@ var KOLONE = {
   CLANOVI: ['member_id', 'ime', 'telefon', 'vrsta', 'pocetak', 'istek', 'zadnje_produzenje',
     'napomena', 'aktivan', 'brava_id', 'trener', 'trener_do'],
   ULAZI: ['izvor_id', 'datum', 'vrijeme', 'nacin', 'korisnik_brave', 'ime', 'member_id', 'clanarina', 'napomena'],
-  TRENINZI: ['termin_id', 'osobe', 'dan', 'vrijeme', 'trening', 'trener', 'napomena', 'aktivan']
+  TRENINZI: ['termin_id', 'osobe', 'dan', 'vrijeme', 'trening', 'trener', 'napomena', 'aktivan'],
+  // tiho bilježenje radnji na telefonu (gdje radnik zapinje) — samo za analizu i popravke aplikacije
+  AKTIVNOST: ['trag_id', 'datum', 'vrijeme', 'radnik', 'shift_id', 'ekran', 'vrsta', 'product_id', 'trajanje_s', 'broj',
+    'detalji', 'verzija', 'uredjaj', 'primljeno']
 };
 
 // Kolone koje moraju ostati čisti tekst (da ih Sheets ne pretvori u datum/vrijeme/broj)
@@ -51,7 +55,8 @@ var TEKST_KOLONE = {
   INVENTURA: ['shift_id', 'datum', 'product_id', 'mjera'],
   CLANOVI: ['member_id', 'telefon', 'pocetak', 'istek', 'zadnje_produzenje', 'brava_id', 'trener_do'],
   ULAZI: ['izvor_id', 'datum', 'vrijeme', 'korisnik_brave', 'member_id'],
-  TRENINZI: ['termin_id', 'dan', 'vrijeme']
+  TRENINZI: ['termin_id', 'dan', 'vrijeme'],
+  AKTIVNOST: ['trag_id', 'datum', 'vrijeme', 'shift_id', 'product_id', 'verzija', 'primljeno']
 };
 
 var SEED_PROIZVODI = [
@@ -78,7 +83,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '16';
+var VERZIJA_SEME = '17';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2491,4 +2496,294 @@ function resetNaNulu(pin, potvrda) {
       return rezultat;
     });
   });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ *  TRAG RADA — gdje radnik zapinje (telefon tiho bilježi radnje; Kenan vidi analizu i uvide)
+ *  Bilježi se samo rad u aplikaciji: poništavanja, dupli tapovi, trajanje brojanja, prozori bez unosa,
+ *  poruke o greškama, rad bez interneta. Ne bilježi se ništa izvan aplikacije.
+ * ═══════════════════════════════════════════════════════════════ */
+var TRAG_MAX_REDOVA = 25000;   // kad se pređe, brišu se najstariji (5.000 redova)
+
+/** Tekst za ćeliju: jedan red, ograničen, i nikad formula (=, +, -, @ na početku). */
+function tekstCelije_(v, max) {
+  var t = s_(v).replace(/[\r\n\t]+/g, ' ').slice(0, max || 300);
+  return /^[=+\-@]/.test(t) ? "'" + t : t;
+}
+
+/** Prima paket zapisa s telefona. Idempotentno po trag_id. Ako je server zauzet prodajom, telefon pošalje kasnije. */
+function zabiljeziTrag(paket) {
+  return api_(function () {
+    var lista = (Array.isArray(paket) ? paket : []).filter(function (x) {
+      return x && typeof x === 'object' && /^[\w-]{4,80}$/.test(s_(x.id)) && /^[a-z_]{2,30}$/.test(s_(x.vrsta));
+    }).slice(0, 200);
+    if (!lista.length) return { primljeno: [] };
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(5000)) return { primljeno: [], kasnije: true };   // prodaja ima prednost
+    try {
+      var sh = list_(TAB.AKTIVNOST);
+      var zaglavlje = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(function (k) { return String(k).trim(); });
+      var lr = sh.getLastRow();
+      var vec = {}, cId = zaglavlje.indexOf('trag_id') + 1;
+      if (lr >= 2 && cId > 0) {
+        var od = Math.max(2, lr - 3000 + 1);   // ponovljeno slanje dolazi brzo — dovoljni su zadnji zapisi
+        sh.getRange(od, cId, lr - od + 1, 1).getValues().forEach(function (r) { if (r[0] !== '') vec[String(r[0])] = true; });
+      }
+      var sad = nowDate_(), t = sada_(), primljeno = [], redovi = [];
+      var broj = function (v, dec) {
+        if (v === null || v === undefined || v === '' || !isFinite(Number(v))) return '';
+        var f = Math.pow(10, dec || 0);
+        return Math.round(Number(v) * f) / f;
+      };
+      lista.forEach(function (x) {
+        var id = s_(x.id);
+        primljeno.push(id);
+        if (vec[id]) return;
+        vec[id] = true;
+        var ms = Number(x.ms);
+        var d = (isFinite(ms) && ms > sad.getTime() - 90 * 864e5 && ms < sad.getTime() + 864e5) ? new Date(ms) : sad;
+        var o = {
+          trag_id: id, datum: fmt_(d, 'yyyy-MM-dd'), vrijeme: fmt_(d, 'HH:mm:ss'),
+          radnik: tekstCelije_(x.radnik, 40), shift_id: tekstCelije_(x.shift_id, 80), ekran: tekstCelije_(x.ekran, 20),
+          vrsta: s_(x.vrsta), product_id: tekstCelije_(x.pid, 60),
+          trajanje_s: broj(x.trajanje, 1), broj: broj(x.broj, 2),
+          detalji: tekstCelije_(x.detalji, 300), verzija: tekstCelije_(x.verzija, 20), uredjaj: tekstCelije_(x.uredjaj, 20),
+          primljeno: t.ts
+        };
+        redovi.push(zaglavlje.map(function (k) { return o.hasOwnProperty(k) ? o[k] : ''; }));
+      });
+      if (redovi.length) {
+        sh.getRange(lr + 1, 1, redovi.length, zaglavlje.length).setValues(redovi);
+        if (lr + redovi.length > TRAG_MAX_REDOVA) sh.deleteRows(2, 5000);
+      }
+      return { primljeno: primljeno };
+    } finally {
+      lock.releaseLock();
+    }
+  });
+}
+
+/** Analiza rada za vlasnika (Kenan): gdje radnik zapinje, griješi ili ga nešto muči — s prijedlozima. */
+function getAnalizaRada(pin, dana) {
+  return api_(function () {
+    samoKenan_(pin);
+    dana = Math.max(1, Math.min(90, Math.round(num_(dana)) || 14));
+    var t = sada_();
+    var od = dodajDane_(t.datum, -(dana - 1));
+    var naziv = {};
+    proizvodi_(true).forEach(function (p) { naziv[p.product_id] = p.naziv; });
+    var uPeriodu = function (r) { var d = datum_(r.datum); return !!d && d >= od && d <= t.datum; };
+    return analizaRada_(tabela_(TAB.AKTIVNOST).redovi.filter(uPeriodu), tabela_(TAB.SMJENE).redovi.filter(uPeriodu),
+      tabela_(TAB.INVENTURA).redovi.filter(uPeriodu), naziv, od, t.datum, dana);
+  });
+}
+
+var PROZORI_IME = {
+  dopuna: 'Dopuna zalihe', ispravka: 'Ispravka', potrosnja: 'Potrošnja osoblja', uzeto: 'Uzeto iz kase',
+  novi: 'Novo piće', napomena: 'Napomena', clan: 'Mjesečna karta / trener', zavrsi: 'Završiti smjenu?'
+};
+var PROZORI_SAVJET = {
+  dopuna: 'Možda ne nalazi proizvod ili ne zna šta upisati. Popravka: najčešće dopune na vrh liste i veća dugmad za količinu.',
+  clan: 'Vjerovatno ne nalazi člana u pretrazi. Popravka: provjeriti imena članova i olakšati pretragu (po dijelu imena ili telefonu).',
+  ispravka: 'Otvara ispravku, a ništa ne poništi — možda želi nešto drugo (npr. promijeniti količinu). Popravka: jasniji tekst ili nova opcija.',
+  zavrsi: 'Dugme ZAVRŠI SMJENU se vjerovatno tapne slučajno. Popravka: pomjeriti ga ili tražiti duži pritisak.',
+  potrosnja: 'Otvori potrošnju pa odustane — možda ne nalazi osobu ili proizvod. Popravka: jednostavniji izbor.',
+  uzeto: 'Otvori „Uzeto iz kase" pa odustane — možda nije siguran šta upisati. Popravka: kratko objašnjenje u prozoru.',
+  novi: 'Krene dodavati novo piće pa odustane. Popravka: manje polja (naziv i cijena dovoljni).',
+  napomena: 'Krene pisati napomenu pa odustane. Popravka: brze gotove napomene (nestalo, kvar, dug).'
+};
+
+function medijan_(a) {
+  if (!a.length) return null;
+  var b = a.slice().sort(function (x, y) { return x - y; });
+  var m = Math.floor(b.length / 2);
+  return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2;
+}
+
+/** Čista funkcija (testira se): zapisi AKTIVNOST + smjene + inventura → brojke i uvidi. */
+function analizaRada_(trag, smjene, inventura, naziv, od, doo, dana) {
+  var ime = function (pid) { return naziv[pid] || pid || '—'; };
+  var det = function (r) { try { var o = JSON.parse(s_(r.detalji)); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } };
+  var inc = function (m, k, n) { m[k] = (m[k] || 0) + (n === undefined ? 1 : n); };
+  var min1 = function (sek) { return sek === null ? null : Math.round(sek / 6) / 10; };
+  var top = function (m, extra) {
+    return Object.keys(m).map(function (k) { var o = { product_id: k, naziv: ime(k), n: m[k] }; if (extra) extra(o); return o; })
+      .sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
+  };
+
+  var smjeneTrag = {}, radnici = {};
+  var poc = [], kraj = [], pocPresk = [], pocProsli = [], krajPresk = [];
+  var ponisti = {}, brzo = {}, ispravka = {}, dupli = {}, bezZal = {};
+  var prozori = {}, greske = {}, jsGreske = {}, provjere = {};
+  var off = { epizoda: 0, sekundi: 0, max_cekalo: 0 };
+  var presk = { potvrdio: 0, vratio: 0, upozorenja: 0 };
+  var nav = { odustao_od_pocetka: 0, vratio_se_na_prodaju: 0 };
+  var pr = function (sid) { return provjere[sid] || (provjere[sid] = { pokusaja: 0, prva_razlika: false, ponovo: 0, zavrseno: false, razlog: '', ispravke: 0 }); };
+
+  trag.forEach(function (r) {
+    var v = s_(r.vrsta), sid = s_(r.shift_id), pid = s_(r.product_id), sek = num_(r.trajanje_s), d = det(r);
+    if (sid) smjeneTrag[sid] = true;
+    if (s_(r.radnik)) inc(radnici, s_(r.radnik));
+    if (v === 'brojanje') {
+      if (s_(r.ekran) === 'pocetna') { poc.push(sek); pocPresk.push(num_(d.preskoceno)); pocProsli.push(num_(d.prosli)); }
+      else if (s_(r.ekran) === 'zavrsna' && num_(d.krug) <= 1) { kraj.push(sek); krajPresk.push(num_(d.preskoceno)); }
+    } else if (v === 'ponisti') { inc(ponisti, pid); if (sek <= 5) inc(brzo, pid); }
+    else if (v === 'ispravka') inc(ispravka, pid);
+    else if (v === 'dupli_tap') inc(dupli, pid);
+    else if (v === 'bez_zalihe') inc(bezZal, pid);
+    else if (v === 'prozor') {
+      var pz = prozori[s_(r.detalji)] || (prozori[s_(r.detalji)] = { otvoreno: 0, bez_akcije: 0, sekundi: 0 });
+      pz.otvoreno++; if (!(num_(r.broj) > 0)) pz.bez_akcije++; pz.sekundi += sek;
+    } else if (v === 'greska') inc(greske, s_(r.detalji).replace(/^'/, '').slice(0, 140));
+    else if (v === 'js_greska') inc(jsGreske, s_(r.detalji).replace(/^'/, '').slice(0, 140));
+    else if (v === 'offline') { off.epizoda++; off.sekundi += sek; off.max_cekalo = Math.max(off.max_cekalo, num_(r.broj)); }
+    else if (v === 'provjera' && sid) {
+      var p = pr(sid);
+      p.pokusaja = Math.max(p.pokusaja, num_(r.broj));
+      if (num_(r.broj) <= 1 && (num_(d.roba) > 0 || (d.kasa !== null && d.kasa !== undefined && num_(d.kasa) !== 0))) p.prva_razlika = true;
+    } else if (v === 'ponovo' && sid) pr(sid).ponovo++;
+    else if (v === 'zavrseno' && sid) { var z = pr(sid); z.zavrseno = true; z.razlog = s_(d.razlog); z.ispravke = num_(d.ispravke); }
+    else if (v === 'preskoceno') { if (d.potvrdio) presk.potvrdio++; else presk.vratio++; presk.upozorenja += num_(d.upozorenja); }
+    else if (v === 'ekran') {
+      if (s_(r.ekran) === 'pocetna' && s_(r.detalji) === 'radnik') nav.odustao_od_pocetka++;
+      if (s_(r.ekran) === 'zavrsna' && s_(r.detalji) === 'smjena') nav.vratio_se_na_prodaju++;
+    }
+  });
+
+  // razlike robe iz zatvorenih smjena (poslovni podaci, ne trag)
+  var razl = {};
+  inventura.forEach(function (x) {
+    var rk = s_(x.razlika_kom) === '' ? 0 : num_(x.razlika_kom);
+    if (!rk) return;
+    var pid = s_(x.product_id), o = razl[pid] || (razl[pid] = { product_id: pid, naziv: s_(x.proizvod) || ime(pid), smjena: 0, kom: 0 });
+    o.smjena++; o.kom += rk;
+  });
+  var razlike = Object.keys(razl).map(function (k) { return razl[k]; }).sort(function (a, b) { return b.smjena - a.smjena || a.kom - b.kom; }).slice(0, 8);
+
+  var zav = Object.keys(provjere).map(function (k) { return provjere[k]; }).filter(function (p) { return p.pokusaja > 0; });
+  var razlozi = {};
+  zav.forEach(function (p) { if (p.razlog) inc(razlozi, p.razlog); });
+  var prosjek = function (a) { return a.length ? Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length * 10) / 10 : null; };
+
+  var rez = {
+    od: od, do: doo, dana: dana, zapisa: trag.length,
+    smjena: Math.max(Object.keys(smjeneTrag).length, smjene.length),
+    radnici: Object.keys(radnici).map(function (k) { return { ime: k, zapisa: radnici[k] }; }).sort(function (a, b) { return b.zapisa - a.zapisa; }),
+    brojanje: {
+      pocetak: { n: poc.length, medijan_min: min1(medijan_(poc)), max_min: poc.length ? min1(Math.max.apply(null, poc)) : null, preskoceno: prosjek(pocPresk), prosli_put: prosjek(pocProsli) },
+      kraj: { n: kraj.length, medijan_min: min1(medijan_(kraj)), max_min: kraj.length ? min1(Math.max.apply(null, kraj)) : null, preskoceno: prosjek(krajPresk) }
+    },
+    provjere: {
+      smjena: zav.length, iz_prve: zav.filter(function (p) { return !p.prva_razlika; }).length,
+      prosjek_pokusaja: prosjek(zav.map(function (p) { return p.pokusaja; })),
+      ponovo: zav.reduce(function (a, p) { return a + p.ponovo; }, 0),
+      ispravke: zav.reduce(function (a, p) { return a + p.ispravke; }, 0),
+      razlozi: Object.keys(razlozi).map(function (k) { return { razlog: k, n: razlozi[k] }; }).sort(function (a, b) { return b.n - a.n; })
+    },
+    ponistavanja: top(ponisti, function (o) { o.brzo = brzo[o.product_id] || 0; }),
+    ispravke: top(ispravka),
+    dupli_tap: top(dupli),
+    bez_zalihe: top(bezZal),
+    prozori: Object.keys(prozori).map(function (k) {
+      var x = prozori[k];
+      return { ime: k, naziv: PROZORI_IME[k] || k, otvoreno: x.otvoreno, bez_akcije: x.bez_akcije, prosjek_s: Math.round(x.sekundi / x.otvoreno) };
+    }).sort(function (a, b) { return b.bez_akcije - a.bez_akcije || b.otvoreno - a.otvoreno; }),
+    greske: Object.keys(greske).map(function (k) { return { poruka: k, n: greske[k] }; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 10),
+    js_greske: Object.keys(jsGreske).map(function (k) { return { poruka: k, n: jsGreske[k] }; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 5),
+    offline: { epizoda: off.epizoda, minuta: Math.round(off.sekundi / 60), max_cekalo: off.max_cekalo },
+    preskoceno: presk,
+    navigacija: nav,
+    razlike_robe: razlike
+  };
+  rez.uvidi = uvidiRada_(rez);
+  return rez;
+}
+
+/** Pravila → uvidi na jednostavnom jeziku, svaki s prijedlogom popravke. */
+function uvidiRada_(a) {
+  var u = [];
+  var dodaj = function (ozb, naslov, detalj, prijedlog, tezina) { u.push({ ozbiljnost: ozb, naslov: naslov, detalj: detalj, prijedlog: prijedlog, _t: tezina || 0 }); };
+  var b = a.brojanje;
+  if (b.pocetak.n && b.pocetak.medijan_min > 6) {
+    dodaj(b.pocetak.medijan_min > 10 ? 'visoka' : 'srednja', 'Početno brojanje traje oko ' + b.pocetak.medijan_min + ' min',
+      b.pocetak.n + (b.pocetak.n === 1 ? ' brojanje' : ' brojanja') + '; „prošli put" tapnut prosječno ' + (b.pocetak.prosli_put || 0) + '×, preskočeno prosječno ' + (b.pocetak.preskoceno || 0) + '.',
+      'Poredati proizvode kao što stoje u frižideru i na polici; proizvode koji se više ne drže isključiti iz brojanja; podsjetiti radnika na „↺ prošli put".', b.pocetak.medijan_min);
+  }
+  if (b.kraj.n && b.kraj.medijan_min > 8) {
+    dodaj(b.kraj.medijan_min > 12 ? 'visoka' : 'srednja', 'Završno brojanje traje oko ' + b.kraj.medijan_min + ' min',
+      b.kraj.n + (b.kraj.n === 1 ? ' brojanje' : ' brojanja') + ' (bez ponovnog brojanja).',
+      'Isti redoslijed kao na polici; razmisliti da se na kraju broje samo pića, a suplementi jednom dnevno.', b.kraj.medijan_min);
+  }
+  a.ponistavanja.forEach(function (x) {
+    if (x.n < 3) return;
+    dodaj(x.n >= 6 ? 'visoka' : 'srednja', 'Često poništavanje: ' + x.naziv + ' (' + x.n + '×)',
+      x.brzo ? x.brzo + ' od toga u prvih 5 sekundi — vjerovatno se promaši pločica.' : 'Poništava se kasnije — možda se kuca pa predomisli kupac.',
+      x.brzo >= x.n / 2 ? 'Pomjeriti „' + x.naziv + '" dalje od susjedne pločice ili povećati pločice; provjeriti da naziv ne liči na drugi proizvod.'
+        : 'Pitati radnika zašto poništava; možda treba opcija „zamijeni proizvod".', x.n);
+  });
+  a.dupli_tap.forEach(function (x) {
+    if (x.n < 3) return;
+    dodaj('srednja', 'Brzi dupli tap: ' + x.naziv + ' (' + x.n + '×)',
+      'Drugi tap u istom trenutku se ne računa (zaštita od slučajnog dvostrukog kucanja). Ako se prodaju dva komada odjednom, jedan možda nije kucan.',
+      'Dodati dugme „×2" na pločici ili jasniji znak da se svaki tap računa (zujanje + broj).', x.n);
+  });
+  a.bez_zalihe.forEach(function (x) {
+    if (x.n < 2) return;
+    dodaj(x.n >= 4 ? 'visoka' : 'srednja', 'Prodaje se ' + x.naziv + ' dok je po evidenciji 0 (' + x.n + '×)',
+      'Roba je donesena, a dopuna nije upisana — ili je početno stanje pogrešno.',
+      'Pri tapu na proizvod koji je na 0 pitati „Je li stigla dopuna?" s dugmetom za dopunu.', x.n);
+  });
+  a.prozori.forEach(function (x) {
+    if (x.otvoreno < 3 || x.bez_akcije / x.otvoreno < 0.5) return;
+    dodaj(x.bez_akcije >= 6 ? 'visoka' : 'srednja', 'Prozor „' + x.naziv + '" se često zatvori bez unosa (' + x.bez_akcije + ' od ' + x.otvoreno + ')',
+      'U prosjeku je otvoren ' + x.prosjek_s + ' s.', PROZORI_SAVJET[x.ime] || 'Radnik otvori pa odustane — provjeriti je li jasno šta treba upisati.', x.bez_akcije);
+  });
+  a.greske.forEach(function (x) {
+    if (x.n < 2) return;
+    var mreza = /internet|veze|mreže|server/i.test(x.poruka);
+    dodaj(x.n >= 5 ? 'visoka' : 'srednja', 'Radnik često vidi poruku: „' + x.poruka.slice(0, 80) + '" (' + x.n + '×)',
+      mreza ? 'Problem s vezom na šanku.' : 'Poruka se ponavlja — radnik možda ne razumije šta treba uraditi.',
+      mreza ? 'Provjeriti WiFi na šanku (pojačivač) ili mobilne podatke na telefonu.' : 'Jasniji tekst poruke ili korak koji sprječava grešku.', x.n);
+  });
+  if (a.offline.epizoda >= 5 || a.offline.minuta >= 30) {
+    dodaj(a.offline.minuta >= 120 ? 'visoka' : 'srednja', 'Telefon je često bez interneta (' + a.offline.epizoda + ' puta, ukupno ' + a.offline.minuta + ' min)',
+      'Aplikacija sve sačuva i pošalje kasnije, ali vlasnik prodaju vidi sa zakašnjenjem. Najviše promjena na čekanju: ' + a.offline.max_cekalo + '.',
+      'Provjeriti WiFi na šanku ili uključiti mobilne podatke na telefonu radnika.', a.offline.minuta / 10);
+  }
+  var p = a.provjere;
+  if (p.smjena >= 2 && (p.smjena - p.iz_prve) / p.smjena >= 0.5) {
+    var naj = a.razlike_robe.slice(0, 3).map(function (x) { return x.naziv; }).join(', ');
+    dodaj('srednja', 'Na kraju smjene se često ne poklapa iz prve (' + (p.smjena - p.iz_prve) + ' od ' + p.smjena + ' smjena)',
+      'Prosjek ' + (p.prosjek_pokusaja || 1) + ' provjere po smjeni; ponovo brojano ' + p.ponovo + '×; ispravki poslije provjere ' + p.ispravke + '.',
+      naj ? 'Najčešće se ne poklapa: ' + naj + '. Provjeriti gdje se drže i kuca li se svaka prodaja.' : 'Provjeriti s radnikom gdje nastaje razlika.', p.smjena - p.iz_prve);
+  }
+  a.razlike_robe.forEach(function (x) {
+    if (x.smjena < 2) return;
+    dodaj(x.smjena >= 4 ? 'visoka' : 'srednja', x.naziv + ' se često ne poklapa (' + x.smjena + ' smjena, ukupno ' + (x.kom > 0 ? '+' : '') + x.kom + ' kom)',
+      x.kom < 0 ? 'Fali robe — prodaja bez kucanja, gratis ili potrošnja koja nije upisana.' : 'Višak robe — dopuna nije upisana ili je prodaja kucana greškom.',
+      'Dogovoriti s radnikom gdje se ' + x.naziv + ' drži (jedno mjesto) i da se svaka prodaja i dopuna odmah kuca.', x.smjena);
+  });
+  if (a.navigacija.vratio_se_na_prodaju >= 3) {
+    dodaj('srednja', 'Radnik krene završavati smjenu pa se vrati na prodaju (' + a.navigacija.vratio_se_na_prodaju + '×)',
+      'Sa završnog brojanja se vraća na prodaju.',
+      'Možda se sjeti prodaje koju nije kucao ili slučajno tapne ZAVRŠI SMJENU — pitati radnika; po potrebi pomjeriti dugme.', a.navigacija.vratio_se_na_prodaju);
+  }
+  if (a.navigacija.odustao_od_pocetka >= 3) {
+    dodaj('niska', 'Radnik počne početno brojanje pa ode nazad (' + a.navigacija.odustao_od_pocetka + '×)',
+      'Sa početnog brojanja se vraća na izbor imena.',
+      'Možda izabere pogrešno ime ili ga nešto prekine — provjeriti s radnikom.', a.navigacija.odustao_od_pocetka / 2);
+  }
+  if (a.preskoceno.upozorenja >= 3) {
+    dodaj('niska', 'Radnik često preskoči nešto čega je prošli put bilo (' + a.preskoceno.upozorenja + ' upozorenja)',
+      'Potvrdio: ' + a.preskoceno.potvrdio + '×, vratio se da upiše: ' + a.preskoceno.vratio + '×.',
+      'Možda se dio robe drži u magacinu — dogovoriti šta se broji na šanku, a šta ne.', a.preskoceno.upozorenja / 2);
+  }
+  a.js_greske.forEach(function (x) {
+    dodaj('visoka', 'Tehnička greška u aplikaciji (' + x.n + '×)', x.poruka,
+      'Kopiraj ovaj izvještaj i pošalji Claudeu — treba popraviti kod.', 10 + x.n);
+  });
+  var red = { visoka: 0, srednja: 1, niska: 2 };
+  u.sort(function (x, y) { return red[x.ozbiljnost] - red[y.ozbiljnost] || y._t - x._t; });
+  u.forEach(function (x) { delete x._t; });
+  return u.slice(0, 15);
 }

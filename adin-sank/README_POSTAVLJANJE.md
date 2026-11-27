@@ -118,6 +118,13 @@ Najlakše u aplikaciji: **Vlasnik › → Proizvodi** (+ Novi proizvod, klik na 
 - **Detektor grešaka**: traži minus robe (manjak ili više prodano nego što je bilo) i minus para (manjak u kasi, ili kasa u minusu) u smjeni u toku i u smjenama zadnjih 30 dana. Uz svaku grešku piše **gdje** je i **kako provjeriti**. Kad se Kenan prijavi, odmah iskoči upozorenje; „Pregledao sam" gasi grešku.
 - **Dani**: lista zadnjih 30 dana (promet, zarada, smjene, razlike), klik na dan daje sve: smjene, prodaju po proizvodu, promet po satu, osoblje, napomene, greške i raspored.
 
+## 10e. Analiza rada — gdje radnik zapinje (samo Kenan)
+Telefon radnika tiho bilježi rad u aplikaciji u tab **AKTIVNOST** (u Sheetu): poništavanja i na kojem proizvodu, brze duple tapove koji se ne računaju, prodaju robe koje po evidenciji nema, koliko traje početno i završno brojanje, šta preskoči, koliko puta provjerava kasu, prozore koje otvori pa zatvori bez unosa, poruke o greškama koje vidi i koliko je bio bez interneta. Ne bilježi se ništa izvan aplikacije.
+
+- **Vlasnik → Rad**: uvidi s prijedlozima popravki (7 / 14 / 30 dana) i brojke.
+- **📋 Kopiraj za Claude** → zalijepi u razgovor sa Claudeom i napiši „predloži popravke". Claude iz toga predloži i napravi izmjene.
+- Tab AKTIVNOST se sam skraćuje (najviše 25.000 redova; najstariji se brišu). Brisanje tog taba ne dira prodaju ni smjene.
+
 ## 11. Provjera da sve radi (5 minuta)
 
 Uradi ovo jednom nakon postavljanja (poslije možeš obrisati redove testa iz SMJENE/DOGADJAJI/INVENTURA):

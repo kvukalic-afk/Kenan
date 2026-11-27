@@ -12,3 +12,5 @@
 6. Na kraju klikni **ZAVRŠI SMJENU**, prebroji robu (čega nema — preskoči), upiši gotovinu i klikni **PROVJERI**.
    - Ako se nešto ne poklapa, aplikacija kaže **koji proizvod** — tapni **„↺ Prebroji ponovo"** i prebroji samo označene (crveno).
    - Ako i dalje ne štima, izaberi razlog i završi. Vlasnik u izvještaju vidi i šta je ispravljeno poslije provjere.
+
+_Aplikacija bilježi samo kako se radi u njoj (npr. poništavanja, koliko traje brojanje, poruke o greškama) da bi vlasnik vidio šta je teško i da se aplikacija pojednostavi. Ništa izvan aplikacije se ne bilježi._

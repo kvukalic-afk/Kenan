@@ -71,6 +71,22 @@ async function upisiBrojanje(page, vrijednosti) {
 async function tap(page, pid, n = 1) {
   for (let i = 0; i < n; i++) { await page.locator(`[data-tile="${pid}"]`).click(); await pauza(220); }
 }
+/** Telefon pošalje trag rada (kao kad radnik zaključa ekran ili izađe iz aplikacije). */
+async function posaljiTrag(page) {
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    delete document.visibilityState;
+  });
+}
+async function cekajTrag(g, uvjet, opis) {
+  for (let i = 0; i < 60; i++) {
+    const t = g.__tabela('AKTIVNOST');
+    if (uvjet(t)) return t;
+    await pauza(150);
+  }
+  assert.fail('trag nije stigao: ' + opis + ' — ' + JSON.stringify(g.__tabela('AKTIVNOST').map(r => r.vrsta + ':' + r.product_id + ':' + r.detalji)));
+}
 async function cekajSync(page) {
   await page.getByTestId('sync').filter({ hasText: 'Sve spremljeno' }).waitFor({ timeout: 15000 });
 }
@@ -277,6 +293,16 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.getByText('Ko je na smjeni?').waitFor({ timeout: 15000 });
     await cekajSync(page);
 
+    // trag rada: poništavanje, dupli tap i rad bez interneta su zabilježeni
+    await posaljiTrag(page);
+    const trag = await cekajTrag(g, t => t.some(r => r.vrsta === 'offline') && t.some(r => r.vrsta === 'ponisti'), 'poništi + offline');
+    assert.ok(trag.some(r => r.vrsta === 'ponisti' && r.product_id === 'kong' && r.radnik === 'Edin'), 'poništavanje Konga');
+    assert.ok(trag.some(r => r.vrsta === 'dupli_tap' && r.product_id === 'kong'), 'dupli tap na Kong');
+    assert.ok(trag.some(r => r.vrsta === 'offline' && r.trajanje_s > 0 && r.broj >= 1), 'epizoda bez interneta');
+    assert.ok(trag.some(r => r.vrsta === 'prozor' && r.detalji === 'napomena' && r.broj === 1), 'prozor s unosom');
+    assert.ok(trag.some(r => r.vrsta === 'brojanje' && r.ekran === 'pocetna'), 'trajanje početnog brojanja');
+    assert.ok(trag.every(r => r.verzija && r.uredjaj), 'verzija i uređaj');
+
     /* ── Vlasnik ── */
     await page.getByRole('button', { name: 'Vlasnik ›' }).click();
     await page.locator('input[type="password"]').fill('1111');
@@ -291,6 +317,12 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.locator('[data-greska="manjak_robe"]').filter({ hasText: 'Manjak robe: Red Bull' }).first().waitFor();
     assert.ok((await page.locator('[data-greska="manjak_robe"]').first().textContent()).includes('KAKO PROVJERITI'));
     await page.screenshot({ path: path.join(SLIKE, '7b-greske.png'), fullPage: true });
+    // analiza rada: uvidi + tekst za Claudea
+    await page.locator('[data-tab="rad"]').click();
+    await page.getByText('UVIDI I PRIJEDLOZI').waitFor();
+    await page.getByTestId('kopiraj-analizu').click();
+    await page.locator('[data-testid="analiza-tekst"], .toast').first().waitFor();
+    await page.screenshot({ path: path.join(SLIKE, '7e-analiza-rada.png'), fullPage: true });
     await page.getByRole('button', { name: 'Danas', exact: true }).click();
     await page.getByText('PLATA RADNIKA', { exact: false }).waitFor();
     await page.screenshot({ path: path.join(SLIKE, '7-vlasnik.png'), fullPage: true });
@@ -391,7 +423,7 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await page.locator('input[type="password"]').fill('2580');
     await page.getByRole('button', { name: 'Uđi' }).click();
     await page.getByText('evidencija i rad').first().waitFor();
-    for (const tab of ['dani', 'karte', 'vrata', 'proizvodi', 'mjesec']) assert.equal(await page.locator(`[data-tab="${tab}"]`).count(), 0, tab);
+    for (const tab of ['dani', 'rad', 'karte', 'vrata', 'proizvodi', 'mjesec']) assert.equal(await page.locator(`[data-tab="${tab}"]`).count(), 0, tab);
     for (const tab of ['danas', 'greske', 'raspored', 'smjene', 'clanovi', 'zalihe', 'postavke']) assert.equal(await page.locator(`[data-tab="${tab}"]`).count(), 1, tab);
     assert.ok(!/PROMET DANAS|PLATA RADNIKA|PROFIT/.test(await page.locator('#root').textContent()), 'Edin ne vidi novac');
     await page.screenshot({ path: path.join(SLIKE, '7d-edin.png'), fullPage: true });
@@ -520,6 +552,17 @@ test('E2E: preskoči = nema, „prošli put" jednim tapom, ponovo se broji samo 
     assert.match(izv, /80% → 70%/);
     const nap = g.__tabela('DOGADJAJI').filter(d => d.tip_dogadjaja === 'NAPOMENA');
     assert.equal(nap.length, 1, 'napomena o ispravci upisana jednom');
+    // trag rada se pošalje sam poslije zatvaranja smjene
+    const tr = await cekajTrag(g, t => t.some(r => r.vrsta === 'zavrseno'), 'zavrseno');
+    const jedan = (vrsta, f = () => true) => tr.filter(r => r.vrsta === vrsta && f(r));
+    const det = r => JSON.parse(r.detalji || '{}');
+    assert.equal(jedan('brojanje', r => r.ekran === 'pocetna').length, 1);
+    assert.equal(det(jedan('brojanje', r => r.ekran === 'pocetna')[0]).preskoceno, 13);
+    assert.deepEqual(jedan('brojanje', r => r.ekran === 'zavrsna').map(r => det(r).krug), [1, 2], 'prvo brojanje + ponovno');
+    assert.deepEqual(jedan('provjera').map(r => [r.broj, det(r).roba]), [[1, 2], [2, 0]]);
+    assert.equal(jedan('ponovo')[0].broj, 2);
+    assert.equal(det(jedan('zavrseno')[0]).ispravke, 2);
+    assert.ok(jedan('preskoceno').every(r => det(r).potvrdio === true));
     assert.equal(g.__tabela('SMJENE')[0].broj_razlika, 0);
 
     /* sljedeći dan: „prošli put" jednim tapom; preskočena voda upozorava */
@@ -538,6 +581,8 @@ test('E2E: preskoči = nema, „prošli put" jednim tapom, ponovo se broji samo 
     await page.screenshot({ path: path.join(SLIKE, '10d-upozorenje.png') });
     await page.getByRole('button', { name: 'Vrati se i upiši' }).click();
     await page.locator('[data-isto="voda05"]').click();
+    await posaljiTrag(page);
+    await cekajTrag(g, t => t.some(r => r.vrsta === 'preskoceno' && JSON.parse(r.detalji).potvrdio === false && JSON.parse(r.detalji).upozorenja === 2), 'vratio se da upiše (voda i protein malina)');
     await page.getByRole('button', { name: 'ZAPOČNI SMJENU' }).click();
     await page.getByTestId('preskoceno-ok').click();
     await page.locator('[data-tile="redbull"]').waitFor();

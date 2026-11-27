@@ -62,6 +62,7 @@ class MockSheet {
   }
   getDataRange() { return this.getRange(1, 1, Math.max(1, this.getLastRow()), Math.max(1, this.getLastColumn())); }
   clear() { this.data = []; this.formule = {}; return this; }
+  deleteRows(start, n) { this.data.splice(start - 1, n); return this; }
   _set(r, c, v) {
     while (this.data.length < r) this.data.push([]);
     const row = this.data[r - 1];
@@ -145,6 +146,7 @@ function napraviOkruzenje(opcije = {}) {
     LockService: {
       getScriptLock: () => ({
         waitLock() { if (stats.aktivniLock) throw new Error('lock zauzet'); stats.aktivniLock = true; stats.lockovi++; },
+        tryLock() { if (stats.aktivniLock) return false; stats.aktivniLock = true; stats.lockovi++; return true; },
         releaseLock() { stats.aktivniLock = false; }
       })
     },

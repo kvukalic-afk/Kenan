@@ -347,7 +347,49 @@ var Logika = (function () {
     return L.join('\n');
   }
 
+  /** Analiza rada kao tekst — vlasnik ga kopira i pošalje Claudeu da predloži popravke. */
+  function tekstAnalize(a) {
+    if (!a) return '';
+    var L = [];
+    var n1 = function (x) { return x === null || x === undefined ? '—' : String(x).replace('.', ','); };
+    var lista = function (naslov, arr, f) { if (arr && arr.length) L.push(naslov + ': ' + arr.map(f).join(', ')); };
+    L.push('ANALIZA RADA — Fitness Club Adin, ' + dT(a.od) + ' – ' + dT(a.do) + ' (' + a.dana + (a.dana % 10 === 1 && a.dana % 100 !== 11 ? ' dan)' : ' dana)'));
+    L.push('Smjena: ' + a.smjena + ' · zapisa: ' + a.zapisa + (a.radnici && a.radnici.length ? ' · radnici: ' + a.radnici.map(function (r) { return r.ime; }).join(', ') : ''));
+    if (!a.zapisa) L.push('Još nema zapisa — telefon bilježi od nove verzije aplikacije.');
+    if (a.uvidi && a.uvidi.length) {
+      L.push('');
+      L.push('UVIDI:');
+      a.uvidi.forEach(function (u, i) {
+        L.push((i + 1) + '. [' + String(u.ozbiljnost).toUpperCase() + '] ' + u.naslov + (u.detalj ? ' — ' + u.detalj : '') + ' Prijedlog: ' + u.prijedlog);
+      });
+    }
+    L.push('');
+    var b = a.brojanje || { pocetak: {}, kraj: {} };
+    L.push('BROJANJE: početak ' + (b.pocetak.n ? 'medijan ' + n1(b.pocetak.medijan_min) + ' min (najduže ' + n1(b.pocetak.max_min) + '), preskočeno ~' + n1(b.pocetak.preskoceno) + ', „prošli put" ~' + n1(b.pocetak.prosli_put) : 'nema podataka') +
+      ' · kraj ' + (b.kraj.n ? 'medijan ' + n1(b.kraj.medijan_min) + ' min (najduže ' + n1(b.kraj.max_min) + '), preskočeno ~' + n1(b.kraj.preskoceno) : 'nema podataka'));
+    var p = a.provjere;
+    if (p && p.smjena) {
+      L.push('PROVJERA NA KRAJU: iz prve se poklopilo ' + p.iz_prve + '/' + p.smjena + ', prosjek provjera ' + n1(p.prosjek_pokusaja) + ', ponovo brojano ' + p.ponovo + '×, ispravki ' + p.ispravke +
+        (p.razlozi && p.razlozi.length ? ', razlozi: ' + p.razlozi.map(function (r) { return r.razlog + ' ' + r.n + '×'; }).join(', ') : ''));
+    }
+    lista('PONIŠTAVANJA', a.ponistavanja, function (x) { return x.naziv + ' ' + x.n + '×' + (x.brzo ? ' (' + x.brzo + ' odmah)' : ''); });
+    lista('ISPRAVKE', a.ispravke, function (x) { return x.naziv + ' ' + x.n + '×'; });
+    lista('DUPLI TAP', a.dupli_tap, function (x) { return x.naziv + ' ' + x.n + '×'; });
+    lista('PRODAJA BEZ ZALIHE', a.bez_zalihe, function (x) { return x.naziv + ' ' + x.n + '×'; });
+    lista('PROZORI', a.prozori, function (x) { return x.naziv + ' ' + x.otvoreno + '× (bez unosa ' + x.bez_akcije + ', Ø ' + x.prosjek_s + ' s)'; });
+    lista('PORUKE O GREŠCI', a.greske, function (x) { return '„' + x.poruka + '" ' + x.n + '×'; });
+    if (a.offline && a.offline.epizoda) L.push('BEZ INTERNETA: ' + a.offline.epizoda + ' puta, ukupno ' + a.offline.minuta + ' min, najviše ' + a.offline.max_cekalo + ' promjena na čekanju');
+    if (a.preskoceno && (a.preskoceno.potvrdio || a.preskoceno.vratio)) L.push('PRESKAKANJE: potvrdio ' + a.preskoceno.potvrdio + '×, vratio se da upiše ' + a.preskoceno.vratio + '×, upozorenja ' + a.preskoceno.upozorenja);
+    if (a.navigacija && (a.navigacija.vratio_se_na_prodaju || a.navigacija.odustao_od_pocetka)) {
+      L.push('NAZAD: sa završnog brojanja na prodaju ' + a.navigacija.vratio_se_na_prodaju + '×, sa početnog brojanja na izbor imena ' + a.navigacija.odustao_od_pocetka + '×');
+    }
+    lista('RAZLIKE ROBE', a.razlike_robe, function (x) { return x.naziv + ' u ' + x.smjena + ' smj. (' + (x.kom > 0 ? '+' : '') + x.kom + ' kom)'; });
+    lista('TEHNIČKE GREŠKE', a.js_greske, function (x) { return x.poruka + ' ' + x.n + '×'; });
+    return L.join('\n');
+  }
+
   return {
+    tekstAnalize: tekstAnalize,
     uid: uid, km: km, dT: dT, trajanje: trajanje, danasSarajevo: danasSarajevo,
     stanjeSmjene: stanjeSmjene, provjeraZavrsnog: provjeraZavrsnog, nedostaje: nedostaje, saNulama: saNulama, uSmjeni: uSmjeni, ispravke: ispravke,
     dodajURed: dodajURed, ukloniIzReda: ukloniIzReda, sljedeciBatch: sljedeciBatch, pauza: pauza,
@@ -409,6 +451,65 @@ function obrisiNacrte() {
 
 function vibriraj(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* */ } }
 
+/** Kopiraj tekst (clipboard, pa stari način); vraća true ako je uspjelo. */
+async function kopirajTekst(tekst) {
+  try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(tekst); return true; } } catch (e) { /* */ }
+  try {
+    const ta = document.createElement('textarea'); ta.value = tekst; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy'); document.body.removeChild(ta);
+    return !!ok;
+  } catch (e) { return false; }
+}
+
+/* ═══════ TRAG RADA: tiho bilježenje gdje radnik zapinje (Kenan vidi analizu u „Rad") ═══════
+ * Samo radnje u aplikaciji (poništavanja, dupli tapovi, trajanje brojanja, prozori bez unosa, poruke o greškama,
+ * rad bez interneta). Nikad ne smije usporiti ili pokvariti prodaju: sve je u try/catch i šalje se rijetko. */
+const VERZIJA = '__VERZIJA__';
+const Trag = (() => {
+  const KLJUC = 'adin_trag_v1';
+  let kontekst = { radnik: '', shift_id: '', ekran: '' };
+  let saljem = false, zadnje = 0;
+  const uredjaj = (() => {
+    try { const u = navigator.userAgent || ''; return /iPhone|iPad|iPod/.test(u) ? 'iPhone' : /Android/.test(u) ? 'Android' : 'računar'; } catch (e) { return ''; }
+  })();
+  const red = () => { const r = ls.get(KLJUC, []); return Array.isArray(r) ? r : []; };
+  async function posalji(odmah) {
+    const r = red();
+    if (!r.length || saljem) return;
+    if (!odmah && r.length < 30 && Date.now() - zadnje < 4 * 60000) return;
+    saljem = true; zadnje = Date.now();
+    try {
+      const odg = await api('zabiljeziTrag', r.slice(0, 150));
+      const gotovo = {};
+      (odg.primljeno || []).forEach(id => { gotovo[id] = true; });
+      ls.set(KLJUC, red().filter(x => !gotovo[x.id]));
+    } catch (e) { /* pokuša kasnije */ } finally { saljem = false; }
+  }
+  function zabiljezi(vrsta, d) {
+    try {
+      d = d || {};
+      const r = red();
+      r.push({
+        id: Logika.uid('T'), ms: Date.now(), vrsta,
+        ekran: d.ekran || kontekst.ekran, radnik: kontekst.radnik, shift_id: kontekst.shift_id, pid: d.pid || '',
+        trajanje: d.trajanje === undefined ? '' : Math.round(d.trajanje * 10) / 10,
+        broj: d.broj === undefined || d.broj === null ? '' : d.broj,
+        detalji: d.detalji === undefined || d.detalji === null ? '' : (typeof d.detalji === 'string' ? d.detalji : JSON.stringify(d.detalji)).slice(0, 300),
+        verzija: VERZIJA, uredjaj
+      });
+      ls.set(KLJUC, r.slice(-400));
+      if (r.length >= 30) posalji();
+    } catch (e) { /* trag nikad ne smije smetati radu */ }
+  }
+  return {
+    zabiljezi, posalji,
+    postavi(k) { kontekst = { ...kontekst, ...k }; },
+    sekundi(od) { return (Date.now() - od) / 1000; },
+    naCekanju() { return red().length; }
+  };
+})();
+
 /* ═══════ APLIKACIJA ═══════ */
 function App() {
   const [faza, setFaza] = useState('ucitavanje');
@@ -429,6 +530,40 @@ function App() {
   const timerRef = useRef(null);
   const toastTimer = useRef(null);
   const ispravkaRef = useRef('');
+  const offlineRef = useRef(null);
+  const ekranRef = useRef({ ime: 'ucitavanje', od: Date.now() });
+
+  /* ── trag rada: kontekst, ekrani, poruke o greškama, tehničke greške, slanje ── */
+  useEffect(() => {
+    Trag.postavi({ radnik: (smjena && smjena.radnik) || radnik || '', shift_id: (smjena && smjena.shift_id) || '' });
+  }, [smjena && smjena.shift_id, smjena && smjena.radnik, radnik]); // eslint-disable-line
+  useEffect(() => {
+    const e0 = ekranRef.current;
+    if (e0.ime !== faza) {
+      if (e0.ime !== 'ucitavanje' && e0.ime !== 'admin' && faza !== 'admin') {
+        Trag.zabiljezi('ekran', { ekran: e0.ime, trajanje: Trag.sekundi(e0.od), detalji: faza });
+      }
+      ekranRef.current = { ime: faza, od: Date.now() };
+    }
+    Trag.postavi({ ekran: faza });
+  }, [faza]);
+  useEffect(() => { if (greska) Trag.zabiljezi('greska', { detalji: greska }); }, [greska]);
+  useEffect(() => {
+    const salji = setInterval(() => Trag.posalji(), 60000);
+    const sakriven = () => { if (document.visibilityState === 'hidden') Trag.posalji(true); };
+    const jsGreska = e => Trag.zabiljezi('js_greska', { detalji: String((e && e.message) || 'greška') + (e && e.lineno ? ' @' + e.lineno + ':' + e.colno : '') });
+    const obecanje = e => { if (e && e.reason instanceof Error) Trag.zabiljezi('js_greska', { detalji: 'promise: ' + e.reason.message }); };
+    document.addEventListener('visibilitychange', sakriven);
+    window.addEventListener('error', jsGreska);
+    window.addEventListener('unhandledrejection', obecanje);
+    const prvo = setTimeout(() => Trag.posalji(true), 8000);
+    return () => {
+      clearInterval(salji); clearTimeout(prvo);
+      document.removeEventListener('visibilitychange', sakriven);
+      window.removeEventListener('error', jsGreska);
+      window.removeEventListener('unhandledrejection', obecanje);
+    };
+  }, []);
   // proizvodi onako kako se broje u otvorenoj smjeni (promjena načina brojanja važi od sljedeće smjene)
   const proizvodiSmjene = useMemo(() => Logika.uSmjeni(podaci.proizvodi, smjena), [podaci.proizvodi, smjena && smjena.mjere]); // eslint-disable-line
 
@@ -438,6 +573,7 @@ function App() {
   const spremiRed = useCallback(r => { redRef.current = r; setRed(r); ls.set(LS.RED, r); }, []);
 
   const pokaziToast = useCallback((tekst, vrsta) => {
+    if (vrsta === 'err') Trag.zabiljezi('greska', { detalji: 'obavijest: ' + tekst });
     clearTimeout(toastTimer.current);
     setToast({ tekst, vrsta: vrsta || 'info' });
     toastTimer.current = setTimeout(() => setToast(null), vrsta === 'err' ? 6000 : 3500);
@@ -520,6 +656,10 @@ function App() {
         });
       }
       pokusajRef.current = 0;
+      if (offlineRef.current) {
+        Trag.zabiljezi('offline', { trajanje: Trag.sekundi(offlineRef.current.od), broj: offlineRef.current.max });
+        offlineRef.current = null;
+      }
       setSinh(redRef.current.length ? 'salje' : 'ok');
       if (redRef.current.length) dalje = 50;
     } catch (e) {
@@ -527,6 +667,10 @@ function App() {
         // server je odbio cijeli zahtjev (ne bi se smjelo desiti) — ne gubimo podatke, pokušavamo kasnije
       }
       pokusajRef.current += 1;
+      if (e.mreza) {
+        if (!offlineRef.current) offlineRef.current = { od: Date.now(), max: 0 };
+        offlineRef.current.max = Math.max(offlineRef.current.max, redRef.current.length);
+      }
       setSinh('greska');
       dalje = Logika.pauza(pokusajRef.current);
     } finally {
@@ -620,6 +764,7 @@ function App() {
       setIzvjestaj(r.izvjestaj);
       setSmjena(null);
       setFaza('izvjestaj');
+      setTimeout(() => Trag.posalji(true), 1500);
       window.scrollTo(0, 0);
       api('getBootstrap').then(b => setPodaci(p => {
         const n = { ...p, prijedlog: b.prijedlog || {}, prijavljeno: b.prijavljeno || {}, proizvodi: b.proizvodi || p.proizvodi };
@@ -790,7 +935,7 @@ function Radnik({ radnici, izabran, onDalje, onAdmin, raspored }) {
 
 /* ═══════ BROJAČ (−  18  +) ═══════ */
 /** „prošli put" / „vlasnik javio" — tap upiše istu vrijednost (radnik ne mora kucati). */
-function Podsjetnik({ pid, mjera, pod, prij, v, set }) {
+function Podsjetnik({ pid, mjera, pod, prij, v, set, onTap }) {
   const imaPrij = prij !== undefined && prij !== null;
   const x = imaPrij ? prij : pod;
   if (x === undefined || x === null) return null;
@@ -800,17 +945,17 @@ function Podsjetnik({ pid, mjera, pod, prij, v, set }) {
   if (!(Number(x) > 0)) return <div className="sit">{ko}: {opis}</div>;
   const isto = v !== undefined && v !== null && v !== '' && Number(v) === Number(x);
   return (
-    <button type="button" className={'podsj' + (isto ? ' isto' : '') + (imaPrij ? ' vl' : '')} data-isto={pid} onClick={() => set(String(x))}>
+    <button type="button" className={'podsj' + (isto ? ' isto' : '') + (imaPrij ? ' vl' : '')} data-isto={pid} onClick={() => { set(String(x)); if (onTap) onTap(); }}>
       {(isto ? '✓ ' : '↺ ') + ko + ': ' + opis}
     </button>
   );
 }
 
-function Brojac({ pid, naziv, pod, prij, v, set, mjera, oznaka }) {
+function Brojac({ pid, naziv, pod, prij, v, set, mjera, oznaka, onPodsjetnik }) {
   const n = v === '' || v === undefined ? null : Number(v);
   const prazno = v === '' || v === undefined;
   const kl = 'row' + (prazno ? ' prazno' : '') + (oznaka ? ' sumnja' : '');
-  const hint = <Podsjetnik pid={pid} mjera={mjera} pod={pod} prij={prij} v={v} set={set} />;
+  const hint = <Podsjetnik pid={pid} mjera={mjera} pod={pod} prij={prij} v={v} set={set} onTap={onPodsjetnik} />;
   if (mjera === 'ima') {
     return (
       <div className={kl}>
@@ -872,8 +1017,10 @@ function Preskoceno({ lista, prijedlog, prijavljeno, dugme, zatvori, potvrdi }) 
   };
   const sumnja = lista.filter(p => bilo(p) !== null);
   const ostali = lista.filter(p => bilo(p) === null);
+  const trag = potvrdio => Trag.zabiljezi('preskoceno', { broj: lista.length, detalji: { potvrdio, upozorenja: sumnja.length, sumnja: sumnja.map(p => p.product_id).slice(0, 8) } });
+  const nazad = () => { trag(false); zatvori(); };
   return (
-    <Sheet naslov="Preskočeno = nema" zatvori={zatvori}>
+    <Sheet naslov="Preskočeno = nema" zatvori={nazad}>
       <div className="info">Ovo nisi upisao, pa se računa da toga <b style={{ color: 'var(--text)' }}>nema (0)</b>.</div>
       {sumnja.length > 0 && (
         <div className="warn" data-testid="preskoceno-sumnja">
@@ -882,8 +1029,8 @@ function Preskoceno({ lista, prijedlog, prijavljeno, dugme, zatvori, potvrdi }) 
         </div>
       )}
       {ostali.length > 0 && <div className="card" data-testid="preskoceno" style={{ fontSize: 14, lineHeight: 1.6 }}>{ostali.map(p => p.naziv).join(', ')}</div>}
-      <button className="btn" data-testid="preskoceno-ok" onClick={potvrdi}>{dugme}</button>
-      <button className="btn2" style={{ marginTop: 10 }} onClick={zatvori}>Vrati se i upiši</button>
+      <button className="btn" data-testid="preskoceno-ok" onClick={() => { trag(true); potvrdi(); }}>{dugme}</button>
+      <button className="btn2" style={{ marginTop: 10 }} onClick={nazad}>Vrati se i upiši</button>
     </Sheet>
   );
 }
@@ -897,8 +1044,14 @@ function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, naza
   const kasaOk = String(kasa).trim() !== '' && isFinite(Number(String(kasa).replace(',', '.')));
   const [v, setV] = useNacrt('pocetno', {});
   const fali = Logika.nedostaje(roba, v);
-  const post = (id, nov) => setV(s => ({ ...s, [id]: nov }));
+  const mjeri = useRef({ od: Date.now(), prosli: 0, dirano: {}, zapisano: false });
+  const post = (id, nov) => { mjeri.current.dirano[id] = 1; setV(s => ({ ...s, [id]: nov })); };
   const kreni = (vr) => {
+    if (!mjeri.current.zapisano) {
+      mjeri.current.zapisano = true;
+      Trag.zabiljezi('brojanje', { ekran: 'pocetna', trajanje: Trag.sekundi(mjeri.current.od), broj: roba.length,
+        detalji: { preskoceno: fali.length, prosli: mjeri.current.prosli, dirano: Object.keys(mjeri.current.dirano).length } });
+    }
     const o = {}; roba.forEach(p => { o[p.product_id] = Number(vr[p.product_id]); }); onStart(o, String(kasa).replace(',', '.'));
   };
 
@@ -915,7 +1068,7 @@ function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, naza
           <div className="card0">
             {g.stavke.map(p => (
               <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} mjera={Logika.mjera(p)} pod={prijedlog[p.product_id]} prij={prijavljeno[p.product_id]}
-                v={v[p.product_id]} set={n => post(p.product_id, n)} />
+                v={v[p.product_id]} set={n => post(p.product_id, n)} onPodsjetnik={() => { mjeri.current.prosli += 1; }} />
             ))}
           </div>
         </div>
@@ -957,6 +1110,15 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
   const [sada, setSada] = useState(Date.now());
   const tapovi = useRef({});
   const hitTimer = useRef(null);
+  // trag: koji prozor je otvoren, koliko dugo i je li nešto urađeno (ili zatvoren bez unosa)
+  const prozorRef = useRef(null);
+  useEffect(() => {
+    const s0 = prozorRef.current;
+    if (s0 && s0.ime !== sheet) Trag.zabiljezi('prozor', { detalji: s0.ime, broj: s0.akcija, trajanje: Trag.sekundi(s0.od) });
+    prozorRef.current = sheet ? (s0 && s0.ime === sheet ? s0 : { ime: sheet, od: Date.now(), akcija: 0 }) : null;
+  }, [sheet]);
+  const akcija = () => { if (prozorRef.current) prozorRef.current.akcija += 1; };
+  const zapisi = (...a) => { akcija(); return dodaj(...a); };
 
   useEffect(() => { const t = setInterval(() => setSada(Date.now()), 30000); return () => clearInterval(t); }, []);
   useEffect(() => {
@@ -975,8 +1137,11 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
   const brojTrenera = dio.treneri.reduce((a, p) => a + st.prodano(p.product_id), 0);
 
   const prodaj = (p) => {
-    if (!Logika.dozvoliTap(tapovi.current, p.product_id, Date.now(), 150)) return;
-    dodaj('SALE', p.product_id, 1);
+    if (!Logika.dozvoliTap(tapovi.current, p.product_id, Date.now(), 150)) { Trag.zabiljezi('dupli_tap', { pid: p.product_id }); return; }
+    if (p.prati_zalihu && st.ocekivano.hasOwnProperty(p.product_id) && st.ocekivano[p.product_id] <= 0) {
+      Trag.zabiljezi('bez_zalihe', { pid: p.product_id, broj: st.ocekivano[p.product_id] });
+    }
+    zapisi('SALE', p.product_id, 1);
     setZadnji(z => (z && z.p.product_id === p.product_id) ? { p, n: z.n + 1, k: Date.now() } : { p, n: 1, k: Date.now() });
     setHit(p.product_id);
     clearTimeout(hitTimer.current);
@@ -987,8 +1152,9 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
   const ponisti = () => {
     if (!zadnji) return;
     // zaštita: brzi drugi tap na pločicu ne smije "pogoditi" PONIŠTI koje se upravo pojavilo
-    if (Date.now() - zadnji.k < 500) return;
-    dodaj('UNDO_SALE', zadnji.p.product_id, 1, 'Poništeno na šanku');
+    if (Date.now() - zadnji.k < 500) { Trag.zabiljezi('dupli_tap', { pid: zadnji.p.product_id, detalji: 'traka' }); return; }
+    Trag.zabiljezi('ponisti', { pid: zadnji.p.product_id, trajanje: Trag.sekundi(zadnji.k) });
+    zapisi('UNDO_SALE', zadnji.p.product_id, 1, 'Poništeno na šanku');
     vibriraj([8, 40, 8]);
     setZadnji(z => (z && z.n > 1) ? { ...z, n: z.n - 1, k: Date.now() } : null);
   };
@@ -1106,7 +1272,10 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
       </div>
 
       {zadnji && (
-        <div className="undo" data-testid="undo">
+        <div className="undo" data-testid="undo" onClick={e => {
+          // tap na traku (ne na dugme) = drugi brzi tap na pločicu ispod koji nije kucan
+          if (!(e.target && e.target.closest && e.target.closest('button'))) Trag.zabiljezi('dupli_tap', { pid: zadnji.p.product_id, detalji: 'traka' });
+        }}>
           <span>✓ {zadnji.p.naziv} +1{zadnji.n > 1 ? ' (×' + zadnji.n + ')' : ''}</span>
           <button onClick={ponisti}>PONIŠTI</button>
         </div>
@@ -1123,31 +1292,31 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
 
       {sheet === 'potrosnja' && <Potrosnja roba={proizvodi.filter(p => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id))}
         osobe={osobe} st={st} zatvori={() => setSheet(null)}
-        zapisi={(osoba, p, q) => { dodaj('POTROSNJA', p.product_id, q, '', null, { osoba }); vibriraj(10); }} />}
+        zapisi={(osoba, p, q) => { zapisi('POTROSNJA', p.product_id, q, '', null, { osoba }); vibriraj(10); }} />}
 
       {sheet === 'uzeto' && <UzetoIzKase osobe={osobe} kasaTreba={st.kasaTreba} zatvori={() => setSheet(null)}
         zapisi={(osoba, iznos, napomena) => {
-          dodaj('KASA_IZLAZ', '', 0, napomena, null, { osoba, iznos });
+          zapisi('KASA_IZLAZ', '', 0, napomena, null, { osoba, iznos });
           setSheet(null); pokaziToast('✓ Zapisano: ' + osoba + ' uzeo ' + km(iznos) + ' KM iz kase.', 'ok');
         }} />}
 
       {sheet === 'novi' && <NoviProizvod proizvodi={proizvodi} radnik={smjena.radnik} shiftId={smjena.shift_id}
-        zatvori={() => setSheet(null)} gotovo={(r, kol) => { setSheet(null); onNovi(r, kol); }} />}
+        zatvori={() => setSheet(null)} gotovo={(r, kol) => { akcija(); setSheet(null); onNovi(r, kol); }} />}
 
       {sheet === 'dopuna' && <Dopuna proizvodi={proizvodi.filter(p => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id) && (Logika.mjera(p) !== 'ima' || Logika.trenutnoMjera(p, smjena, st) === 0))}
-        noviProizvod={() => setSheet('novi')}
+        noviProizvod={() => { akcija(); setSheet('novi'); }}
         zatvori={() => setSheet(null)}
         potvrdi={(p, kol) => {
-          dodaj('RESTOCK', p.product_id, kol); setSheet(null);
+          zapisi('RESTOCK', p.product_id, kol); setSheet(null);
           const m = Logika.mjera(p);
           pokaziToast(m === 'ima' ? '✓ ' + p.naziv + ': sada ima' : m === 'posto' ? '✓ ' + p.naziv + ': nova kanta (100%)' : '✓ Dopuna: ' + p.naziv + ' +' + kol, 'ok');
         }} />}
 
       {sheet === 'napomena' && <Napomena zatvori={() => setSheet(null)}
-        posalji={t => { dodaj('NAPOMENA', '', 0, t); setSheet(null); pokaziToast('✓ Napomena zapisana. Vlasnik je vidi u izvještaju.', 'ok'); }} />}
+        posalji={t => { zapisi('NAPOMENA', '', 0, t); setSheet(null); pokaziToast('✓ Napomena zapisana. Vlasnik je vidi u izvještaju.', 'ok'); }} />}
 
       {sheet === 'ispravka' && <Ispravka proizvodi={obicni} st={st} zatvori={() => setSheet(null)}
-        ponisti={p => { dodaj('UNDO_SALE', p.product_id, 1, 'Ispravka'); vibriraj(10); }} />}
+        ponisti={p => { Trag.zabiljezi('ispravka', { pid: p.product_id }); zapisi('UNDO_SALE', p.product_id, 1, 'Ispravka'); vibriraj(10); }} />}
 
       {sheet === 'clan' && <Clanarina clanarine={dio.clanarine} trenerProizvodi={dio.treneri} treneri={treneri} clanovi={clanovi} zatvori={() => setSheet(null)}
         potvrdi={(clan, pk, trenerIme) => {
@@ -1155,11 +1324,11 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
           const azuriran = { ...clan };
           pk.stavke.forEach(st0 => {
             if (Logika.tip(st0.p) === 'trener') {
-              dodaj('SALE', st0.p.product_id, 1, '', { ...payload, trener: trenerIme },
+              zapisi('SALE', st0.p.product_id, 1, '', { ...payload, trener: trenerIme },
                 st0.prilagodjena ? { cijena_override: String(st0.cijena), ukupno: st0.cijena } : undefined);
               azuriran.trener = trenerIme; azuriran.trener_do = st0.do;
             } else {
-              dodaj('SALE', st0.p.product_id, 1, '', payload);
+              zapisi('SALE', st0.p.product_id, 1, '', payload);
               azuriran.vrsta = st0.p.product_id; azuriran.istek = st0.do;
             }
           });
@@ -1173,7 +1342,7 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
       {sheet === 'zavrsi' && (
         <Sheet naslov="Završiti smjenu?" zatvori={() => setSheet(null)}>
           <div className="info">Ideš na završno brojanje robe i kase. Prodaja se poslije toga više ne kuca.</div>
-          <button className="btn" onClick={() => { setSheet(null); onZavrsi(); }}>Da, idem brojati</button>
+          <button className="btn" onClick={() => { akcija(); setSheet(null); onZavrsi(); }}>Da, idem brojati</button>
           <button className="btn2" style={{ marginTop: 10 }} onClick={() => setSheet(null)}>Ne, nastavljam prodaju</button>
         </Sheet>
       )}
@@ -1577,14 +1746,23 @@ function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGo
   const [potvrda, setPotvrda] = useState(false);
   const [ponovo, setPonovo] = useState([]);   // proizvodi koje treba prebrojati ponovo (zamrznuto, ne mijenja se dok kuca)
   const [prva, setPrva] = useNacrt('prva:' + smjena.shift_id, null);
+  const mjeri = useRef({ od: Date.now(), krug: 0, provjera: 0 });
   const fali = Logika.nedostaje(roba, v);
   const pr = Logika.provjeraZavrsnog(smjena, proizvodi, v, kasa);
   const kasaOk = pr.kasaRazlika !== null;
   const lista = (razlozi && razlozi.length) ? razlozi : ['Greška u kucanju', 'Gratis / poklon', 'Lom ili isteklo', 'Ne znam'];
 
   const imena = pids => pids.map(pid => (poId[pid] || { naziv: pid }).naziv).join(', ');
-  const naKasu = () => { setKorak('kasa'); setProvjereno(false); setPonovo([]); window.scrollTo(0, 0); };
-  const naBrojanje = () => { setPonovo(provjereno ? pr.razlikePid.slice() : []); setKorak('brojanje'); setProvjereno(false); window.scrollTo(0, 0); };
+  const naKasu = () => {
+    mjeri.current.krug += 1;
+    Trag.zabiljezi('brojanje', { ekran: 'zavrsna', trajanje: Trag.sekundi(mjeri.current.od), broj: roba.length, detalji: { preskoceno: fali.length, krug: mjeri.current.krug } });
+    setKorak('kasa'); setProvjereno(false); setPonovo([]); window.scrollTo(0, 0);
+  };
+  const naBrojanje = () => {
+    if (provjereno && pr.razlikePid.length) Trag.zabiljezi('ponovo', { broj: pr.razlikePid.length, detalji: { pids: pr.razlikePid.slice(0, 8) } });
+    mjeri.current.od = Date.now();
+    setPonovo(provjereno ? pr.razlikePid.slice() : []); setKorak('brojanje'); setProvjereno(false); window.scrollTo(0, 0);
+  };
 
   if (korak === 'brojanje') {
     return (
@@ -1625,7 +1803,11 @@ function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGo
         <span style={{ fontSize: 18, color: 'var(--dim)' }}>KM</span>
       </div>
       {!provjereno && (
-        <button className="btn" disabled={!kasaOk} onClick={() => { setProvjereno(true); if (!prva) setPrva({ roba: { ...v }, kasa }); }}>PROVJERI</button>
+        <button className="btn" disabled={!kasaOk} onClick={() => {
+          mjeri.current.provjera += 1;
+          Trag.zabiljezi('provjera', { broj: mjeri.current.provjera, detalji: { roba: pr.razlikeRobe, kasa: pr.kasaRazlika, pids: pr.razlikePid.slice(0, 8) } });
+          setProvjereno(true); if (!prva) setPrva({ roba: { ...v }, kasa });
+        }}>PROVJERI</button>
       )}
       {provjereno && kasaOk && (
         <>
@@ -1664,7 +1846,9 @@ function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGo
           <button className="btn" disabled={radi || (pr.trebaRazlog && !razlog)}
             onClick={() => {
               const b = {}; roba.forEach(p => { b[p.product_id] = Number(v[p.product_id]); });
-              onGotovo(b, String(kasa).replace(',', '.'), pr.trebaRazlog ? razlog : '', Logika.ispravke(prva, roba, v, kasa));
+              const isp = Logika.ispravke(prva, roba, v, kasa);
+              Trag.zabiljezi('zavrseno', { broj: mjeri.current.provjera, detalji: { razlog: pr.trebaRazlog ? razlog : '', ispravke: isp ? isp.split(';').length : 0 } });
+              onGotovo(b, String(kasa).replace(',', '.'), pr.trebaRazlog ? razlog : '', isp);
             }}>
             {radi ? 'Zatvaram smjenu…' : 'ZAVRŠI SMJENU'}
           </button>
@@ -1708,15 +1892,7 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
   const [pokaziTekst, setPokaziTekst] = useState(false);
 
   const kopiraj = async () => {
-    let uspjeh = false;
-    try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(tekst); uspjeh = true; } } catch (e) { /* */ }
-    if (!uspjeh) {
-      try {
-        const ta = document.createElement('textarea'); ta.value = tekst; ta.setAttribute('readonly', '');
-        ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
-        uspjeh = document.execCommand('copy'); document.body.removeChild(ta);
-      } catch (e) { /* */ }
-    }
+    const uspjeh = await kopirajTekst(tekst);
     if (uspjeh) pokaziToast('✓ Izvještaj kopiran. Zalijepi ga u Viber ili WhatsApp.', 'ok');
     else setPokaziTekst(true);
   };
@@ -1848,7 +2024,7 @@ function Admin({ nazad, pokaziToast }) {
   const nepregledane = d ? (d.greske || []).filter(g => !g.pregledano).length : 0;
   const kenan = !!(d && d.ja === 'Kenan');
   const tabovi = kenan
-    ? [['danas', 'Danas'], ['greske', 'Greške'], ['dani', 'Dani'], ['raspored', 'Raspored'], ['karte', 'Karte'], ['vrata', 'Vrata'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['proizvodi', 'Proizvodi'], ['mjesec', 'Mjesec'], ['postavke', 'Postavke']]
+    ? [['danas', 'Danas'], ['greske', 'Greške'], ['rad', 'Rad'], ['dani', 'Dani'], ['raspored', 'Raspored'], ['karte', 'Karte'], ['vrata', 'Vrata'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['proizvodi', 'Proizvodi'], ['mjesec', 'Mjesec'], ['postavke', 'Postavke']]
     : [['danas', 'Danas'], ['greske', 'Greške'], ['raspored', 'Raspored'], ['smjene', 'Smjene'], ['clanovi', 'Članovi'], ['zalihe', 'Zalihe'], ['postavke', 'Postavke']];
 
   if (!ulogovan) {
@@ -1884,6 +2060,7 @@ function Admin({ nazad, pokaziToast }) {
       {d && tab === 'danas' && <AdminDanas d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && tab === 'greske' && <AdminGreske d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
       {d && kenan && tab === 'dani' && <AdminDani pin={pin} />}
+      {d && kenan && tab === 'rad' && <AdminRad pin={pin} pokaziToast={pokaziToast} />}
       {d && tab === 'zalihe' && <AdminZalihe d={d} />}
       {d && kenan && tab === 'karte' && <AdminKarte d={d} />}
       {d && tab === 'raspored' && <AdminRaspored d={d} pin={pin} osvjezi={() => ucitaj(pin)} pokaziToast={pokaziToast} />}
@@ -2021,6 +2198,77 @@ function AdminGreske({ d, pin, osvjezi, pokaziToast }) {
 
 /* ═══════ STATISTIKA PO DANIMA (Kenan) ═══════ */
 const DAN_KRATKO = { pon: 'pon', uto: 'uto', sri: 'sri', cet: 'čet', pet: 'pet', sub: 'sub', ned: 'ned' };
+
+/* ═══════ VLASNIK: ANALIZA RADA — gdje radnik zapinje, griješi ili ga nešto muči ═══════ */
+function AdminRad({ pin, pokaziToast }) {
+  const [dana, setDana] = useState(14);
+  const [a, setA] = useState(null);
+  const [greska, setGreska] = useState('');
+  const [radi, setRadi] = useState(false);
+  const [tekst, setTekst] = useState('');
+  useEffect(() => {
+    let ziv = true;
+    setRadi(true); setGreska(''); setTekst('');
+    api('getAnalizaRada', pin, dana)
+      .then(r => { if (ziv) setA(r); })
+      .catch(e => { if (ziv) setGreska(e.message); })
+      .finally(() => { if (ziv) setRadi(false); });
+    return () => { ziv = false; };
+  }, [pin, dana]);
+  const boja = { visoka: 'var(--red)', srednja: 'var(--gold)', niska: 'var(--dim)' };
+  const kopiraj = async () => {
+    const t = Logika.tekstAnalize(a);
+    if (await kopirajTekst(t)) pokaziToast('✓ Kopirano. Zalijepi u razgovor s Claudeom i napiši „predloži popravke".', 'ok');
+    else setTekst(t);
+  };
+  const b = a && a.brojanje;
+  const min = x => (x === null || x === undefined ? '—' : String(x).replace('.', ',') + ' min');
+  return (
+    <div>
+      <div className="info">Telefon tiho bilježi gdje radnik zapinje: poništavanja, dupli tapovi, koliko traje brojanje, prozori zatvoreni bez unosa, poruke o greškama i rad bez interneta. Ovdje su uvidi s prijedlozima popravki.</div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        {[7, 14, 30].map(n => <button key={n} className={'chip' + (dana === n ? ' on' : '')} data-dana={n} onClick={() => setDana(n)}>{n} dana</button>)}
+      </div>
+      {greska && <div className="err">{greska}</div>}
+      {radi && !a && <div className="sit">Učitavam…</div>}
+      {a && <>
+        <div className="two">
+          <Broj lab="POČETNO BROJANJE" v={min(b.pocetak.medijan_min)} sit={b.pocetak.n ? b.pocetak.n + '× · „prošli put" ~' + (b.pocetak.prosli_put || 0) : 'nema podataka'} />
+          <Broj lab="ZAVRŠNO BROJANJE" v={min(b.kraj.medijan_min)} sit={b.kraj.n ? b.kraj.n + '× · preskočeno ~' + (b.kraj.preskoceno || 0) : 'nema podataka'} />
+        </div>
+        <div className="two">
+          <Broj lab="IZ PRVE SE POKLOPILO" v={a.provjere.smjena ? a.provjere.iz_prve + ' / ' + a.provjere.smjena : '—'} sit="završnih provjera" />
+          <Broj lab="PONIŠTAVANJA" v={a.ponistavanja.reduce((x, y) => x + y.n, 0)} sit={a.ponistavanja[0] ? 'najviše ' + a.ponistavanja[0].naziv : 'nema'} />
+        </div>
+        <div className="grp">UVIDI I PRIJEDLOZI</div>
+        {a.uvidi.length === 0
+          ? <div className="good" data-testid="bez-uvida">{a.zapisa ? '✓ U ovom periodu nema većih problema.' : 'Još nema zapisa. Telefon bilježi od ove verzije aplikacije — pogledaj ponovo za par dana.'}</div>
+          : a.uvidi.map((u, i) => (
+            <div key={i} className="card" data-testid="uvid" style={{ borderLeft: '3px solid ' + (boja[u.ozbiljnost] || 'var(--line)') }}>
+              <div style={{ fontWeight: 600, fontSize: 15, lineHeight: 1.35 }}>{u.naslov}</div>
+              {u.detalj && <div className="sit" style={{ marginTop: 5, lineHeight: 1.45 }}>{u.detalj}</div>}
+              <div style={{ marginTop: 8, fontSize: 13.5, lineHeight: 1.5 }}>💡 {u.prijedlog}</div>
+            </div>
+          ))}
+        {(a.prozori.length > 0 || a.greske.length > 0 || a.offline.epizoda > 0) && <div className="grp">DETALJI</div>}
+        {a.prozori.length > 0 && (
+          <div className="card">
+            {a.prozori.map(x => <div className="ln" key={x.ime}><span>{x.naziv}</span><b>{x.otvoreno}× · bez unosa {x.bez_akcije}</b></div>)}
+          </div>
+        )}
+        {a.greske.length > 0 && (
+          <div className="card">
+            {a.greske.map((x, i) => <div className="ln" key={i} style={{ alignItems: 'flex-start' }}><span style={{ fontSize: 13 }}>{x.poruka}</span><b>{x.n}×</b></div>)}
+          </div>
+        )}
+        {a.offline.epizoda > 0 && <div className="sit">Bez interneta: {a.offline.epizoda}×, ukupno {a.offline.minuta} min.</div>}
+        <button className="btn" data-testid="kopiraj-analizu" onClick={kopiraj}>📋 Kopiraj za Claude</button>
+        <div className="sit" style={{ textAlign: 'center' }}>Zalijepi u razgovor s Claudeom i napiši „predloži popravke".</div>
+        {tekst && <textarea className="inp" data-testid="analiza-tekst" readOnly value={tekst} style={{ minHeight: 220, fontSize: 12, marginTop: 10 }} onFocus={e => e.target.select()} />}
+      </>}
+    </div>
+  );
+}
 
 function AdminDani({ pin }) {
   const [r, setR] = useState(null);
