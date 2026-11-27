@@ -652,3 +652,57 @@ test('protein po okusima (mjerice): vanilija/čokolada/malina, kreatin na mjeric
   assert.equal(z.find(x => x.product_id === 'protein').nestalo, false);
   assert.equal(z.find(x => x.product_id === 'rodeo').nestalo, false, 'što nikad nije bilo na zalihi nije "nestalo"');
 });
+
+test('protein: ima/nema po okusu; kreatin: % u kanti — bez brojanja mjerica i bez lažnih razlika', () => {
+  const g = napraviOkruzenje({ sada: SAT, varijante: true, mjere: true });
+  g.setupSpreadsheet();
+  const b = ok(g.getBootstrap());
+  const pr = id => b.proizvodi.find(p => p.product_id === id);
+  assert.deepEqual(['protein', 'protein_cokolada', 'protein_malina'].map(id => pr(id).jedinica), ['ima', 'ima', 'ima']);
+  assert.equal(pr('kreatin').jedinica, '%');
+  // početak: vanilija ima, čokolada ima, malina nema; kreatin 80 %
+  assert.equal(g.startShift({ shift_id: 'M', radnik: 'Edin', pocetna: pocetno(g, { protein: 1, protein_cokolada: 1, protein_malina: 0, kreatin: 180 }) }).code, 'NEISPRAVAN_BROJ', '% ne može preko 100');
+  ok(g.startShift({ shift_id: 'M', radnik: 'Edin', pocetna: pocetno(g, { protein: 1, protein_cokolada: 1, protein_malina: 0, kreatin: 80 }) }));
+  ok(g.pushEvents('M', [
+    { event_id: 'm1', shift_id: 'M', tip: 'SALE', product_id: 'protein', kolicina: 1 },
+    { event_id: 'm2', shift_id: 'M', tip: 'SALE', product_id: 'protein', kolicina: 1 },
+    { event_id: 'm3', shift_id: 'M', tip: 'SALE', product_id: 'kreatin', kolicina: 1 }
+  ]));
+  const a = ok(g.getAdminData('2308'));
+  const z = id => a.zalihe.find(x => x.product_id === id);
+  assert.deepEqual([z('protein_malina').mjera, z('protein_malina').nestalo], ['ima', true]);
+  assert.deepEqual([z('kreatin').mjera, z('kreatin').kolicina], ['posto', 80]);
+  assert.ok(!a.greske.some(x => /Protein|Kreatin/.test(x.naslov)), 'prodaja bez brojanja mjerica nije "minus robe"');
+  // kraj: vanilija ostala, čokolada nestala, kreatin 70 %
+  const zv = ok(g.closeShift('M', pocetno(g, { protein: 1, protein_cokolada: 0, protein_malina: 0, kreatin: 70 }), '8', ''));
+  const st = id => zv.izvjestaj.stavke.find(x => x.product_id === id);
+  assert.equal(zv.izvjestaj.broj_razlika, 0, 'nema razlika za okuse i postotak');
+  assert.deepEqual([st('protein').mjera, st('protein').stvarno, st('protein').razlika_kom], ['ima', 1, null]);
+  assert.deepEqual([st('kreatin').pocetno, st('kreatin').stvarno], [80, 70]);
+  assert.equal(zv.izvjestaj.promet, 8);
+  const inv = g.__tabela('INVENTURA').find(r => r.product_id === 'kreatin');
+  assert.deepEqual([inv.pocetno_stanje, inv.stvarno_zavrsno, inv.razlika_kom], [80, 70, '']);
+  // sljedeća smjena dobija "prošli put" za okuse i %
+  const p = ok(g.getBootstrap()).prijedlog;
+  assert.deepEqual([p.protein, p.protein_cokolada, p.kreatin], [1, 0, 70]);
+});
+
+test('otvorena smjena se zatvara jednom, po odobrenju vlasnika, i može početi novi dan', () => {
+  const g = napraviOkruzenje({ sada: SAT });
+  g.setupSpreadsheet();
+  ok(g.startShift({ shift_id: 'ED', radnik: 'Edin', pocetna: pocetno(g, { redbull: 4 }), kasa_pocetna: '20' }));
+  ok(g.pushEvents('ED', [{ event_id: 'e1', shift_id: 'ED', tip: 'SALE', product_id: 'redbull', kolicina: 1 }]));
+  delete g.__props.SEED_ZATVORI_1127; delete g.__props.VERZIJA_SEME;
+  const b = ok(g.getBootstrap());
+  assert.equal(b.aktivna, null, 'smjena je zatvorena pri otvaranju nove verzije');
+  const sm = g.__tabela('SMJENE')[0];
+  assert.equal(sm.status, 'CLOSED');
+  assert.match(sm.kasa_razlog, /odobrenju vlasnika/);
+  assert.equal(sm.promet, 4);
+  assert.equal(sm.kasa_ocekivano, 24);
+  // novi dan
+  ok(g.startShift({ shift_id: 'NOVI', radnik: 'Edin', pocetna: pocetno(g, { redbull: 3 }), kasa_pocetna: '24' }));
+  // migracija se ne ponavlja: nova smjena ostaje otvorena i nakon ponovnog setupa
+  g.setupSpreadsheet();
+  assert.equal(ok(g.getBootstrap()).aktivna.shift_id, 'NOVI');
+});

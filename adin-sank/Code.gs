@@ -78,7 +78,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '14';
+var VERZIJA_SEME = '15';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -485,6 +485,15 @@ function obracunSmjene_(proizvodi, pocetna, dogadjaji, brojanje) {
     var p = poId[pid] || { product_id: pid, naziv: pid, cijena: 0 };
     var x = s[pid] || nula;
     var poc = Math.round(num_(pocetna[pid]));
+    var mj = mjera_(p);
+    if (mj !== 'kom') {
+      var imaB = brojanje && brojanje[pid] !== undefined && brojanje[pid] !== null && brojanje[pid] !== '';
+      return {
+        product_id: pid, naziv: p.naziv, cijena: p.cijena, mjera: mj,
+        pocetno: poc, dopunjeno: x.dopunjeno + x.korekcija, prodano_klik: x.prodano, potroseno: x.potroseno || 0,
+        ocekivano: null, stvarno: imaB ? Math.round(num_(brojanje[pid])) : null, prodano_inventura: null, razlika_kom: null, razlika_km: null
+      };
+    }
     var dop = x.dopunjeno + x.korekcija;
     var pot = x.potroseno || 0;
     var ocek = poc + dop - x.prodano - pot;
@@ -503,6 +512,7 @@ function obracunSmjene_(proizvodi, pocetna, dogadjaji, brojanje) {
 
   var upozorenja = [];
   stavke.forEach(function (st) {
+    if (st.mjera) return;
     if (st.stvarno !== null && st.stvarno > st.pocetno + st.dopunjeno) {
       upozorenja.push(st.naziv + ': prebrojano ' + st.stvarno + ', a početno + dopuna je samo ' +
         (st.pocetno + st.dopunjeno) + '. Provjeri je li dopuna evidentirana.');
@@ -545,7 +555,7 @@ function obracunSmjene_(proizvodi, pocetna, dogadjaji, brojanje) {
     .sort(function (a, b) { return a.osoba < b.osoba ? -1 : a.osoba > b.osoba ? 1 : 0; });
   var problemi = stavke.filter(function (st) { return st.razlika_kom !== null && st.razlika_kom !== 0; });
   var poInv = 0, sveIzbrojano = stavke.length > 0;
-  stavke.forEach(function (st) { if (st.prodano_inventura === null) sveIzbrojano = false; else poInv += st.prodano_inventura; });
+  stavke.forEach(function (st) { if (st.mjera) return; if (st.prodano_inventura === null) sveIzbrojano = false; else poInv += st.prodano_inventura; });
 
   return {
     stavke: stavke,
@@ -568,7 +578,15 @@ function kasaTreba_(kasaPocetna, ob) {
   return r2_(num_(kasaPocetna) + ob.promet - ob.uzeto_iz_kase);
 }
 
-/** Provjera brojanja: svaki proizvod mora imati cijeli broj ≥ 0 (i nula se upisuje). */
+/** Kako se proizvod broji: 'kom' (komadi, s obračunom razlike), 'ima' (samo ima/nema), 'posto' (% ostalo u kanti). */
+function mjera_(p) {
+  var j = s_(p && p.jedinica).toLowerCase();
+  if (j === 'ima') return 'ima';
+  if (j === '%' || j === 'posto') return 'posto';
+  return 'kom';
+}
+
+/** Provjera brojanja: svaki proizvod mora imati vrijednost (i nula se upisuje). Ima/nema = 1/0, postotak = 0–100. */
 function provjeriBrojanje_(roba, mapa, rijec) {
   mapa = mapa || {};
   var fali = [], los = [], izlaz = {};
@@ -577,6 +595,9 @@ function provjeriBrojanje_(roba, mapa, rijec) {
     if (v === undefined || v === null || String(v).trim() === '') { fali.push(p.naziv); return; }
     var n = Number(String(v).replace(',', '.'));
     if (!isFinite(n) || n < 0 || Math.floor(n) !== n) { los.push(p.naziv); return; }
+    var m = mjera_(p);
+    if (m === 'ima' && n > 1) n = 1;
+    if (m === 'posto' && n > 100) { los.push(p.naziv); return; }
     izlaz[p.product_id] = n;
   });
   if (los.length) throw greska_('NEISPRAVAN_BROJ', 'Stanje mora biti cijeli broj, nula ili više (' + los.join(', ') + ').');
@@ -754,6 +775,34 @@ function osigurajTabele_(formatiraj) {
       svojstva_().setProperty('SEED_VARIJANTE_1127', '1');
     }
   } catch (e) { logMigracija_('SEED_VARIJANTE_1127', e); }
+
+  // protein: samo ima/nema po okusu; kreatin: % ostalo u kanti (vlasnik, 27.11.)
+  try {
+    if (!svojstva_().getProperty('SEED_MJERE_1127B')) {
+      var tm = tabela_(TAB.PROIZVODI);
+      tm.redovi.forEach(function (r) {
+        var id = s_(r.product_id);
+        if (id === 'protein' || id === 'protein_cokolada' || id === 'protein_malina' || /^protein/i.test(s_(r.naziv))) {
+          azurirajRed_(tm, r, { jedinica: 'ima', paket: 0 }); uradjeno.push(s_(r.naziv) + ': ima/nema');
+        } else if (id === 'kreatin' || /^kreatin/i.test(s_(r.naziv))) {
+          azurirajRed_(tm, r, { jedinica: '%', paket: 0 }); uradjeno.push(s_(r.naziv) + ': % u kanti');
+        }
+      });
+      svojstva_().setProperty('SEED_MJERE_1127B', '1');
+    }
+  } catch (e) { logMigracija_('SEED_MJERE_1127B', e); }
+
+  // zatvaranje smjene koja je ostala otvorena — po izričitom odobrenju vlasnika (27.11.); jednom
+  try {
+    if (!svojstva_().getProperty('SEED_ZATVORI_1127')) {
+      svojstva_().setProperty('SEED_ZATVORI_1127', '1');
+      tabela_(TAB.SMJENE).redovi.forEach(function (r) {
+        if (s_(r.status) !== 'OPEN') return;
+        zatvoriBezBrojanja_(s_(r.shift_id), 'Zatvoreno bez brojanja po odobrenju vlasnika (Kenan, 27.11.) — počinje novi dan');
+        uradjeno.push('zatvorena smjena ' + s_(r.radnik));
+      });
+    }
+  } catch (e) { logMigracija_('SEED_ZATVORI_1127', e); }
 
   var pg = ss.getSheetByName(TAB.PREGLED);
   if (!pg) {
@@ -1587,8 +1636,11 @@ function adminCloseShift(pin, shiftId, napomena) {
     provjeriPin_(pin);
     var nap = s_(napomena).slice(0, 200);
     if (!nap) throw greska_('NAPOMENA', 'Upiši napomenu zašto zatvaraš smjenu.');
-    return zakljucano_(function () {
-      var id = s_(shiftId);
+    return zakljucano_(function () { return zatvoriBezBrojanja_(s_(shiftId), 'Zatvorio vlasnik bez brojanja: ' + nap); });
+  });
+}
+
+function zatvoriBezBrojanja_(id, razlog) {
       var sm = tabela_(TAB.SMJENE);
       var red = null;
       sm.redovi.forEach(function (r) { if (s_(r.shift_id) === id) red = r; });
@@ -1611,11 +1663,9 @@ function adminCloseShift(pin, shiftId, napomena) {
         vrijeme_kraja: t.vrijeme, status: 'CLOSED', ukupno_prodano_klikovima: ob.prodano_kom,
         promet: ob.promet, kasa_ocekivano: kasaTreba_(red.kasa_pocetna, ob),
         uzeto_iz_kase: ob.uzeto_iz_kase, potrosnja_nabavna: ob.potrosnja_nabavna,
-        kasa_razlog: 'Zatvorio vlasnik bez brojanja: ' + nap, updated_at: t.ts
+        kasa_razlog: razlog, updated_at: t.ts
       });
       return { izvjestaj: izvjestaj_(red, proizvodi, ps.pocetna, dog, null) };
-    });
-  });
 }
 
 /** Sve što vlasnik vidi u aplikaciji — jedan poziv. */
@@ -1727,6 +1777,11 @@ function getAdminData(pin) {
       zalihe = robaAktivna.map(function (p) {
         var k = ocek.hasOwnProperty(p.product_id) ? ocek[p.product_id] : null;
         var stavka = ob.stavke.filter(function (x) { return x.product_id === p.product_id; })[0];
+        if (stavka && stavka.mjera) {
+          var vr = stavka.pocetno;
+          return { product_id: p.product_id, naziv: p.naziv, kolicina: vr, minimum: p.minimum, jedinica: p.jedinica, mjera: stavka.mjera, izvor: 'na početku smjene',
+            nisko: stavka.mjera === 'posto' ? vr <= 15 : false, nestalo: stavka.mjera === 'ima' ? vr === 0 : vr === 0 };
+        }
         var bilo = !!stavka && (stavka.pocetno + stavka.dopunjeno) > 0;
         return { product_id: p.product_id, naziv: p.naziv, kolicina: k, minimum: p.minimum, jedinica: p.jedinica, izvor: 'očekivano sada',
           nisko: k !== null && k <= p.minimum, nestalo: bilo && k !== null && k <= 0 };
@@ -1735,6 +1790,9 @@ function getAdminData(pin) {
       var pr = prijedlog_(tInv);
       zalihe = robaAktivna.map(function (p) {
         var k = pr.hasOwnProperty(p.product_id) ? pr[p.product_id] : null;
+        var mjz = mjera_(p);
+        if (mjz !== 'kom') return { product_id: p.product_id, naziv: p.naziv, kolicina: k, minimum: p.minimum, jedinica: p.jedinica, mjera: mjz, izvor: 'zadnje brojanje',
+          nisko: mjz === 'posto' && k !== null && k <= 15, nestalo: k === 0 };
         return { product_id: p.product_id, naziv: p.naziv, kolicina: k, minimum: p.minimum, jedinica: p.jedinica, izvor: 'zadnje brojanje', nisko: k !== null && k <= p.minimum, nestalo: false };
       });
     }

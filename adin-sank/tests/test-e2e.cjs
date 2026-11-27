@@ -405,3 +405,50 @@ test('E2E: scenarij prihvatanja kroz pravi ekran + offline, undo, dupli tap, dru
     await browser.close();
   }
 });
+
+test('E2E: protein ima/nema po okusu i kreatin u % — brojanje, NEMA baner, izvještaj', { skip: !playwright && 'playwright nije instaliran', timeout: 120000 }, async () => {
+  const g = napraviOkruzenje({ sada: () => new Date(), varijante: true, mjere: true });
+  g.setupSpreadsheet();
+  const browser = await playwright.chromium.launch();
+  const { page, greske } = await noviTelefon(browser, g, { offline: false, pozivi: [] });
+  try {
+    await page.getByRole('button', { name: 'Edin', exact: true }).click();
+    await page.getByRole('button', { name: /Dalje/ }).click();
+    await page.locator('[data-ima="protein"]').click();
+    await page.locator('[data-ima="protein_cokolada"]').click();
+    await page.locator('[data-nema="protein_malina"]').click();
+    await upisiBrojanje(page, { kreatin: 80, redbull: 5 });
+    await page.getByTestId('kasa-pocetna').fill('0');
+    await page.screenshot({ path: path.join(SLIKE, '9a-okusi-pocetak.png'), fullPage: true });
+    await page.getByRole('button', { name: 'ZAPOČNI SMJENU' }).click();
+    await page.getByTestId('nestalo').filter({ hasText: 'Protein malina' }).waitFor();
+    assert.match(await page.locator('[data-tile="protein_malina"]').textContent(), /NEMA/);
+    assert.match(await page.locator('[data-tile="kreatin"]').textContent(), /80%/);
+    await tap(page, 'protein', 2);
+    await page.screenshot({ path: path.join(SLIKE, '9b-okusi-smjena.png') });
+    // usred smjene stigao okus malina
+    await page.getByRole('button', { name: '+ DOPUNA ZALIHE' }).click();
+    await page.locator('[data-dopuna="protein_malina"]').click();
+    await page.getByText('Protein malina: sada ima').waitFor();
+    await page.locator('[data-tile="protein_malina"]').filter({ hasText: 'ima' }).waitFor();
+    assert.ok(!/NEMA/.test(await page.locator('[data-tile="protein_malina"]').textContent()));
+    assert.equal(await page.getByTestId('nestalo').count(), 0, 'baner nestaje kad stigne');
+    await page.getByRole('button', { name: 'ZAVRŠI SMJENU' }).click();
+    await page.getByRole('button', { name: 'Da, idem brojati' }).click();
+    await page.locator('[data-ima="protein"]').click();
+    await page.locator('[data-nema="protein_cokolada"]').click();
+    await page.locator('[data-nema="protein_malina"]').click();
+    await upisiBrojanje(page, { kreatin: 70, redbull: 5 });
+    await page.getByRole('button', { name: 'DALJE — KASA' }).click();
+    await page.getByTestId('kasa').fill('6');
+    await page.getByRole('button', { name: 'PROVJERI' }).click();
+    await page.getByText('✓ sve se poklapa').waitFor();
+    await page.getByRole('button', { name: 'ZAVRŠI SMJENU' }).click();
+    await page.getByText('PROTEIN I KREATIN').waitFor();
+    const txt = await page.locator('#root').textContent();
+    assert.match(txt, /80% → 70%/);
+    assert.match(txt, /✕ nema/);
+    await page.screenshot({ path: path.join(SLIKE, '9c-okusi-izvjestaj.png'), fullPage: true });
+    assert.deepEqual(greske.filter(x => !/favicon|Failed to load resource/.test(x)), []);
+  } finally { await browser.close(); }
+});

@@ -47,14 +47,40 @@ var Logika = (function () {
     var pocetna = (smjena && smjena.pocetna) || {};
     return (proizvodi || []).filter(function (p) {
       if (!p.prati_zalihu || !pocetna.hasOwnProperty(p.product_id)) return false;
+      var m = mjera(p);
+      if (m === 'ima') return trenutnoMjera(p, smjena, st) === 0;            // okus kojeg nema
+      if (m === 'posto') return trenutnoMjera(p, smjena, st) <= 10;          // kanta pri kraju
       return ((Number(pocetna[p.product_id]) || 0) + st.dopunjeno(p.product_id)) > 0 && st.ocekivano[p.product_id] <= 0;
     });
   }
 
   /** Stanje aktivne smjene iz događaja: prodano, dopunjeno, očekivano, promet. */
+  /** Kako se proizvod broji: 'kom' (komadi), 'ima' (ima/nema), 'posto' (% u kanti). */
+  function mjera(p) {
+    var j = String((p && p.jedinica) || '').toLowerCase();
+    return j === 'ima' ? 'ima' : (j === '%' || j === 'posto') ? 'posto' : 'kom';
+  }
+  function opisMjere(p, v) {
+    if (v === undefined || v === null || v === '') return '';
+    var m = mjera(p);
+    if (m === 'ima') return Number(v) > 0 ? 'ima' : 'NEMA';
+    if (m === 'posto') return Number(v) + '%';
+    return String(v);
+  }
+
+  /** Trenutno stanje za okuse/kante: ima/nema → 1/0 (dopuna znači "stiglo"), % → 100 ako je stigla nova kanta. */
+  function trenutnoMjera(p, smjena, st) {
+    var pocetna = (smjena && smjena.pocetna) || {};
+    var poc = Number(pocetna[p.product_id]) || 0, dop = st ? st.dopunjeno(p.product_id) : 0;
+    var m = mjera(p);
+    if (m === 'ima') return (poc + dop) > 0 ? 1 : 0;
+    if (m === 'posto') return dop > 0 ? 100 : poc;
+    return null;
+  }
+
   function stanjeSmjene(smjena, proizvodi) {
-    var cijene = {}, po = {}, potOsobe = {}, uzeto = 0;
-    (proizvodi || []).forEach(function (p) { cijene[p.product_id] = p.cijena; });
+    var cijene = {}, po = {}, potOsobe = {}, uzeto = 0, mjere = {};
+    (proizvodi || []).forEach(function (p) { cijene[p.product_id] = p.cijena; mjere[p.product_id] = mjera(p); });
     var promet = 0, kom = 0;
     ((smjena && smjena.dogadjaji) || []).forEach(function (e) {
       var pid = e.product_id, q = Number(e.kolicina) || 0;
@@ -80,6 +106,7 @@ var Logika = (function () {
     var pocetna = (smjena && smjena.pocetna) || {};
     var ocekivano = {};
     Object.keys(pocetna).forEach(function (pid) {
+      if (mjere[pid] && mjere[pid] !== 'kom') return; // ima/nema i % se ne obračunavaju po komadu
       var x = po[pid] || { prodano: 0, dopunjeno: 0, potroseno: 0 };
       ocekivano[pid] = (Number(pocetna[pid]) || 0) + x.dopunjeno - x.prodano - x.potroseno;
     });
@@ -266,7 +293,9 @@ var Logika = (function () {
       L.push('Kasa: ' + km(izv.kasa_stvarno) + ' KM' + (izv.kasa_razlika ? ' (razlika ' + (izv.kasa_razlika > 0 ? '+' : '') + km(izv.kasa_razlika) + ' KM)' : ' ✓'));
     }
     var problemi = (izv.stavke || []).filter(function (s) { return s.razlika_kom; });
-    var ok = (izv.stavke || []).length - problemi.length;
+    var ok = (izv.stavke || []).filter(function (s) { return s.razlika_kom === 0; }).length;
+    var mj = (izv.stavke || []).filter(function (s) { return s.mjera; });
+    if (mj.length) L.push(mj.map(function (s) { return s.naziv + ': ' + (s.mjera === 'ima' ? (s.stvarno > 0 ? 'ima' : 'nema') : (s.pocetno + '% → ' + (s.stvarno === null ? '?' : s.stvarno + '%'))); }).join(' · '));
     if (izv.bez_brojanja) L.push('Inventura: nije prebrojano');
     else L.push('Inventura: ✓ ' + ok + ' se poklapa' + (problemi.length ? ', ⚠ ' + problemi.length + ' s razlikom (' + km(izv.vrijednost_razlike) + ' KM)' : ''));
     problemi.forEach(function (s) {
@@ -287,7 +316,7 @@ var Logika = (function () {
     spojiDogadjaje: spojiDogadjaje, dozvoliTap: dozvoliTap,
     dodajMjesece: dodajMjesece, produzenje: produzenje, normaliziraj: normaliziraj, traziClanove: traziClanove,
     grupisi: grupisi, tekstIzvjestaja: tekstIzvjestaja, tip: tip, podijeli: podijeli, paket: paket, cijenaIzUnosa: cijenaIzUnosa,
-    nestalo: nestalo, DANI: DANI, DANI_IME: DANI_IME, danUSedmici: danUSedmici, zaDan: zaDan, termini: termini
+    nestalo: nestalo, mjera: mjera, opisMjere: opisMjere, trenutnoMjera: trenutnoMjera, DANI: DANI, DANI_IME: DANI_IME, danUSedmici: danUSedmici, zaDan: zaDan, termini: termini
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Logika;
@@ -710,9 +739,41 @@ function Radnik({ radnici, izabran, onDalje, onAdmin, raspored }) {
 }
 
 /* ═══════ BROJAČ (−  18  +) ═══════ */
-function Brojac({ pid, naziv, pod, prij, v, set }) {
+function Brojac({ pid, naziv, pod, prij, v, set, mjera }) {
   const n = v === '' || v === undefined ? null : Number(v);
   const prazno = v === '' || v === undefined;
+  if (mjera === 'ima') {
+    return (
+      <div className={'row' + (prazno ? ' prazno' : '')}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 15.5, fontWeight: 500 }}>{naziv}</div>
+          {pod !== undefined && pod !== null && <div className="sit">prošli put: {pod > 0 ? 'ima' : 'nema'}</div>}
+        </div>
+        <div className="cnt">
+          <button className={'chip' + (n === 1 ? ' on' : '')} data-ima={pid} style={{ minWidth: 64 }} onClick={() => set('1')}>✓ Ima</button>
+          <button className={'chip' + (n === 0 ? ' on' : '')} data-nema={pid} style={{ minWidth: 64, color: n === 0 ? 'var(--red)' : undefined }} onClick={() => set('0')}>Nema</button>
+        </div>
+      </div>
+    );
+  }
+  if (mjera === 'posto') {
+    return (
+      <div className={'row' + (prazno ? ' prazno' : '')} style={{ flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 15.5, fontWeight: 500 }}>{naziv}</div>
+          <div className="sit">koliko je ostalo u kanti{pod !== undefined && pod !== null ? ' · prošli put: ' + pod + '%' : ''}</div>
+        </div>
+        <div className="cnt">
+          <input className={'cin' + (prazno ? ' prazno' : '')} data-pid={pid} inputMode="numeric" pattern="[0-9]*" value={v === undefined ? '' : v} placeholder="%" maxLength={3}
+            onFocus={e => e.target.select()} onChange={e => { const t = e.target.value.replace(/\D/g, ''); set(t === '' ? '' : String(Math.min(100, Number(t)))); }} />
+          <span style={{ color: 'var(--dim)', fontSize: 16 }}>%</span>
+        </div>
+        <div style={{ display: 'flex', gap: 6, width: '100%', marginTop: 8 }}>
+          {[100, 75, 50, 25, 0].map(x => <button key={x} className={'chip' + (n === x ? ' on' : '')} style={{ flex: 1, minHeight: 40, padding: '6px 0' }} onClick={() => set(String(x))}>{x === 0 ? 'prazna' : x + '%'}</button>)}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={'row' + (prazno ? ' prazno' : '')}>
       <div style={{ minWidth: 0 }}>
@@ -755,7 +816,7 @@ function Pocetna({ proizvodi, prijedlog, prijavljeno, radnik, greska, radi, naza
           <div className="grp">{g.ime.toUpperCase()}</div>
           <div className="card0">
             {g.stavke.map(p => (
-              <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} pod={prijedlog[p.product_id]} prij={prijavljeno[p.product_id]}
+              <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} mjera={Logika.mjera(p)} pod={prijedlog[p.product_id]} prij={prijavljeno[p.product_id]}
                 v={v[p.product_id]} set={n => post(p.product_id, n)} />
             ))}
           </div>
@@ -870,7 +931,7 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
 
         {nestaloLista.length > 0 && (
           <div className="err nestalo" data-testid="nestalo">
-            <b>NESTALO:</b> {nestaloLista.map(p => p.naziv).join(', ')}
+            <b>NEMA / NESTALO:</b> {nestaloLista.map(p => p.naziv + (Logika.mjera(p) === 'posto' ? ' (' + Logika.trenutnoMjera(p, smjena, st) + '% u kanti)' : '')).join(', ')}
             <div className="sit" style={{ color: 'inherit', opacity: .85 }}>Provjeri u magacinu i dodaj kroz „+ DOPUNA ZALIHE".</div>
           </div>
         )}
@@ -910,8 +971,10 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
             <div className="grid">
               {g.stavke.map(p => {
                 const kom = st.prodano(p.product_id);
+                const mj = Logika.mjera(p);
                 const ost = p.prati_zalihu && st.ocekivano.hasOwnProperty(p.product_id) ? st.ocekivano[p.product_id] : null;
-                const nisko = ost !== null && ost <= Math.max(2, p.minimum || 0);
+                const nisko = mj !== 'kom' ? nestaloLista.indexOf(p) >= 0 : ost !== null && ost <= Math.max(2, p.minimum || 0);
+                const opisM = mj !== 'kom' && smjena.pocetna.hasOwnProperty(p.product_id) ? Logika.opisMjere(p, Logika.trenutnoMjera(p, smjena, st)) : '';
                 return (
                   <button key={p.product_id} data-tile={p.product_id}
                     className={'tile' + (hit === p.product_id ? ' hit' : '')} onClick={() => prodaj(p)}>
@@ -919,6 +982,7 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
                     <span className="nm">{p.naziv}</span>
                     <span className="bot">
                       <span className="pr">{km(p.cijena)} KM</span>
+                      {opisM && <span className={'st' + (nisko ? ' low' : '')}>{opisM}</span>}
                       {ost !== null && <span className={'st' + (nisko ? ' low' : '')}>{ost <= 0 && nestaloLista.indexOf(p) >= 0 ? 'NESTALO' : 'ima ' + ost}{p.jedinica && p.jedinica !== 'kom' ? ' ' + p.jedinica.slice(0, 4) + '.' : ''}</span>}
                     </span>
                   </button>
@@ -969,10 +1033,14 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
       {sheet === 'novi' && <NoviProizvod proizvodi={proizvodi} radnik={smjena.radnik} shiftId={smjena.shift_id}
         zatvori={() => setSheet(null)} gotovo={(r, kol) => { setSheet(null); onNovi(r, kol); }} />}
 
-      {sheet === 'dopuna' && <Dopuna proizvodi={proizvodi.filter(p => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id))}
+      {sheet === 'dopuna' && <Dopuna proizvodi={proizvodi.filter(p => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id) && (Logika.mjera(p) !== 'ima' || Logika.trenutnoMjera(p, smjena, st) === 0))}
         noviProizvod={() => setSheet('novi')}
         zatvori={() => setSheet(null)}
-        potvrdi={(p, kol) => { dodaj('RESTOCK', p.product_id, kol); setSheet(null); pokaziToast('✓ Dopuna: ' + p.naziv + ' +' + kol, 'ok'); }} />}
+        potvrdi={(p, kol) => {
+          dodaj('RESTOCK', p.product_id, kol); setSheet(null);
+          const m = Logika.mjera(p);
+          pokaziToast(m === 'ima' ? '✓ ' + p.naziv + ': sada ima' : m === 'posto' ? '✓ ' + p.naziv + ': nova kanta (100%)' : '✓ Dopuna: ' + p.naziv + ' +' + kol, 'ok');
+        }} />}
 
       {sheet === 'napomena' && <Napomena zatvori={() => setSheet(null)}
         posalji={t => { dodaj('NAPOMENA', '', 0, t); setSheet(null); pokaziToast('✓ Napomena zapisana. Vlasnik je vidi u izvještaju.', 'ok'); }} />}
@@ -1036,7 +1104,7 @@ function Potrosnja({ roba, osobe, st, zatvori, zapisi }) {
             <button key={p.product_id} data-potrosnja={p.product_id} className={'tile mala' + (hit === p.product_id + 1 ? ' hit' : '')} disabled={!osoba} onClick={() => tap(p, 1)}>
               {n > 0 && <span className="badge" key={n}>{n}</span>}
               <span className="nm">{p.naziv}</span>
-              <span className="bot"><span className="st">ima {st.ocekivano[p.product_id]}</span>
+              <span className="bot"><span className="st">{st.ocekivano.hasOwnProperty(p.product_id) ? 'ima ' + st.ocekivano[p.product_id] : Logika.opisMjere(p, Logika.trenutnoMjera(p, smjena, st))}</span>
                 {n > 0 && <span className="minus" role="button" onClick={e => { e.stopPropagation(); tap(p, -1); }}>−1</span>}</span>
             </button>
           );
@@ -1181,11 +1249,21 @@ function Dopuna({ proizvodi, zatvori, potvrdi, noviProizvod }) {
     <Sheet naslov={p ? 'Dopuna — ' + p.naziv : 'Šta si dopunio?'} zatvori={zatvori}>
       {!p ? (
         <div className="card0">
-          {proizvodi.map(x => (
-            <button key={x.product_id} className="listbtn" data-dopuna={x.product_id} onClick={() => { setP(x); setKol(''); }}>
-              <span>{x.naziv}</span><span className="sit">›</span>
-            </button>
-          ))}
+          {proizvodi.map(x => {
+            const m = Logika.mjera(x);
+            if (m !== 'kom') {
+              return (
+                <button key={x.product_id} className="listbtn" data-dopuna={x.product_id} onClick={() => potvrdi(x, 1)}>
+                  <span>{x.naziv}</span><span className="sit" style={{ color: 'var(--gold)' }}>{m === 'ima' ? 'Stiglo — sada ima ✓' : 'Nova kanta (100%) ✓'}</span>
+                </button>
+              );
+            }
+            return (
+              <button key={x.product_id} className="listbtn" data-dopuna={x.product_id} onClick={() => { setP(x); setKol(''); }}>
+                <span>{x.naziv}</span><span className="sit">›</span>
+              </button>
+            );
+          })}
           <button className="listbtn" style={{ color: 'var(--gold)' }} onClick={noviProizvod}>
             <span>＋ Novo piće koje nije na listi</span><span className="sit">›</span>
           </button>
@@ -1410,7 +1488,7 @@ function Zavrsna({ smjena, proizvodi, razlozi, greska, radi, cekaju, nazad, onGo
             <div className="grp">{g.ime.toUpperCase()}</div>
             <div className="card0">
               {g.stavke.map(p => (
-                <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} v={v[p.product_id]}
+                <Brojac key={p.product_id} pid={p.product_id} naziv={p.naziv} mjera={Logika.mjera(p)} v={v[p.product_id]}
                   set={n => setV(s => ({ ...s, [p.product_id]: n }))} />
               ))}
             </div>
@@ -1510,7 +1588,8 @@ function DetaljRazlike({ s }) {
 
 function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
   const problemi = (izv.stavke || []).filter(s => s.razlika_kom);
-  const ok = (izv.stavke || []).length - problemi.length;
+  const ok = (izv.stavke || []).filter(s => s.razlika_kom === 0).length;
+  const mjereStavke = (izv.stavke || []).filter(s => s.mjera);
   const tekst = Logika.tekstIzvjestaja(izv);
   const [pokaziTekst, setPokaziTekst] = useState(false);
 
@@ -1579,6 +1658,18 @@ function Izvjestaj({ izv, onNovo, pokaziToast, uAdminu }) {
 
       {(izv.upozorenja || []).map((u, i) => <div className="warn" key={i}>⚠ {u}</div>)}
       {problemi.map(s => <DetaljRazlike key={s.product_id} s={s} />)}
+
+      {mjereStavke.length > 0 && (
+        <div className="card">
+          <div className="lab">PROTEIN I KREATIN</div>
+          {mjereStavke.map(s => (
+            <div className="ln" key={s.product_id}><span>{s.naziv}<div className="sit">prodano {s.prodano_klik}{s.potroseno ? ' · osoblje ' + s.potroseno : ''}</div></span>
+              <b style={{ color: s.mjera === 'ima' && s.stvarno === 0 ? 'var(--red)' : 'var(--text)' }}>
+                {s.mjera === 'ima' ? (s.stvarno === null ? (s.pocetno > 0 ? 'ima' : 'nema') : s.stvarno > 0 ? '✓ ima' : '✕ nema') : s.pocetno + '% → ' + (s.stvarno === null ? '?' : s.stvarno + '%')}
+              </b></div>
+          ))}
+        </div>
+      )}
 
       {izv.usluge && izv.usluge.length > 0 && (
         <div className="card">
@@ -2072,7 +2163,7 @@ function AdminZalihe({ d }) {
         {d.zalihe.map(z => (
           <div className="row" key={z.product_id} style={{ minHeight: 52 }}>
             <span style={{ fontSize: 15 }}>{z.naziv}<div className="sit">minimum {z.minimum}{z.jedinica && z.jedinica !== 'kom' ? ' · ' + z.jedinica : ''}</div></span>
-            <b style={{ fontSize: z.nestalo ? 14 : 20, color: z.nisko ? 'var(--red)' : 'var(--text)' }}>{z.nestalo ? 'NESTALO' : z.kolicina === null ? '—' : z.kolicina}</b>
+            <b style={{ fontSize: z.nestalo || z.mjera ? 15 : 20, color: z.nisko || z.nestalo ? 'var(--red)' : 'var(--text)' }}>{z.mjera === 'ima' ? (z.kolicina === null ? '—' : z.kolicina > 0 ? '✓ ima' : '✕ nema') : z.mjera === 'posto' ? (z.kolicina === null ? '—' : z.kolicina + '%') : z.nestalo ? 'NESTALO' : z.kolicina === null ? '—' : z.kolicina}</b>
           </div>
         ))}
       </div>
@@ -2233,12 +2324,15 @@ function UrediProizvod({ p, kategorije, pin, zatvori, gotovo }) {
       )}
       {tip === 'roba' && (
         <>
-          <div className="lab" style={{ marginTop: 12 }}>MJERNA JEDINICA (ŠTA SE BROJI I PRODAJE)</div>
+          <div className="lab" style={{ marginTop: 12 }}>KAKO SE BROJI NA POČETKU I KRAJU SMJENE</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {['kom', 'mjerica', 'porcija'].map(j => <button key={j} className={'chip' + ((x.jedinica || 'kom') === j ? ' on' : '')} onClick={() => setX({ ...x, jedinica: j })}>{j}</button>)}
+            {[['kom', 'Komadi'], ['ima', 'Samo ima / nema'], ['%', '% u kanti']].map(([j, n]) => <button key={j} className={'chip' + ((x.jedinica || 'kom') === j || (j === 'kom' && ['mjerica', 'porcija'].indexOf(x.jedinica) >= 0) ? ' on' : '')} onClick={() => setX({ ...x, jedinica: j })}>{n}</button>)}
           </div>
-          <div className="lab" style={{ marginTop: 12 }}>VELIČINA PAKOVANJA (KOLIKO {(x.jedinica || 'kom').toUpperCase()} U JEDNOJ KANTI/KUTIJI) — ZA BRZU DOPUNU</div>
-          <input className="inp" inputMode="numeric" value={x.paket || ''} placeholder="npr. 30" onChange={e => setX({ ...x, paket: e.target.value.replace(/\D/g, '').slice(0, 4) })} />
+          <div className="sit" style={{ marginTop: 6 }}>{x.jedinica === 'ima' ? 'Npr. okusi proteina: radnik samo označi ima ili nema. Prodaja se kuca normalno, ali bez obračuna razlike.' : x.jedinica === '%' ? 'Npr. kreatin: radnik upiše koliko je % ostalo u kanti. Prodaja se kuca normalno, ali bez obračuna razlike.' : 'Broji se tačan broj komada i aplikacija javlja razliku.'}</div>
+          {(!x.jedinica || x.jedinica === 'kom') && <>
+            <div className="lab" style={{ marginTop: 12 }}>KOMADA U JEDNOM PAKOVANJU (ZA BRZU DOPUNU, NIJE OBAVEZNO)</div>
+            <input className="inp" inputMode="numeric" value={x.paket || ''} placeholder="npr. 24" onChange={e => setX({ ...x, paket: e.target.value.replace(/\D/g, '').slice(0, 4) })} />
+          </>}
         </>
       )}
       <button className={'chip' + (x.aktivan ? ' on' : '')} style={{ marginTop: 12, width: '100%' }} onClick={() => setX({ ...x, aktivan: !x.aktivan })}>

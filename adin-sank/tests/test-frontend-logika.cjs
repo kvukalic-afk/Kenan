@@ -201,3 +201,37 @@ test('nestalo: samo ono što je bilo na zalihi i došlo do nule', () => {
   // potrošnja po računu
   assert.equal(JSON.stringify(st.potrosnjaOsobe), JSON.stringify({ Edin: { malina: 1 } }));
 });
+
+test('mjere: protein ima/nema, kreatin % — ne ulaze u očekivano ni u razlike; NEMA baner', () => {
+  const prod = [
+    { product_id: 'protein', naziv: 'Protein vanilija', prati_zalihu: true, jedinica: 'ima', cijena: 3 },
+    { product_id: 'protein_malina', naziv: 'Protein malina', prati_zalihu: true, jedinica: 'ima', cijena: 3 },
+    { product_id: 'kreatin', naziv: 'Kreatin', prati_zalihu: true, jedinica: '%', cijena: 2 },
+    { product_id: 'redbull', naziv: 'Red Bull', prati_zalihu: true, cijena: 4 }
+  ];
+  const smjena = { pocetna: { protein: 1, protein_malina: 0, kreatin: 8, redbull: 5 }, dogadjaji: [
+    { tip: 'SALE', product_id: 'protein', kolicina: 1 }, { tip: 'SALE', product_id: 'protein', kolicina: 1 }, { tip: 'SALE', product_id: 'redbull', kolicina: 1 }
+  ] };
+  const st = L.stanjeSmjene(smjena, prod);
+  assert.equal(JSON.stringify(st.ocekivano), JSON.stringify({ redbull: 4 }));
+  assert.equal(st.promet, 10);
+  assert.equal(L.nestalo(smjena, prod, st).map(p => p.naziv).join(), 'Protein malina,Kreatin');
+  assert.deepEqual([L.opisMjere(prod[0], 1), L.opisMjere(prod[1], 0), L.opisMjere(prod[2], 8)], ['ima', 'NEMA', '8%']);
+  const pr = L.provjeraZavrsnog(smjena, prod, { protein: '0', protein_malina: '0', kreatin: '5', redbull: '4' }, '10');
+  assert.equal(pr.razlikeRobe, 0, 'okusi i % nisu razlike');
+  assert.equal(pr.trebaRazlog, false);
+});
+
+test('mjere: "stiglo" i "nova kanta" usred smjene', () => {
+  const prod = [
+    { product_id: 'protein_malina', naziv: 'Protein malina', prati_zalihu: true, jedinica: 'ima', cijena: 3 },
+    { product_id: 'kreatin', naziv: 'Kreatin', prati_zalihu: true, jedinica: '%', cijena: 2 }
+  ];
+  const smjena = { pocetna: { protein_malina: 0, kreatin: 5 }, dogadjaji: [] };
+  let st = L.stanjeSmjene(smjena, prod);
+  assert.equal(L.nestalo(smjena, prod, st).length, 2);
+  smjena.dogadjaji.push({ tip: 'RESTOCK', product_id: 'protein_malina', kolicina: 1 }, { tip: 'RESTOCK', product_id: 'kreatin', kolicina: 1 });
+  st = L.stanjeSmjene(smjena, prod);
+  assert.deepEqual([L.trenutnoMjera(prod[0], smjena, st), L.trenutnoMjera(prod[1], smjena, st)], [1, 100]);
+  assert.equal(L.nestalo(smjena, prod, st).length, 0);
+});
