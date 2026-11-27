@@ -875,3 +875,29 @@ test('trag rada: tabela se sama skraćuje (najstariji zapisi se brišu)', () => 
   assert.equal(sh.getRange(2, c + 1).getValue(), 'T-st5002');
   assert.equal(sh.getRange(sh.getLastRow(), c + 1).getValue(), 'T-novi1');
 });
+
+test('PREGLED: formule se pišu dok je Sheet na en_US (evropski jezik je davao #ERROR!), jezik se vrati; pokvaren PREGLED se popravi jednom', () => {
+  const g = napraviOkruzenje({ sada: SAT });
+  g.setupSpreadsheet();
+  assert.deepEqual(g.__ss.localeHistorija, ['en_US', 'bs_BA'], 'pri pisanju en_US, pa nazad na bs_BA');
+  assert.equal(g.__ss.getSpreadsheetLocale(), 'bs_BA');
+  const pg = g.__ss.getSheetByName('PREGLED');
+  assert.match(String(pg.getRange('B3').getValue()), /^=TEXT\(TODAY\(\),"yyyy-mm-dd"\)$/);
+  assert.equal(ok(g.provjeraSistema('2308')).pregled_radi, true);
+  // stari, pokvareni PREGLED (kao kod vlasnika): #ERROR! → migracija ga jednom prepiše
+  pg.getRange('B3').setValue('#ERROR!');
+  assert.equal(ok(g.provjeraSistema('2308')).pregled_radi, false);
+  delete g.__props.SEED_PREGLED_1128; delete g.__props.VERZIJA_SEME;
+  g.__ss.localeHistorija.length = 0;
+  ok(g.getBootstrap());
+  assert.match(String(pg.getRange('B3').getValue()), /^=TEXT/);
+  assert.deepEqual(g.__ss.localeHistorija, ['en_US', 'bs_BA']);
+  assert.equal(ok(g.provjeraSistema('2308')).pregled_radi, true);
+  // radi samo jednom
+  pg.getRange('B3').setValue('#ERROR!');
+  delete g.__props.VERZIJA_SEME;
+  ok(g.getBootstrap());
+  assert.equal(pg.getRange('B3').getValue(), '#ERROR!', 'migracija se ne ponavlja (za to je dugme Popravi)');
+  ok(g.popraviSistem('2308'));
+  assert.match(String(pg.getRange('B3').getValue()), /^=TEXT/, 'Popravi prepiše pokvaren PREGLED');
+});

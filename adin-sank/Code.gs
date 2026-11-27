@@ -83,7 +83,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '17';
+var VERZIJA_SEME = '18';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -875,12 +875,24 @@ function osigurajTabele_(formatiraj) {
   var pg = ss.getSheetByName(TAB.PREGLED);
   if (!pg) {
     pg = ss.insertSheet(TAB.PREGLED);
-    napisiPregled_(pg);
+    uEnUs_(function () { napisiPregled_(pg); });
     uradjeno.push('napravljen PREGLED');
   } else if (pg.getLastRow() === 0) {
-    napisiPregled_(pg);
+    uEnUs_(function () { napisiPregled_(pg); });
     uradjeno.push('napisan PREGLED');
   }
+  // PREGLED je na evropskom jeziku Sheeta pokazivao #ERROR! (formule sa zarezom) — jednom ga prepiši ispravno (27.11.)
+  try {
+    if (!svojstva_().getProperty('SEED_PREGLED_1128')) {
+      svojstva_().setProperty('SEED_PREGLED_1128', '1');
+      if (!pregledRadi_()) {
+        pg.clear();
+        uEnUs_(function () { napisiPregled_(pg); });
+        uradjeno.push(pregledRadi_() ? 'PREGLED: formule popravljene' : 'PREGLED: formule i dalje ne rade');
+        if (!pregledRadi_()) logMigracija_('SEED_PREGLED_1128', 'Formule u PREGLED-u i dalje javljaju grešku.');
+      }
+    }
+  } catch (e) { logMigracija_('SEED_PREGLED_1128', e); }
 
   // ukloni prazan početni list ("Sheet1", "List 1"...) ako je potpuno prazan
   ss.getSheets().forEach(function (sh) {
@@ -996,8 +1008,37 @@ function obnoviPregled() {
   var ss = ss_();
   var pg = ss.getSheetByName(TAB.PREGLED) || ss.insertSheet(TAB.PREGLED);
   pg.clear();
-  napisiPregled_(pg);
-  return 'PREGLED je obnovljen.';
+  uEnUs_(function () { napisiPregled_(pg); });
+  return pregledRadi_() ? 'PREGLED je obnovljen.' : 'PREGLED je obnovljen, ali formule i dalje javljaju grešku — javi Claudeu.';
+}
+
+/**
+ * Formule se pišu u en_US obliku (zarez između argumenata). Kad je Sheet na bosanskom/evropskom jeziku (decimalni zarez),
+ * Google takvu formulu ne razumije i pokaže #ERROR! — zato se jezik Sheeta za trenutak prebaci na en_US pa vrati.
+ * Formule ostaju ispravne i poslije vraćanja jezika (Google ih sam prikaže s ";").
+ */
+function uEnUs_(fn) {
+  var ss = ss_(), staro = '';
+  try { staro = String(ss.getSpreadsheetLocale() || ''); } catch (e) { /* */ }
+  var promijeni = !!staro && staro !== 'en_US';
+  if (promijeni) { try { ss.setSpreadsheetLocale('en_US'); } catch (e) { promijeni = false; } }
+  try {
+    var r = fn();
+    if (promijeni) SpreadsheetApp.flush();
+    return r;
+  } finally {
+    if (promijeni) { try { ss.setSpreadsheetLocale(staro); } catch (e) { logMigracija_('vraćanje jezika Sheeta (' + staro + ')', e); } }
+  }
+}
+
+/** Da li formule u PREGLED-u rade (B3 = današnji datum, a ne #ERROR!). */
+function pregledRadi_() {
+  try {
+    var pg = ss_().getSheetByName(TAB.PREGLED);
+    if (!pg || pg.getLastRow() === 0) return false;
+    SpreadsheetApp.flush();
+    return !/^#/.test(String(pg.getRange('B3').getDisplayValue() || ''));
+  } catch (e) { return true; }   // ne znamo — ne diraj
 }
 
 function napisiPregled_(pg) {
@@ -2441,7 +2482,8 @@ function stanjeSistema_() {
   return {
     verzija_koda: VERZIJA_SEME, verzija_tabele: s_(svojstva_().getProperty('VERZIJA_SEME')) || '—',
     tabele: tabele, proizvoda: pr.redovi.filter(function (r) { return s_(r.product_id); }).length,
-    pica: pica, cijene: cijene, prijavljeno: prijavljenoStanje_(), greske_migracija: s_(svojstva_().getProperty('MIGRACIJE_GRESKE'))
+    pica: pica, cijene: cijene, prijavljeno: prijavljenoStanje_(), greske_migracija: s_(svojstva_().getProperty('MIGRACIJE_GRESKE')),
+    pregled_radi: pregledRadi_()
   };
 }
 
@@ -2461,6 +2503,7 @@ function popraviSistem(pin) {
       try { osigurajVarijante_(uradjeno); } catch (e) { logMigracija_('popravka okusa', e); poruke.push('Okusi: ' + (e && e.message ? e.message : e)); }
       ['SEED_TRENERI_1126', 'SEED_CIJENE_1126', 'SEED_RASPORED', 'SEED_PICA_1125'].forEach(function (k) { if (k !== 'SEED_PICA_1125') svojstva_().deleteProperty(k); });
       try { poruke.push(osigurajTabele_(true)); } catch (e) { logMigracija_('osigurajTabele', e); poruke.push('Tabele: ' + (e && e.message ? e.message : e)); }
+      try { if (!pregledRadi_()) poruke.push(obnoviPregled()); } catch (e) { logMigracija_('PREGLED', e); poruke.push('PREGLED: ' + (e && e.message ? e.message : e)); }
       svojstva_().setProperty('VERZIJA_SEME', VERZIJA_SEME);
       uradjeno.forEach(function (u) { poruke.push(u); });
     });

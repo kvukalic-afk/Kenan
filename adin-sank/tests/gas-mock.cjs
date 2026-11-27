@@ -90,6 +90,7 @@ class MockRange {
     return out;
   }
   getValue() { return this.sheet._get(this.r, this.c); }
+  getDisplayValue() { return String(this.sheet._get(this.r, this.c)); }
   setValues(v) {
     if (v.length !== this.nr || v.some(row => row.length !== this.nc)) {
       throw new Error(`Mock setValues: dimenzije ${v.length}x${v[0] && v[0].length} ne odgovaraju ${this.nr}x${this.nc}`);
@@ -107,7 +108,9 @@ class MockRange {
 }
 
 class MockSpreadsheet {
-  constructor() { this.sheets = [SheetProxy(new MockSheet('Sheet1', this))]; this.tz = 'Etc/GMT'; }
+  constructor() { this.sheets = [SheetProxy(new MockSheet('Sheet1', this))]; this.tz = 'Etc/GMT'; this.locale = 'bs_BA'; this.localeHistorija = []; }
+  getSpreadsheetLocale() { return this.locale; }
+  setSpreadsheetLocale(l) { this.locale = l; this.localeHistorija.push(l); }
   getSheetByName(n) { return this.sheets.find(s => s.getName() === n) || null; }
   insertSheet(n) { const s = SheetProxy(new MockSheet(n, this)); this.sheets.push(s); return s; }
   getSheets() { return this.sheets.slice(); }

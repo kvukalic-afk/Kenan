@@ -2924,6 +2924,7 @@ function ProvjeraSistema({ pin, osvjezi, pokaziToast }) {
       {x && (
         <div style={{ marginTop: 12 }} data-testid="provjera-rezultat">
           <div className="ln"><span>Verzija koda / tabele</span><b style={{ color: staro ? 'var(--red)' : 'var(--green)' }}>{x.verzija_koda} / {x.verzija_tabele}{staro ? ' ⚠' : ' ✓'}</b></div>
+          {x.pregled_radi !== undefined && <div className="ln"><span>Tab PREGLED u Sheetu</span><b data-testid="pregled-radi" style={{ color: x.pregled_radi ? 'var(--green)' : 'var(--red)' }}>{x.pregled_radi ? 'formule rade ✓' : 'formule ne rade — klikni Popravi'}</b></div>}
           <div className="ln"><span>Proizvoda u tabeli</span><b>{x.proizvoda}</b></div>
           {x.pica.map(p => (
             <div className="ln" key={p.naziv}><span>{p.naziv}</span>
