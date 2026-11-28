@@ -398,12 +398,12 @@ test('svježa instalacija: prva upotreba odmah daje nove cijene', () => {
   assert.deepEqual([c('powerade'), c('dnevna'), c('clan30'), c('redbull'), c('voda05')], [3, 4, 40, 4, 1]);
 });
 
-test('paketi trenera: plan 40, asistencija+plan 60, grupni 70, personalni 100 + prilagođena cijena; trenerov novac ne ulazi u profit', () => {
+test('paketi trenera: plan 40, asistencija+plan 60, grupni 70, personalni 140 + prilagođena cijena; trenerov novac ne ulazi u profit', () => {
   const g = napraviOkruzenje({ sada: SAT, treneri: true });
   g.setupSpreadsheet();
   const b = ok(g.getBootstrap());
   const t = b.proizvodi.filter(p => p.tip === 'trener');
-  assert.deepEqual(t.map(p => p.naziv + ':' + p.cijena), ['Asistencija + plan:60', 'Plan treninga ili ishrane:40', 'Grupni trening (termin):70', 'Personalni trening:100']);
+  assert.deepEqual(t.map(p => p.naziv + ':' + p.cijena), ['Asistencija + plan:60', 'Plan treninga ili ishrane:40', 'Grupni trening (termin):70', 'Personalni trening:140']);
   ok(g.startShift({ shift_id: 'T', radnik: 'Edin', pocetna: pocetno(g) }));
   const clan = { member_id: 'M-T', ime: 'Lejla', telefon: '061', trener: 'Kenan' };
   const r = ok(g.pushEvents('T', [
@@ -417,13 +417,13 @@ test('paketi trenera: plan 40, asistencija+plan 60, grupni 70, personalni 100 + 
   assert.equal(r.odbijeni[0].code, 'CIJENA');
   const d = g.__tabela('DOGADJAJI');
   const red = id => d.find(x => x.event_id === id);
-  assert.deepEqual([red('t2').cijena, red('t2').ukupno, red('t3').cijena, red('t3').ukupno], [100, 100, 30, 30]);
+  assert.deepEqual([red('t2').cijena, red('t2').ukupno, red('t3').cijena, red('t3').ukupno], [140, 140, 30, 30]);
   assert.match(red('t3').napomena, /Prilagođena cijena 30 KM \(standardno 40 KM\)/);
   assert.equal(red('t5').ukupno, 30, 'za kartu se cijena ne prilagođava');
-  const z = ok(g.closeShift('T', pocetno(g), '190', ''));
-  assert.equal(z.izvjestaj.promet, 190);
+  const z = ok(g.closeShift('T', pocetno(g), '230', ''));
+  assert.equal(z.izvjestaj.promet, 230);
   const a = ok(g.getAdminData('2308'));
-  assert.equal(a.karte.mjesec.trener.promet, 130);
+  assert.equal(a.karte.mjesec.trener.promet, 170);
   assert.equal(a.karte.mjesec.trener.profit, 0, 'sav novac za trenere ide treneru');
 });
 
@@ -900,4 +900,19 @@ test('PREGLED: formule se pišu dok je Sheet na en_US (evropski jezik je davao #
   assert.equal(pg.getRange('B3').getValue(), '#ERROR!', 'migracija se ne ponavlja (za to je dugme Popravi)');
   ok(g.popraviSistem('2308'));
   assert.match(String(pg.getRange('B3').getValue()), /^=TEXT/, 'Popravi prepiše pokvaren PREGLED');
+});
+
+test('ELITE: postojeći personalni trening 100 KM postaje 140 KM jednom (vlasnik može kasnije mijenjati)', () => {
+  const g = napraviOkruzenje({ sada: SAT, treneri: true });
+  g.setupSpreadsheet();
+  const t = g.__tabela('PROIZVODI'); const sh = g.__ss.getSheetByName('PROIZVODI');
+  const kol = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const red = t.findIndex(p => p.product_id === 'trener_personalni') + 2;
+  sh.getRange(red, kol.indexOf('cijena') + 1).setValue(100);
+  delete g.__props.SEED_ELITE_1128; delete g.__props.VERZIJA_SEME;
+  ok(g.getBootstrap());
+  assert.equal(g.__tabela('PROIZVODI').find(p => p.product_id === 'trener_personalni').cijena, 140);
+  sh.getRange(red, kol.indexOf('cijena') + 1).setValue(120);
+  delete g.__props.VERZIJA_SEME; ok(g.getBootstrap());
+  assert.equal(g.__tabela('PROIZVODI').find(p => p.product_id === 'trener_personalni').cijena, 120, 'ne ponavlja se');
 });

@@ -83,7 +83,7 @@ var SEED_PROIZVODI = [
 var TIPOVI = ['SALE', 'UNDO_SALE', 'RESTOCK', 'ADJUSTMENT', 'NAPOMENA', 'POTROSNJA', 'KASA_IZLAZ'];
 var MAX_PROIZVODA_U_PREGLEDU = 40;
 var TIPOVI_PROIZVODA = ['roba', 'usluga', 'dnevna', 'clanarina', 'trener'];
-var VERZIJA_SEME = '18';
+var VERZIJA_SEME = '19';
 var DANI = ['pon', 'uto', 'sri', 'cet', 'pet', 'sub', 'ned'];   // povećaj kad se mijenja struktura tabela — nadogradnja se radi sama pri prvom otvaranju
 
 /* ═══════════════════════════════════════════════════════════════
@@ -785,7 +785,7 @@ function osigurajTabele_(formatiraj) {
       [
         ['trener_plan', 'Plan treninga ili ishrane', 40, 171],
         ['trener_grupni', 'Grupni trening (termin)', 70, 172],
-        ['trener_personalni', 'Personalni trening', 100, 173]
+        ['trener_personalni', 'Personalni trening', 140, 173]
       ].forEach(function (n) {
         if (postoji2[n[0]]) return;
         dodajRedove_(tabela_(TAB.PROIZVODI), [{ product_id: n[0], kategorija: 'Trener', naziv: n[1], cijena: n[2], nabavna_cijena: n[2],
@@ -795,6 +795,19 @@ function osigurajTabele_(formatiraj) {
       svojstva_().setProperty('SEED_TRENERI_1126', '1');
     }
   } catch (e) { logMigracija_('SEED_TRENERI_1126', e); }
+
+  // ELITE = personalni trening 140 + članarina 40 = 180 KM (vlasnik, 28.11.)
+  try {
+    if (!svojstva_().getProperty('SEED_ELITE_1128')) {
+      var te = tabela_(TAB.PROIZVODI);
+      te.redovi.forEach(function (r) {
+        if (s_(r.product_id) === 'trener_personalni' && r2_(num_(r.cijena)) === 100) {
+          azurirajRed_(te, r, { cijena: 140, nabavna_cijena: 140 }); uradjeno.push('Personalni trening: 140 KM (ELITE 180 s članarinom)');
+        }
+      });
+      svojstva_().setProperty('SEED_ELITE_1128', '1');
+    }
+  } catch (e) { logMigracija_('SEED_ELITE_1128', e); }
 
   // nalog vlasnika Kenana: vlastiti PIN (postavlja se jednom; poslije ga Kenan mijenja u Vlasnik → Postavke)
   try {
