@@ -13,7 +13,7 @@ var CONFIG = {
   VLASNICI: 'Edin & Kenan',          // pozdrav u vlasničkom pregledu
   TZ: 'Europe/Sarajevo',
   PREVOZ: 0.03,                      // 3% na nabavnu cijenu robe (prevoz)
-  PLATA_UDIO: 0.30,                  // plata radnika = 30% sedmičnog profita
+  PLATA_UDIO: 0.33,                  // plata radnika = 33% ukupnog sedmičnog profita (dogovor s Edinom, 28.11.)
   STARA_SMJENA_SATI: 14,             // upozorenje za zaboravljenu otvorenu smjenu
   ISTICE_DANA: 5,                    // "ističe u narednih 5 dana"
   RAZLOZI: ['Greška u kucanju', 'Gratis / poklon', 'Lom ili isteklo', 'Ne znam']

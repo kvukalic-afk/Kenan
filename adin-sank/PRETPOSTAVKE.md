@@ -6,7 +6,7 @@
 | 2 | **Prevoz 3%** se dodaje samo na robu (pića, suplementi), ne na usluge i članarine | `CONFIG.PREVOZ` + `obnoviPregled` |
 | 3 | Mjesečna 24/7: trošak **20 KM** po prodaji (profit 30); mjesečna 30 KM = čist profit | PROIZVODI → `nabavna_cijena` |
 | 4 | Članarina traje **1 kalendarski mjesec** (21.11. → 21.12.; 31.01. → 28.02.). Produženje ide od isteka ako još važi, inače od danas | PROIZVODI → `clanarina_mjeseci` |
-| 5 | Sedmica za platu je **ponedjeljak–nedjelja**; plata = 30% profita **cijele prošle sedmice** (svih radnika zajedno), isplata u ponedjeljak. Ako je sedmični profit negativan, plata je 0 | `CONFIG.PLATA_UDIO` |
+| 5 | Sedmica za platu je **ponedjeljak–nedjelja**; plata = 33% profita **cijele prošle sedmice** (svih radnika zajedno), isplata u ponedjeljak. Ako je sedmični profit negativan, plata je 0 | `CONFIG.PLATA_UDIO` |
 | 6 | Profit = prodajna cijena − nabavna (+3%). Manjkovi robe se **ne** oduzimaju od profita ni od plate (vide se posebno kao "manjak robe") | — |
 | 7 | **Minimum zalihe** (upozorenje): Voda 0,5 L i Red Bull 6, suplementi 3, ostala pića 4 — izmišljene početne vrijednosti | PROIZVODI → `minimum` |
 | 8 | Razlog je obavezan ako se ne poklapa **kasa ili bilo koji proizvod** (lista: Greška u kucanju / Gratis-poklon / Lom ili isteklo / Ne znam) | `CONFIG.RAZLOZI` |

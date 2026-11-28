@@ -358,7 +358,7 @@ test('vlasnik: PIN, pregled (profit, plata, zalihe, članovi), historija, detalj
   // Red Bull profit = 4 − 2,30×1,03 = 1,631 ; ×2 = 3,262 ; clan50 profit = 30 → 33,26
   assert.equal(a.prosla.promet, 58);
   assert.equal(a.prosla.profit, 33.26);
-  assert.equal(a.plata.prosla, 9.98);
+  assert.equal(a.plata.prosla, 10.98); // 33% sedmičnog profita
   // voda 1 − 0,50×1,03 = 0,485 ; dnevna 3 → 3,49 (zaokruženo)
   assert.equal(a.danas.promet, 4);
   assert.equal(a.danas.profit, 3.49);
