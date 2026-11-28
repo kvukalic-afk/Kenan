@@ -1291,7 +1291,7 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
       </div>
 
       {sheet === 'potrosnja' && <Potrosnja roba={proizvodi.filter(p => p.prati_zalihu && smjena.pocetna.hasOwnProperty(p.product_id))}
-        osobe={osobe} st={st} zatvori={() => setSheet(null)}
+        osobe={osobe} st={st} smjena={smjena} zatvori={() => setSheet(null)}
         zapisi={(osoba, p, q) => { zapisi('POTROSNJA', p.product_id, q, '', null, { osoba }); vibriraj(10); }} />}
 
       {sheet === 'uzeto' && <UzetoIzKase osobe={osobe} kasaTreba={st.kasaTreba} zatvori={() => setSheet(null)}
@@ -1351,7 +1351,7 @@ function Smjena({ smjena, raspored, proizvodi, clanovi, treneri, radnici, dodaj,
 }
 
 /** Potrošnja osoblja/vlasnika: ko → tap na proizvod = 1 kom (ne ide u kasu, skida se sa zalihe). */
-function Potrosnja({ roba, osobe, st, zatvori, zapisi }) {
+function Potrosnja({ roba, osobe, st, smjena, zatvori, zapisi }) {
   const [osoba, setOsoba] = useState(osobe[0] || '');
   const [hit, setHit] = useState(null);
   const moje = (st.potrosnjaOsobe && st.potrosnjaOsobe[osoba]) || {};

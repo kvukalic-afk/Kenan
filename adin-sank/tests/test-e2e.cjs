@@ -515,6 +515,13 @@ test('E2E: preskoči = nema, „prošli put" jednim tapom, ponovo se broji samo 
     assert.deepEqual([red1('protein').mjera, red1('redbull').mjera], ['%', 'kom']);
     assert.match(await page.locator('[data-tile="protein"]').textContent(), /80%/);
     await page.getByTestId('nestalo').filter({ hasText: 'Protein čokolada' }).waitFor();
+    // potrošnja osoblja se otvara i s proteinom u % (ranije je prozor padao)
+    await page.getByRole('button', { name: '☕ Potrošnja osoblja' }).click();
+    await page.locator('[data-potrosnja="protein"]').filter({ hasText: '80%' }).waitFor();
+    await page.locator('[data-osoba="Kenan"]').click();
+    await page.locator('[data-potrosnja="protein"]').click();
+    await page.getByTestId('racuni').locator('[data-racun="Kenan"]').filter({ hasText: 'Protein vanilija' }).waitFor();
+    await page.getByRole('button', { name: 'Gotovo', exact: true }).click();
     await tap(page, 'redbull', 2);
     await page.getByTestId('promet').filter({ hasText: '28,00' }).waitFor();
 
